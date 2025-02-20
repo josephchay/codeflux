@@ -3,22 +3,24 @@ import shutil
 import argparse
 
 
-DEFAULT_EXCLUDES = ["__pycache__", ".git", ".idea", ".vscode", ".venv", "venv", ".pyc", ".pyo"]
+DEFAULT_EXCLUDE_DIRS = ["__pycache__", ".git", ".idea", ".vscode", ".venv", "venv"]
+DEFAULT_EXCLUDE_EXTENSIONS = [".pyc", ".pyo", "__init__.py"]
 
 
-def flatten_dir(source_dir, destination_dir, include_init=False, exclude=None):
+def flatten_dir(source_dir, destination_dir, exclude_dirs=None, exclude_extensions=None):
     """
     Flattens the folder structure by copying all .py files into a single destination directory.
     Files are prefixed with their parent directory names separated by double underscores.
 
     :param source_dir: Path to the source directory
     :param destination_dir: Path to the destination directory
-    :param include_init: Whether to include __init__.py files (default: False)
-    :param exclude: List of directory names to exclude (default: DEFAULT_EXCLUDES)
+    :param exclude_dirs: List of directory names to exclude (default: DEFAULT_EXCLUDE_DIRS)
+    :param exclude_extensions: List of file extensions to exclude (default: DEFAULT_EXCLUDE_EXTENSIONS)
     """
 
-    # Set default values for exclude if not provided
-    exclude = exclude or DEFAULT_EXCLUDES
+    # Set default values for exclude_dirs and exclude_extensions if not provided
+    exclude_dirs = exclude_dirs or DEFAULT_EXCLUDE_DIRS
+    exclude_extensions = exclude_extensions or DEFAULT_EXCLUDE_EXTENSIONS
 
     # Clear the destination directory if it exists
     if os.path.exists(destination_dir):
@@ -29,14 +31,11 @@ def flatten_dir(source_dir, destination_dir, include_init=False, exclude=None):
 
     for root, dirs, files in os.walk(source_dir):
         # Exclude specified directories
-        dirs[:] = [d for d in dirs if d not in exclude]
+        dirs[:] = [d for d in dirs if d not in exclude_dirs]
 
         for file in files:
-            # Filter Python files based on include_init parameter and exclude specified extensions
-            if file.endswith(".py") and file not in exclude:
-                if not include_init and file == "__init__.py":
-                    continue
-
+            # Filter Python files based on exclude_extensions
+            if file.endswith(".py") and not any(file.endswith(ext) for ext in exclude_extensions):
                 source_file = os.path.join(root, file)
 
                 # Get the relative path components after the source directory
@@ -103,14 +102,15 @@ def main():
     parser.add_argument("--dest",
                         required=True,
                         help="Destination directory path")
-    parser.add_argument("--include-init",
-                        action="store_true",
-                        help="Include __init__.py files in the flattening process (default: False)")
-    parser.add_argument("--exclude",
+    parser.add_argument("--exclude-dirs",
                         nargs="+",
-                        default=[".idea", ".venv", ".vscode"],
-                        help="Directory names to exclude (default: \"__pycache__\", \".git\", \".idea\", \".vscode\", "
-                             "\".venv\", \"venv\", \".pyc\", \".pyo\")")
+                        default=DEFAULT_EXCLUDE_DIRS,
+                        help="Directory names to exclude (default: \"__pycache__\", \".git\", "
+                             "\".idea\", \".vscode\", \".venv\", \"venv\")")
+    parser.add_argument("--exclude-extensions",
+                        nargs="+",
+                        default=DEFAULT_EXCLUDE_EXTENSIONS,
+                        help="File extensions to exclude (default: \".pyc\", \".pyo\", \"__init__.py\")")
     parser.add_argument("--deflatten",
                         action="store_true",
                         help="Deflatten the directory instead of flattening (default: False)")
@@ -121,7 +121,7 @@ def main():
         if args.deflatten:
             deflatten_dir(args.src, args.dest)
         else:
-            flatten_dir(args.src, args.dest, args.include_init, args.exclude)
+            flatten_dir(args.src, args.dest, args.exclude_dirs, args.exclude_extensions)
     except ValueError as e:
         print(f"Error: {e}")
         return 1
