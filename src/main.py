@@ -67,7 +67,7 @@ def flatten_dir(source_dir, dest_dir, exclude_dirs=None, exclude_exts=None, clea
 
                 # Create the new filename with directory prefixes
                 if path_parts:
-                    new_filename = "__".join(path_parts + [file])
+                    new_filename = "___".join(path_parts + [file])
                 else:
                     new_filename = file
 
@@ -102,7 +102,7 @@ def deflatten_dir(flattened_dir, dest_dir, clear_dest_dir=False):
             flattened_file = os.path.join(flattened_dir, file)
 
             # Get the original directory structure from the file name
-            path_parts = file.split("__")
+            path_parts = file.split("___")
             original_file = path_parts[-1]
             original_dir = os.path.join(dest_dir, *path_parts[:-1])
 
