@@ -1,19 +1,19 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='codebase-flattener',
-    version='0.1.0',
+    name='codebase-unraveller',
+    version='0.3.0',
     description='A lightweight CLI tool to flatten nested Python files into a single directory',
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',
     author='Joseph Chay',
     author_email='josephemmanuelchay@gmail.com',
-    url='https://github.com/josephchay/codebase-flattener',
+    url='https://github.com/josephchay/codebase-unraveller',
     py_modules=['main'],
     package_dir={'': 'src'},
     entry_points={
         'console_scripts': [
-            'codebase-flattener=main:main',
+            'codebase-unraveller=main:main',
         ],
     },
     classifiers=[
