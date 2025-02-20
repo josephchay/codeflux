@@ -7,6 +7,24 @@ DEFAULT_EXCLUDE_DIRS = ["__pycache__", ".git", ".idea", ".vscode", ".venv", "ven
 DEFAULT_EXCLUDE_EXTENSIONS = [".pyc", ".pyo", "__init__.py"]
 
 
+def get_unique_filename(destination_file):
+    """
+    Generates a unique filename by appending a counter if the file already exists.
+
+    :param destination_file: The original destination file path
+    :return: The unique file path
+    """
+    counter = 2
+    name, ext = os.path.splitext(destination_file)
+    unique_destination_file = destination_file
+
+    while os.path.exists(unique_destination_file):
+        unique_destination_file = f"{name}_{counter}{ext}"
+        counter += 1
+
+    return unique_destination_file
+
+
 def flatten_dir(source_dir, destination_dir, exclude_dirs=None, exclude_extensions=None):
     """
     Flattens the folder structure by copying all .py files into a single destination directory.
@@ -21,11 +39,6 @@ def flatten_dir(source_dir, destination_dir, exclude_dirs=None, exclude_extensio
     # Set default values for exclude_dirs and exclude_extensions if not provided
     exclude_dirs = exclude_dirs or DEFAULT_EXCLUDE_DIRS
     exclude_extensions = exclude_extensions or DEFAULT_EXCLUDE_EXTENSIONS
-
-    # Clear the destination directory if it exists
-    if os.path.exists(destination_dir):
-        shutil.rmtree(destination_dir)
-    os.makedirs(destination_dir)
 
     source_dir_parts = len(os.path.normpath(source_dir).split(os.sep))
 
@@ -49,16 +62,11 @@ def flatten_dir(source_dir, destination_dir, exclude_dirs=None, exclude_extensio
 
                 destination_file = os.path.join(destination_dir, new_filename)
 
-                # Rename the file if it already exists in the destination
-                counter = 1
-                original_dest_file = destination_file
-                while os.path.exists(destination_file):
-                    name, ext = os.path.splitext(original_dest_file)
-                    destination_file = f"{name}_{counter}{ext}"
-                    counter += 1
+                # Generate a unique filename if the file already exists in the destination
+                unique_destination_file = get_unique_filename(destination_file)
 
-                shutil.copy2(source_file, destination_file)
-                print(f"Copied: {source_file} -> {destination_file}")
+                shutil.copy2(source_file, unique_destination_file)
+                print(f"Copied: {source_file} -> {unique_destination_file}")
 
 
 def deflatten_dir(flattened_dir, destination_dir):
@@ -69,11 +77,6 @@ def deflatten_dir(flattened_dir, destination_dir):
     :param flattened_dir: Path to the flattened directory
     :param destination_dir: Path to the destination directory
     """
-
-    # Clear the destination directory if it exists
-    if os.path.exists(destination_dir):
-        shutil.rmtree(destination_dir)
-    os.makedirs(destination_dir)
 
     for file in os.listdir(flattened_dir):
         if file.endswith(".py"):
@@ -88,8 +91,12 @@ def deflatten_dir(flattened_dir, destination_dir):
             os.makedirs(original_dir, exist_ok=True)
 
             destination_file = os.path.join(original_dir, original_file)
-            shutil.copy2(flattened_file, destination_file)
-            print(f"Copied: {flattened_file} -> {destination_file}")
+
+            # Generate a unique filename if the file already exists in the destination
+            unique_destination_file = get_unique_filename(destination_file)
+
+            shutil.copy2(flattened_file, unique_destination_file)
+            print(f"Copied: {flattened_file} -> {unique_destination_file}")
 
 
 def main():

@@ -154,7 +154,7 @@ Clone the Repository:
 
 ```bash
 git clone https://github.com/josephchay/codebase-flattener.git
-cd flatten-directory
+cd codebase-flattener
 ```
 
 Install Locally:
