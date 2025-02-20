@@ -51,8 +51,11 @@ def flatten_dir(source_dir, dest_dir, exclude_dirs=None, exclude_exts=None, clea
     source_dir_parts = len(os.path.normpath(source_dir).split(os.sep))
 
     for root, dirs, files in os.walk(source_dir):
-        # Exclude specified directories
-        dirs[:] = [d for d in dirs if d not in exclude_dirs]
+        # Exclude specified directories and the destination directory itself
+        dirs[:] = [
+            d for d in dirs
+            if d not in exclude_dirs and os.path.abspath(os.path.join(root, d)) != os.path.abspath(dest_dir)
+        ]
 
         for file in files:
             # Filter Python files based on exclude_extensions
@@ -102,6 +105,11 @@ def deflatten_dir(flattened_dir, dest_dir, clear_dest_dir=False):
             path_parts = file.split("__")
             original_file = path_parts[-1]
             original_dir = os.path.join(dest_dir, *path_parts[:-1])
+
+            # Skip if the destination would be the source itself to avoid overwriting
+            if os.path.abspath(original_dir).startswith(os.path.abspath(flattened_dir)):
+                print(f"Skipping to avoid overwriting source: {flattened_file}")
+                continue
 
             # Create the original directory structure if it doesn't exist
             os.makedirs(original_dir, exist_ok=True)

@@ -165,6 +165,19 @@ Command:
 codebase-flattener --src src --dest flat
 ```
 
+You can also flatten or deflatten the root directory with commands like:
+```bash
+codebase-flattener --src . --dest flat
+```
+or
+```bash
+codebase-flattener --src flat --dest .
+```
+or
+```bash
+codebase-flattener --src . --dest . --deflatten
+```
+
 ## How It Works
 1. **Directory Traversal**: Recursively scans through the source directory using `os.walk()`.
 2. **File Filtering**: Selects `.py` files, skipping files and folders with excluded extensions. `__init__.py` files are excluded by default.

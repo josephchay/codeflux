@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.2.1] - 2025-02-21
 
+### Added
+
+- Flatten and Deflatten feature for current (root) directory.
+
 ### Fixed
 
 - Make destination directory if it does not exist.
