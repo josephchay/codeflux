@@ -63,9 +63,9 @@ Here are various scenarios and how to use the tool:
 ```
 Before:                             After:
 src/                               flat/
-├── module1/                       ├── script1.py
-│   ├── script1.py                 ├── helper.py
-│   ├── __init__.py                └── script2.py
+├── module1/                       ├── module1___script1.py
+│   ├── script1.py                 ├── module1___utils___helper.py
+│   ├── __init__.py                └── module2___script2.py
 │   └── utils/
 │       └── helper.py
 └── module2/
@@ -81,10 +81,10 @@ codebase-flattener --src src --dest flat
 ```
 Before:                             After:
 src/                               flat/
-├── auth/                          ├── auth__login.py
-│   ├── login.py                   ├── auth__utils__validator.py
-│   └── utils/                     ├── models__user.py
-│       └── validator.py           └── models__data__schema.py
+├── auth/                          ├── auth___login.py
+│   ├── login.py                   ├── auth___utils___validator.py
+│   └── utils/                     ├── models___user.py
+│       └── validator.py           └── models___data___schema.py
 └── models/
     ├── user.py
     └── data/
@@ -100,8 +100,8 @@ codebase-flattener --src src --dest flat
 ```
 Before:                            After (Currently only supports python files):
 src/                               flat/
-├── .idea/                         ├── module1__script1.py
-├── .git/                          └── module2__script2.py
+├── .idea/                         ├── module1___script1.py
+├── .git/                          └── module2___script2.py
 ├── __pycache__/                   
 ├── .venv/                         
 ├── docs/                          
@@ -130,10 +130,10 @@ codebase-flattener --src src --dest flat --exclude-dirs .idea .git __pycache__ .
 ```
 Before:                             After:
 flat/                              original/
-├── module1__script.py             ├── module/
-├── module1__utils__helper.py      │   ├── script.py
-├── module2__script_2.py           │   └── utils/
-└── module2__data__schema.py       │       └── helper.py
+├── module1___script.py            ├── module/
+├── module1___utils___helper.py    │   ├── script.py
+├── module2___script_2.py          │   └── utils/
+└── module2___data___schema.py     │       └── helper.py
                                    └── module2/
                                        ├── script_2.py
                                        └── data/
@@ -149,15 +149,15 @@ codebase-flattener --src flat --dest original --deflatten
 ```
 Before (Third Flattening with modified files):           After (Third Flatten):
 src/                                                     flat/
-├── utils/                                               ├── helper.py
-│   └── helper.py                                        ├── user.py
-├── auth/                                                 ├── schema.py
-│   └── utils/                                            ├── helper_2.py
-│       └── helper.py                                     ├── user_2.py
-├── models/                                               ├── schema_2.py
-│   └── user.py                                           ├── helper_3.py
-└── data/                                                 ├── user_3.py
-    └── schema.py                                         └── schema_3.py
+├── utils/                                               ├── utils___helper.py
+│   └── helper.py                                        ├── models___user.py
+├── auth/                                                ├── data___schema.py
+│   └── utils/                                           ├── utils___helper_2.py
+│       └── helper.py                                    ├── models___user_2.py
+├── models/                                              ├── data___schema_2.py
+│   └── user.py                                          ├── utils___helper_3.py
+└── data/                                                ├── models___user_3.py
+    └── schema.py                                        └── data___schema_3.py
 ```
 
 Command:
