@@ -2,6 +2,8 @@
 
 *Effortlessly declutter your project by flattening nested `.py` files into a single folder.*
 
+> [!NOTE] _Currently only supports python files._
+
 ## **Overview**
 
 Do you often find yourself digging through multiple nested directories to find Python files?  
@@ -206,7 +208,7 @@ Contributions are welcome! If you'd like to report a bug, suggest a feature, or 
 4. Push your branch and open a PR.
 
 ## **License**
-This project is licensed under the MIT License. See the LICENSE file for details.
+This project is licensed under the MIT License. See the [LICENSE](LICENSE.txt) file for details.
 
 ## **Support**
 Need help? Have a question? Feel free to reach out:
