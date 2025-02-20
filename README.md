@@ -1,6 +1,6 @@
-# Codebase Flattener
+# Codebase Unraveller
 
-*Effortlessly declutter your project by flattening nested `.py` files into a single folder.*
+*Effortlessly declutter and organize your project by flattening nested `.py` files into a single folder.*
 
 > [!NOTE] 
 > _Currently only supports python files._
@@ -8,7 +8,7 @@
 ## Overview
 
 Do you often find yourself digging through multiple nested directories to find Python files?  
-**Codebase Flattener** is here to simplify your life! This lightweight CLI tool scans through your source directory (and all its subdirectories), collects all `.py` files (excluding `__init__.py`), and copies them into a single destination directory — all while automatically renaming conflicting files. 
+**Codebase Unraveller** is here to simplify your life! This lightweight CLI tool scans through your source directory (and all its subdirectories), collects all `.py` files (excluding `__init__.py`), and copies them into a single destination directory — all while automatically renaming conflicting files. 
 
 It's perfect for organizing large codebases, consolidating scripts, or preparing for migration or backup.
 
@@ -32,7 +32,7 @@ It's perfect for organizing large codebases, consolidating scripts, or preparing
 Install the package from source:
 
 ```bash
-pip install git+https://github.com/josephchay/codebase-flattener.git
+pip install git+https://github.com/josephchay/codebase-unraveller.git
 ```
 
 ## Command-Line Arguments
@@ -50,12 +50,12 @@ pip install git+https://github.com/josephchay/codebase-flattener.git
 
 Here are various scenarios and how to use the tool:
 
-| Scenario                   | Command                                                                                 | Description                                                                                                |
-|----------------------------|-----------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------|
-| Basic Flattening           | `codebase-flattener --src src --dest flat`                                              | Flattens all `.py` files (except `__init__.py`) into the 'flat' directory                                  |
-| Exclude Directories        | `codebase-flattener --src src --dest flat --exclude-dirs .idea .venv`                   | Excludes the `.idea` and `.venv` directories from the flattening process                                   |
-| Exclude File Extensions    | `codebase-flattener --src src --dest flat --exclude-extensions .txt .csv`               | Excludes files with `.txt` and `.csv` extensions from the flattening process                               |
-| Deflatten Directory        | `codebase-flattener --src flattened --dest original --deflatten`                        | Reverts the flattening process and restores the original directory structure from the flattened directory  |
+| Scenario                   | Command                                                                 | Description                                                                                                |
+|----------------------------|-------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------|
+| Basic Flattening           | `codebase-unraveller --src src --dest flat`                                | Flattens all `.py` files (except `__init__.py`) into the 'flat' directory                                  |
+| Exclude Directories        | `codebase-unraveller --src src --dest flat --exclude-dirs .idea .venv`     | Excludes the `.idea` and `.venv` directories from the flattening process                                   |
+| Exclude File Extensions    | `codebase-unraveller --src src --dest flat --exclude-extensions .txt .csv` | Excludes files with `.txt` and `.csv` extensions from the flattening process                               |
+| Deflatten Directory        | `codebase-unraveller --src flattened --dest original --deflatten`          | Reverts the flattening process and restores the original directory structure from the flattened directory  |
 
 ### Example Directory Transformations
 
@@ -74,7 +74,7 @@ src/                               flat/
 
 Command: 
 ```bash
-codebase-flattener --src src --dest flat
+codebase-unraveller --src src --dest flat
 ```
 
 #### Example 2: With Directory Prefixes
@@ -93,7 +93,7 @@ src/                               flat/
 
 Command:
 ```bash
-codebase-flattener --src src --dest flat
+codebase-unraveller --src src --dest flat
 ```
 
 #### Example 3: Excluding Directories and File Extensions
@@ -123,7 +123,7 @@ src/                               flat/
 
 Command:
 ```bash
-codebase-flattener --src src --dest flat --exclude-dirs .idea .git __pycache__ .venv docs tests --exclude-extensions .md .pyc .csv .json
+codebase-unraveller --src src --dest flat --exclude-dirs .idea .git __pycache__ .venv docs tests --exclude-extensions .md .pyc .csv .json
 ```
 
 #### Example 4: Deflattening a Directory
@@ -142,7 +142,7 @@ flat/                              original/
 
 Command:
 ```bash
-codebase-flattener --src flat --dest original --deflatten
+codebase-unraveller --src flat --dest original --deflatten
 ```
 
 #### Example 5: Flattening with Duplicated Filenames
@@ -162,20 +162,20 @@ src/                                                     flat/
 
 Command:
 ```bash
-codebase-flattener --src src --dest flat
+codebase-unraveller --src src --dest flat
 ```
 
 You can also flatten or deflatten the root directory with commands like:
 ```bash
-codebase-flattener --src . --dest flat
+codebase-unraveller --src . --dest flat
 ```
 or
 ```bash
-codebase-flattener --src flat --dest .
+codebase-unraveller --src flat --dest .
 ```
 or
 ```bash
-codebase-flattener --src . --dest . --deflatten
+codebase-unraveller --src . --dest . --deflatten
 ```
 
 ## How It Works
@@ -188,7 +188,7 @@ codebase-flattener --src . --dest . --deflatten
 7. **Unique Filenames**: Generates unique filenames by appending a counter to the filename if a file with the same name already exists in the destination directory.
 8. **Deflattening**: If the `--deflatten` argument is provided, reconstructs the original directory structure from the flattened files.
 
-## Why Use Codebase Flattener?
+## Why Use Codebase Unraveller?
 - Save time navigating large, deeply nested projects.
 - Quickly consolidate files for migration, sharing, or debugging.
 - Eliminate clutter while maintaining file integrity.
@@ -200,8 +200,8 @@ codebase-flattener --src . --dest . --deflatten
 Clone the Repository:
 
 ```bash
-git clone https://github.com/josephchay/codebase-flattener.git
-cd codebase-flattener
+git clone https://github.com/josephchay/codebase-unraveller.git
+cd codebase-unraveller
 ```
 
 Install Locally:
@@ -230,6 +230,6 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE.txt) f
 ## Support
 Need help? Have a question? Feel free to reach out:
 * **Email**: [josephemmanuelchay@gmail.com](mailto:josephemmanuelchay@gmail.com)
-* **GitHub Issues**: [Issues](https://github.com/josephchay/codebase-flattener/issues)
+* **GitHub Issues**: [Issues](https://github.com/josephchay/codebase-unraveller/issues)
 
 Make your life easier and your projects cleaner — flatten your directories today!
