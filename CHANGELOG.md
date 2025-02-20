@@ -15,6 +15,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - package installation command.
 - Made inclusion of `__init__.py` files for conversion optional - by default not included.
 - Coppied files are now prefixed with their parent directory names and Directory names are separated by double hyphens `__`.
+- `DEFAULT_EXCLUDES` to exclude files and folders from flattening.
+- `deflatten_dir` function to reverse the flattening process.
+- `exclude` parameter to exclude files and folders from flattening. 
 
 ### Changed
 - Execution script in `README.md`.

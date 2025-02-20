@@ -18,6 +18,9 @@ It's perfect for organizing large codebases, consolidating scripts, or preparing
 - **Clean Destination Directory**: Automatically clears the destination folder before copying.
 - **Command-Line Simplicity**: Provides an easy-to-use CLI interface.
 - **Directory Path Preservation**: Option to prefix files with their original directory structure.
+- **Exclude Specific Directories**: Allows excluding certain directories from the flattening process.
+- **Exclude Specific File Extensions**: Allows excluding files with certain extensions.
+- **Deflatten Functionality**: Provides the ability to revert the flattening process and restore the original directory structure.
 
 ---
 
@@ -31,22 +34,25 @@ pip install git+https://github.com/josephchay/codebase-flattener.git
 
 ## **Command-Line Arguments**
 
-| Argument         | Required | Default | Description                                             |
-|------------------|----------|---------|---------------------------------------------------------|
-| `--src`          | Yes      | -       | Source directory containing the Python files to flatten |
-| `--dest`         | Yes      | -       | Destination directory where files will be copied        |
-| `--include-init` | No       | `False` | Include `__init__.py` files in the flattening process   |
+| Argument         | Required | Default                                                                        | Description                                                                     |
+|------------------|----------|--------------------------------------------------------------------------------|---------------------------------------------------------------------------------|
+| `--src`          | Yes      | -                                                                              | Source directory containing the Python files to flatten                         |
+| `--dest`         | Yes      | -                                                                              | Destination directory where files will be copied                                |
+| `--include-init` | No       | `False`                                                                        | Include `__init__.py` files in the flattening process                           |
+| `--exclude`      | No       | `["__pycache__", ".git", ".idea", ".vscode", ".venv", "venv", ".pyc", ".pyo"]` | Directory names to exclude                                                      |
+| `--deflatten`    | No       | `False`                                                                        | Deflatten the directory instead of flattening (reverses the flattening process) |
 
 ## **Usage Examples**
 
 Here are various scenarios and how to use the tool:
 
-| Scenario           | Command                                                      | Description                                                               |
-|--------------------|--------------------------------------------------------------|---------------------------------------------------------------------------|
-| Basic Flattening   | `codebase-flattener --src src --dest flat`                   | Flattens all `.py` files (except `__init__.py`) into the 'flat' directory |
-| Include Init Files | `codebase-flattener --src src --dest flat --include-init`    | Includes `__init__.py` files in the flattening process                    |
-| Relative Paths     | `codebase-flattener --src ../project/src --dest ./flat`      | Works with relative paths                                                 |
-| Absolute Paths     | `codebase-flattener --src /path/to/src --dest /path/to/dest` | Works with absolute paths                                                 |
+| Scenario                | Command                                                                 | Description                                                                                               |
+|-------------------------|-------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------|
+| Basic Flattening        | `codebase-flattener --src src --dest flat`                              | Flattens all `.py` files (except `__init__.py`) into the 'flat' directory                                 |
+| Include Init Files      | `codebase-flattener --src src --dest flat --include-init`               | Includes `__init__.py` files in the flattening process                                                    |
+| Exclude Directories     | `codebase-flattener --src src --dest flat --exclude .idea .venv`        | Excludes the `.idea` and `.venv` directories from the flattening process                                  |
+| Exclude File Extensions | `codebase-flattener --src src --dest flat --exclude .pyc .pyo`          | Excludes files with `.pyc` and `.pyo` extensions from the flattening process                              |
+| Deflatten Directory     | `codebase-flattener --src flattened --dest original --deflatten`        | Reverts the flattening process and restores the original directory structure from the flattened directory |
 
 ### **Example Directory Transformations**
 
@@ -95,18 +101,81 @@ src/                               flat/
 Command: codebase-flattener --src src --dest flat --include-init
 ```
 
+**Example 4: Excluding Directories**
+```
+Before:                             After:
+src/                               flat/
+├── .idea/                         ├── module1__script1.py
+├── module1/                       └── module2__script2.py
+│   ├── script1.py                 
+│   ├── __init__.py                
+│   └── utils/
+│       └── helper.pyc
+└── module2/
+    └── script2.py
+
+Command: codebase-flattener --src src --dest flat --exclude .idea
+```
+
+**Example 5: More Exclusions**
+```
+Before:                            After (Currently only supports python files):
+src/                               flat/
+├── .idea/                         ├── module1__script1.py
+├── .git/                          └── module2__script2.py
+├── __pycache__/
+├── .venv/
+├── docs/
+│   └── README.md
+├── tests/
+│   ├── test_script1.py
+│   └── test_script2.py
+├── module1/
+│   ├── script1.py
+│   ├── __init__.py
+│   └── utils/
+│       └── helper.pyc
+└── module2/
+    ├── script2.py
+    └── data/
+        ├── input.csv
+        └── output.json
+
+Command: codebase-flattener --src src --dest flat --exclude .idea .git __pycache__ .venv docs tests
+```
+
+**Example 6: Deflattening a Directory**
+```
+Before:                             After:
+flat/                              original/
+├── module1__script1.py            ├── module1/
+├── module1__utils__helper.py      │   ├── script1.py
+├── module2__script2.py            │   └── utils/
+└── module2__data__schema.py       │       └── helper.py
+                                   └── module2/
+                                       ├── script2.py
+                                       └── data/
+                                           └── schema.py
+
+Command: codebase-flattener --src flat --dest original --deflatten
+```
+
 ## **How It Works**
 1. **Directory Traversal**: Recursively scans through the source directory using `os.walk()`.
-2. **File Filtering**: Selects `.py` files, skipping `__init__.py` (unless `--include-init` is used).
-3. **Conflict Resolution**: Renames files if conflicts are detected in the destination folder.
-4. **Copy Operation**: Uses `shutil.copy2()` to preserve metadata while copying files.
-5. **Clean Destination**: Ensures the destination folder is emptied before starting.
+2. **File Filtering**: Selects `.py` files, skipping `__init__.py` (unless `--include-init` is used) and files and folders with excluded extensions.
+3. **Directory Exclusion**: Skips directories specified in the `--exclude` argument.
+4. **Conflict Resolution**: Renames files if conflicts are detected in the destination folder.
+5. **Copy Operation**: Uses `shutil.copy2()` to preserve metadata while copying files.
+6. **Clean Destination**: Ensures the destination folder is emptied before starting.
+7. **Deflattening**: If the `--deflatten` argument is provided, reconstructs the original directory structure from the flattened files.
 
 ## **Why Use Codebase Flattener?**
 * Save time navigating large, deeply nested projects.
 * Quickly consolidate files for migration, sharing, or debugging.
 * Eliminate clutter while maintaining file integrity.
 * Fully automated with zero manual intervention required.
+* Easily exclude specific directories and file extensions from the flattening process.
+* Revert the flattening process and restore the original directory structure when needed.
 
 ## **Development**
 Clone the Repository:
@@ -141,7 +210,7 @@ This project is licensed under the MIT License. See the LICENSE file for details
 
 ## **Support**
 Need help? Have a question? Feel free to reach out:
-* **Email**: josephemmanuelchay@gmail.com
+* **Email**: [josephemmanuelchay@gmail.com](mailto:josephemmanuelchay@gmail.com)
 * **GitHub Issues**: [Issues](https://github.com/josephchay/codebase-flattener/issues)
 
 Make your life easier and your projects cleaner — flatten your directories today!
