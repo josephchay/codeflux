@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `exclude` parameter to exclude files and folders from flattening.
 - Separated `exclude` parameter to `exclude_dirs` for directories and `exclude_extensions` for files.
 - `get_unique_filename` that generates a unique filename by appending a counter to the filename if a file with the same name already exists in the destination directory.
+- `clear_dest_dir` optional parameter to clear the destination directory before copying files.
 
 ## [0.1.2] - 2025-01-21
 

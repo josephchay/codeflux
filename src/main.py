@@ -25,20 +25,27 @@ def get_unique_filename(destination_file):
     return unique_destination_file
 
 
-def flatten_dir(source_dir, destination_dir, exclude_dirs=None, exclude_extensions=None):
+def flatten_dir(source_dir, dest_dir, exclude_dirs=None, exclude_exts=None, clear_dest_dir=False):
     """
     Flattens the folder structure by copying all .py files into a single destination directory.
     Files are prefixed with their parent directory names separated by double underscores.
 
     :param source_dir: Path to the source directory
-    :param destination_dir: Path to the destination directory
+    :param dest_dir: Path to the destination directory
     :param exclude_dirs: List of directory names to exclude (default: DEFAULT_EXCLUDE_DIRS)
-    :param exclude_extensions: List of file extensions to exclude (default: DEFAULT_EXCLUDE_EXTENSIONS)
+    :param exclude_exts: List of file extensions to exclude (default: DEFAULT_EXCLUDE_EXTENSIONS)
+    :param clear_dest_dir: Whether to clear the destination directory before copying (default: False)
     """
 
     # Set default values for exclude_dirs and exclude_extensions if not provided
     exclude_dirs = exclude_dirs or DEFAULT_EXCLUDE_DIRS
-    exclude_extensions = exclude_extensions or DEFAULT_EXCLUDE_EXTENSIONS
+    exclude_exts = exclude_exts or DEFAULT_EXCLUDE_EXTENSIONS
+
+    if clear_dest_dir:
+        # Clear the destination directory if it exists
+        if os.path.exists(dest_dir):
+            shutil.rmtree(dest_dir)
+        os.makedirs(dest_dir)
 
     source_dir_parts = len(os.path.normpath(source_dir).split(os.sep))
 
@@ -48,7 +55,7 @@ def flatten_dir(source_dir, destination_dir, exclude_dirs=None, exclude_extensio
 
         for file in files:
             # Filter Python files based on exclude_extensions
-            if file.endswith(".py") and not any(file.endswith(ext) for ext in exclude_extensions):
+            if file.endswith(".py") and not any(file.endswith(ext) for ext in exclude_exts):
                 source_file = os.path.join(root, file)
 
                 # Get the relative path components after the source directory
@@ -60,7 +67,7 @@ def flatten_dir(source_dir, destination_dir, exclude_dirs=None, exclude_extensio
                 else:
                     new_filename = file
 
-                destination_file = os.path.join(destination_dir, new_filename)
+                destination_file = os.path.join(dest_dir, new_filename)
 
                 # Generate a unique filename if the file already exists in the destination
                 unique_destination_file = get_unique_filename(destination_file)
@@ -69,14 +76,21 @@ def flatten_dir(source_dir, destination_dir, exclude_dirs=None, exclude_extensio
                 print(f"Copied: {source_file} -> {unique_destination_file}")
 
 
-def deflatten_dir(flattened_dir, destination_dir):
+def deflatten_dir(flattened_dir, dest_dir, clear_dest_dir=False):
     """
     Reverts the flattening process by recreating the original directory structure
     based on the file names in the flattened directory.
 
+    :param clear_dest_dir:
     :param flattened_dir: Path to the flattened directory
-    :param destination_dir: Path to the destination directory
+    :param dest_dir: Path to the destination directory
     """
+
+    if clear_dest_dir:
+        # Clear the destination directory if it exists
+        if os.path.exists(dest_dir):
+            shutil.rmtree(dest_dir)
+        os.makedirs(dest_dir)
 
     for file in os.listdir(flattened_dir):
         if file.endswith(".py"):
@@ -85,7 +99,7 @@ def deflatten_dir(flattened_dir, destination_dir):
             # Get the original directory structure from the file name
             path_parts = file.split("__")
             original_file = path_parts[-1]
-            original_dir = os.path.join(destination_dir, *path_parts[:-1])
+            original_dir = os.path.join(dest_dir, *path_parts[:-1])
 
             # Create the original directory structure if it doesn't exist
             os.makedirs(original_dir, exist_ok=True)
@@ -121,14 +135,17 @@ def main():
     parser.add_argument("--deflatten",
                         action="store_true",
                         help="Deflatten the directory instead of flattening (default: False)")
+    parser.add_argument("--clear-dest-dir",
+                        action="store_true",
+                        help="Clear the destination directory before copying (default: False)")
 
     args = parser.parse_args()
 
     try:
         if args.deflatten:
-            deflatten_dir(args.src, args.dest)
+            deflatten_dir(args.src, args.dest, args.clear_dest_dir)
         else:
-            flatten_dir(args.src, args.dest, args.exclude_dirs, args.exclude_extensions)
+            flatten_dir(args.src, args.dest, args.exclude_dirs, args.exclude_extensions, args.clear_dest_dir)
     except ValueError as e:
         print(f"Error: {e}")
         return 1

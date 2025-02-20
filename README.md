@@ -43,6 +43,7 @@ pip install git+https://github.com/josephchay/codebase-flattener.git
 | `--dest`               | Yes      | -                                                              | Destination directory where files will be copied                                |
 | `--exclude-dirs`       | No       | `["__pycache__", ".git", ".idea", ".vscode", ".venv", "venv"]` | Directory names to exclude (default: `DEFAULT_EXCLUDE_DIRS`)                    |
 | `--exclude-extensions` | No       | `[".pyc", ".pyo", "__init__.py"]`                              | File extensions to exclude (default: `DEFAULT_EXCLUDE_EXTENSIONS`)              |
+| `--clear-dest-dir`     | No       | `False`                                                        | Clear the destination directory before copying files                            |
 | `--deflatten`          | No       | `False`                                                        | Deflatten the directory instead of flattening (reverses the flattening process) |
 
 ## **Usage Examples**
@@ -120,16 +121,33 @@ Command: codebase-flattener --src src --dest flat --exclude-dirs .idea .git __py
 ```
 Before:                             After:
 flat/                              original/
-├── module1__script1.py            ├── module1/
-├── module1__utils__helper.py      │   ├── script1.py
-├── module2__script2.py            │   └── utils/
+├── module1__script.py             ├── module/
+├── module1__utils__helper.py      │   ├── script.py
+├── module2__script_2.py           │   └── utils/
 └── module2__data__schema.py       │       └── helper.py
                                    └── module2/
-                                       ├── script2.py
+                                       ├── script_2.py
                                        └── data/
                                            └── schema.py
 
 Command: codebase-flattener --src flat --dest original --deflatten
+```
+
+**Example 5: Flattening with Duplicated Filenames**
+```
+Before (Third Flattening with modified files):           After (Third Flatten):
+src/                                                     flat/
+├── utils/                                               ├── helper.py
+│   └── helper.py                                        ├── user.py
+├── auth/                                                 ├── schema.py
+│   └── utils/                                            ├── helper_2.py
+│       └── helper.py                                     ├── user_2.py
+├── models/                                               ├── schema_2.py
+│   └── user.py                                           ├── helper_3.py
+└── data/                                                 ├── user_3.py
+    └── schema.py                                         └── schema_3.py
+
+Command: codebase-flattener --src src --dest flat
 ```
 
 ## **How It Works**
@@ -138,8 +156,9 @@ Command: codebase-flattener --src flat --dest original --deflatten
 3. **Directory and File Exclusion**: Skips directories specified in the `--exclude-dirs` argument and files specified in `--exclude-extensions`.
 4. **Conflict Resolution**: Renames files if conflicts are detected in the destination folder.
 5. **Copy Operation**: Uses `shutil.copy2()` to preserve metadata while copying files.
-6. **Clean Destination**: Ensures the destination folder is emptied before starting.
-7. **Deflattening**: If the `--deflatten` argument is provided, reconstructs the original directory structure from the flattened files.
+6. **Clean Destination**: Ensures the destination folder is emptied before starting if the `--clear-dest-dir` argument is provided.
+7. **Unique Filenames**: Generates unique filenames by appending a counter to the filename if a file with the same name already exists in the destination directory.
+8. **Deflattening**: If the `--deflatten` argument is provided, reconstructs the original directory structure from the flattened files.
 
 ## **Why Use Codebase Flattener?**
 * Save time navigating large, deeply nested projects.
