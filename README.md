@@ -1,11 +1,11 @@
-# **Codebase Flattener**  
+# Codebase Flattener
 
 *Effortlessly declutter your project by flattening nested `.py` files into a single folder.*
 
 > [!NOTE] 
 > _Currently only supports python files._
 
-## **Overview**
+## Overview
 
 Do you often find yourself digging through multiple nested directories to find Python files?  
 **Codebase Flattener** is here to simplify your life! This lightweight CLI tool scans through your source directory (and all its subdirectories), collects all `.py` files (excluding `__init__.py`), and copies them into a single destination directory — all while automatically renaming conflicting files. 
@@ -14,7 +14,7 @@ It's perfect for organizing large codebases, consolidating scripts, or preparing
 
 ---
 
-## **Features**
+## Features
 - **Flattens Nested Directories**: Gathers all `.py` files into a single folder, no matter how deeply nested they are.
 - **Excludes `__init__.py`**: Avoids copying module definition files (`__init__.py`) by default.
 - **Handles File Name Conflicts**: Renames files with duplicate names to ensure no overwriting.
@@ -27,7 +27,7 @@ It's perfect for organizing large codebases, consolidating scripts, or preparing
 
 ---
 
-## **Installation**
+## Installation
 
 Install the package from source:
 
@@ -35,7 +35,7 @@ Install the package from source:
 pip install git+https://github.com/josephchay/codebase-flattener.git
 ```
 
-## **Command-Line Arguments**
+## Command-Line Arguments
 
 | Argument               | Required | Default                                                        | Description                                                                     |
 |------------------------|----------|----------------------------------------------------------------|---------------------------------------------------------------------------------|
@@ -46,7 +46,7 @@ pip install git+https://github.com/josephchay/codebase-flattener.git
 | `--clear-dest-dir`     | No       | `False`                                                        | Clear the destination directory before copying files                            |
 | `--deflatten`          | No       | `False`                                                        | Deflatten the directory instead of flattening (reverses the flattening process) |
 
-## **Usage Examples**
+## Usage Examples
 
 Here are various scenarios and how to use the tool:
 
@@ -57,9 +57,9 @@ Here are various scenarios and how to use the tool:
 | Exclude File Extensions    | `codebase-flattener --src src --dest flat --exclude-extensions .txt .csv`               | Excludes files with `.txt` and `.csv` extensions from the flattening process                               |
 | Deflatten Directory        | `codebase-flattener --src flattened --dest original --deflatten`                        | Reverts the flattening process and restores the original directory structure from the flattened directory  |
 
-### **Example Directory Transformations**
+### Example Directory Transformations
 
-**Example 1: Basic Flattening**
+#### Example 1: Basic Flattening
 ```
 Before:                             After:
 src/                               flat/
@@ -70,11 +70,14 @@ src/                               flat/
 │       └── helper.py
 └── module2/
     └── script2.py
-
-Command: codebase-flattener --src src --dest flat
 ```
 
-**Example 2: With Directory Prefixes**
+Command: 
+```bash
+codebase-flattener --src src --dest flat
+```
+
+#### Example 2: With Directory Prefixes
 ```
 Before:                             After:
 src/                               flat/
@@ -86,11 +89,14 @@ src/                               flat/
     ├── user.py
     └── data/
         └── schema.py
-
-Command: codebase-flattener --src src --dest flat
 ```
 
-**Example 3: Excluding Directories and File Extensions**
+Command:
+```bash
+codebase-flattener --src src --dest flat
+```
+
+#### Example 3: Excluding Directories and File Extensions
 ```
 Before:                            After (Currently only supports python files):
 src/                               flat/
@@ -113,11 +119,14 @@ src/                               flat/
     └── data/                      
         ├── input.csv              
         └── output.json            
-
-Command: codebase-flattener --src src --dest flat --exclude-dirs .idea .git __pycache__ .venv docs tests --exclude-extensions .md .pyc .csv .json
 ```
 
-**Example 4: Deflattening a Directory**
+Command:
+```bash
+codebase-flattener --src src --dest flat --exclude-dirs .idea .git __pycache__ .venv docs tests --exclude-extensions .md .pyc .csv .json
+```
+
+#### Example 4: Deflattening a Directory
 ```
 Before:                             After:
 flat/                              original/
@@ -129,11 +138,14 @@ flat/                              original/
                                        ├── script_2.py
                                        └── data/
                                            └── schema.py
-
-Command: codebase-flattener --src flat --dest original --deflatten
 ```
 
-**Example 5: Flattening with Duplicated Filenames**
+Command:
+```bash
+codebase-flattener --src flat --dest original --deflatten
+```
+
+#### Example 5: Flattening with Duplicated Filenames
 ```
 Before (Third Flattening with modified files):           After (Third Flatten):
 src/                                                     flat/
@@ -146,11 +158,14 @@ src/                                                     flat/
 │   └── user.py                                           ├── helper_3.py
 └── data/                                                 ├── user_3.py
     └── schema.py                                         └── schema_3.py
-
-Command: codebase-flattener --src src --dest flat
 ```
 
-## **How It Works**
+Command:
+```bash
+codebase-flattener --src src --dest flat
+```
+
+## How It Works
 1. **Directory Traversal**: Recursively scans through the source directory using `os.walk()`.
 2. **File Filtering**: Selects `.py` files, skipping files and folders with excluded extensions. `__init__.py` files are excluded by default.
 3. **Directory and File Exclusion**: Skips directories specified in the `--exclude-dirs` argument and files specified in `--exclude-extensions`.
@@ -160,15 +175,15 @@ Command: codebase-flattener --src src --dest flat
 7. **Unique Filenames**: Generates unique filenames by appending a counter to the filename if a file with the same name already exists in the destination directory.
 8. **Deflattening**: If the `--deflatten` argument is provided, reconstructs the original directory structure from the flattened files.
 
-## **Why Use Codebase Flattener?**
-* Save time navigating large, deeply nested projects.
-* Quickly consolidate files for migration, sharing, or debugging.
-* Eliminate clutter while maintaining file integrity.
-* Fully automated with zero manual intervention required.
-* Easily exclude specific directories and file extensions from the flattening process.
-* Revert the flattening process and restore the original directory structure when needed.
+## Why Use Codebase Flattener?
+- Save time navigating large, deeply nested projects.
+- Quickly consolidate files for migration, sharing, or debugging.
+- Eliminate clutter while maintaining file integrity.
+- Fully automated with zero manual intervention required.
+- Easily exclude specific directories and file extensions from the flattening process.
+- Revert the flattening process and restore the original directory structure when needed.
 
-## **Development**
+## Development
 Clone the Repository:
 
 ```bash
@@ -189,17 +204,17 @@ To test functionality during development, you can run:
 python -m src.main --src <source_dir> --dest <dest_dir>
 ```
 
-## **Contributing**
+## Contributing
 Contributions are welcome! If you'd like to report a bug, suggest a feature, or submit a PR:
 1. Fork the repository.
 2. Create a feature branch (`git checkout -b feature-name`).
 3. Commit your changes (`git commit -m "Description of changes"`).
 4. Push your branch and open a PR.
 
-## **License**
+## License
 This project is licensed under the MIT License. See the [LICENSE](LICENSE.txt) file for details.
 
-## **Support**
+## Support
 Need help? Have a question? Feel free to reach out:
 * **Email**: [josephemmanuelchay@gmail.com](mailto:josephemmanuelchay@gmail.com)
 * **GitHub Issues**: [Issues](https://github.com/josephchay/codebase-flattener/issues)
