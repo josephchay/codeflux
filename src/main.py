@@ -45,7 +45,8 @@ def flatten_dir(source_dir, dest_dir, exclude_dirs=None, exclude_exts=None, clea
         # Clear the destination directory if it exists
         if os.path.exists(dest_dir):
             shutil.rmtree(dest_dir)
-        os.makedirs(dest_dir)
+
+    os.makedirs(dest_dir, exist_ok=True)
 
     source_dir_parts = len(os.path.normpath(source_dir).split(os.sep))
 
@@ -90,7 +91,8 @@ def deflatten_dir(flattened_dir, dest_dir, clear_dest_dir=False):
         # Clear the destination directory if it exists
         if os.path.exists(dest_dir):
             shutil.rmtree(dest_dir)
-        os.makedirs(dest_dir)
+
+    os.makedirs(dest_dir, exist_ok=True)
 
     for file in os.listdir(flattened_dir):
         if file.endswith(".py"):
