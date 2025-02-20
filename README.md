@@ -2,7 +2,8 @@
 
 *Effortlessly declutter your project by flattening nested `.py` files into a single folder.*
 
-> [!NOTE] _Currently only supports python files._
+> [!NOTE] 
+> _Currently only supports python files._
 
 ## **Overview**
 
