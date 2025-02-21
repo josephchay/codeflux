@@ -50,12 +50,12 @@ pip install git+https://github.com/josephchay/codebase-unraveller.git
 
 Here are various scenarios and how to use the tool:
 
-| Scenario                   | Command                                                                 | Description                                                                                                |
-|----------------------------|-------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------|
-| Basic Flattening           | `codebase-unraveller --src src --dest flat`                                | Flattens all `.py` files (except `__init__.py`) into the 'flat' directory                                  |
-| Exclude Directories        | `codebase-unraveller --src src --dest flat --exclude-dirs .idea .venv`     | Excludes the `.idea` and `.venv` directories from the flattening process                                   |
-| Exclude File Extensions    | `codebase-unraveller --src src --dest flat --exclude-extensions .txt .csv` | Excludes files with `.txt` and `.csv` extensions from the flattening process                               |
-| Deflatten Directory        | `codebase-unraveller --src flattened --dest original --deflatten`          | Reverts the flattening process and restores the original directory structure from the flattened directory  |
+| Scenario                | Command                                                                    | Description                                                                                               |
+|-------------------------|----------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------|
+| Basic Flattening        | `codebase-unraveller --src src --dest flat`                                | Flattens all `.py` files (except `__init__.py`) into the 'flat' directory                                 |
+| Exclude Directories     | `codebase-unraveller --src src --dest flat --exclude-dirs .idea .venv`     | Excludes the `.idea` and `.venv` directories from the flattening process                                  |
+| Exclude File Extensions | `codebase-unraveller --src src --dest flat --exclude-extensions .txt .csv` | Excludes files with `.txt` and `.csv` extensions from the flattening process                              |
+| Deflatten Directory     | `codebase-unraveller --src flattened --dest original --deflatten`          | Reverts the flattening process and restores the original directory structure from the flattened directory |
 
 ### Example Directory Transformations
 
