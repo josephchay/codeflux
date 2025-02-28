@@ -127,12 +127,15 @@ def main():
     parser = argparse.ArgumentParser(
         description="Flatten or deflatten a directory of Python files."
     )
-    parser.add_argument("--src",
-                        required=True,
-                        help="Source directory path")
-    parser.add_argument("--dest",
-                        required=True,
-                        help="Destination directory path")
+
+    parser.add_argument("src",
+                        nargs="?",
+                        default=None,
+                        help="Source directory path (optional)")
+    parser.add_argument("dest",
+                        nargs="?",
+                        default=None,
+                        help="Destination directory path (optional)")
     parser.add_argument("--exclude-dirs",
                         nargs="+",
                         default=DEFAULT_EXCLUDE_DIRS,
@@ -150,6 +153,12 @@ def main():
                         help="Clear the destination directory before copying (default: False)")
 
     args = parser.parse_args()
+
+    # Ensure src and dest are provided
+    if not args.src or not args.dest:
+        parser.print_help()
+        print("\nError: Source and Destination directories must be provided.")
+        return 1
 
     try:
         if args.deflatten:
