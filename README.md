@@ -29,6 +29,12 @@ It's perfect for organizing large codebases, consolidating scripts, or preparing
 
 ## Installation
 
+> [!WARNING]
+> Uninstall the Package (If you have already installed a previous version of the package):
+> ```bash
+> pip uninstall codebase-unraveller
+> ```
+
 Install the package from source:
 
 ```bash
@@ -211,12 +217,6 @@ codebase-unraveller --src . --dest . --deflatten
 - Revert the flattening process and restore the original directory structure when needed.
 
 ## Development
-
-Uninstall the Package (If you have already installed a previous version of the package):
-
-```bash
-pip uninstall codebase-unraveller
-```
 
 Clone the Repository:
 
