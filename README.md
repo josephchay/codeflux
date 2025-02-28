@@ -174,7 +174,7 @@ Command:
 codebase-unraveller --src src --dest flat
 ```
 
-You can also flatten or deflatten the root directory with commands like:
+You can also flatten
 ```bash
 codebase-unraveller --src . --dest flat
 ```
@@ -183,6 +183,11 @@ or
 codebase-unraveller --src flat --dest .
 ```
 or
+```bash
+codebase-unraveller . flat
+```
+
+To deflatten the directory, run:
 ```bash
 codebase-unraveller --src . --dest . --deflatten
 ```
