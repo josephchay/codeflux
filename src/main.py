@@ -1,6 +1,7 @@
 import os
 import shutil
 import argparse
+import sys
 
 
 DEFAULT_EXCLUDE_DIRS = ["__pycache__", ".git", ".idea", ".vscode", ".venv", "venv"]
@@ -41,6 +42,10 @@ def flatten_dir(source_dir, dest_dir, exclude_dirs=None, exclude_exts=None, clea
     exclude_dirs = exclude_dirs or DEFAULT_EXCLUDE_DIRS
     exclude_exts = exclude_exts or DEFAULT_EXCLUDE_EXTENSIONS
 
+    # Convert to absolute paths to avoid issues with relative paths
+    source_dir = os.path.abspath(source_dir)
+    dest_dir = os.path.abspath(dest_dir)
+
     if clear_dest_dir:
         # Clear the destination directory if it exists
         if os.path.exists(dest_dir):
@@ -54,7 +59,7 @@ def flatten_dir(source_dir, dest_dir, exclude_dirs=None, exclude_exts=None, clea
         # Exclude specified directories and the destination directory itself
         dirs[:] = [
             d for d in dirs
-            if d not in exclude_dirs and os.path.abspath(os.path.join(root, d)) != os.path.abspath(dest_dir)
+            if d not in exclude_dirs and os.path.abspath(os.path.join(root, d)) != dest_dir
         ]
 
         for file in files:
@@ -85,10 +90,13 @@ def deflatten_dir(flattened_dir, dest_dir, clear_dest_dir=False):
     Reverts the flattening process by recreating the original directory structure
     based on the file names in the flattened directory.
 
-    :param clear_dest_dir:
     :param flattened_dir: Path to the flattened directory
     :param dest_dir: Path to the destination directory
+    :param clear_dest_dir: Whether to clear the destination directory before copying (default: False)
     """
+    # Convert to absolute paths to avoid issues with relative paths
+    flattened_dir = os.path.abspath(flattened_dir)
+    dest_dir = os.path.abspath(dest_dir)
 
     if clear_dest_dir:
         # Clear the destination directory if it exists
@@ -107,7 +115,7 @@ def deflatten_dir(flattened_dir, dest_dir, clear_dest_dir=False):
             original_dir = os.path.join(dest_dir, *path_parts[:-1])
 
             # Skip if the destination would be the source itself to avoid overwriting
-            if os.path.abspath(original_dir).startswith(os.path.abspath(flattened_dir)):
+            if os.path.abspath(original_dir).startswith(flattened_dir):
                 print(f"Skipping to avoid overwriting source: {flattened_file}")
                 continue
 
@@ -125,14 +133,19 @@ def deflatten_dir(flattened_dir, dest_dir, clear_dest_dir=False):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Flatten or deflatten a directory of Python files.",
-        usage="%(prog)s [src] [dest] [options]"
+        description="Flatten or deflatten a directory of Python files."
     )
 
-    parser.add_argument("src",
-                        help="Source directory path (required)")
-    parser.add_argument("dest",
-                        help="Destination directory path (required)")
+    # Make both positional and named arguments accept the same parameters
+    # This is the key change! Support BOTH styles of arguments
+    src_group = parser.add_argument_group('source')
+    src_group.add_argument("src_pos", nargs="?", help="Source directory path (positional)")
+    src_group.add_argument("--src", dest="src_named", help="Source directory path (named)")
+
+    dest_group = parser.add_argument_group('destination')
+    dest_group.add_argument("dest_pos", nargs="?", help="Destination directory path (positional)")
+    dest_group.add_argument("--dest", dest="dest_named", help="Destination directory path (named)")
+
     parser.add_argument("--exclude-dirs",
                         nargs="+",
                         default=DEFAULT_EXCLUDE_DIRS,
@@ -149,18 +162,24 @@ def main():
                         action="store_true",
                         help="Clear the destination directory before copying (default: False)")
 
-    args, unknown = parser.parse_known_args()
+    args = parser.parse_args()
 
-    if not args.src or not args.dest:
+    # Determine source and destination directories
+    source_dir = args.src_named if args.src_named else args.src_pos
+    dest_dir = args.dest_named if args.dest_named else args.dest_pos
+
+    # Validate that we have both source and destination
+    if not source_dir or not dest_dir:
         parser.print_help()
-        print("\nError: Source and Destination directories must be provided.")
+        print("\nError: Both source and destination directories are required.")
         return 1
 
     try:
         if args.deflatten:
-            deflatten_dir(args.src, args.dest, args.clear_dest_dir)
+            deflatten_dir(source_dir, dest_dir, args.clear_dest_dir)
         else:
-            flatten_dir(args.src, args.dest, args.exclude_dirs, args.exclude_extensions, args.clear_dest_dir)
+            flatten_dir(source_dir, dest_dir, args.exclude_dirs, args.exclude_extensions, args.clear_dest_dir)
+        print("Operation completed successfully.")
     except ValueError as e:
         print(f"Error: {e}")
         return 1
@@ -171,4 +190,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
