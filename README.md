@@ -212,9 +212,7 @@ codebase-unraveller --src . --dest . --deflatten
 
 ## Development
 
-(If you have already installed a previous version of the package, uninstall it first.)
-
-Uninstall the Package:
+Uninstall the Package (If you have already installed a previous version of the package):
 
 ```bash
 pip uninstall codebase-unraveller
