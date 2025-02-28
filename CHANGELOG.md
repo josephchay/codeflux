@@ -8,7 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.3.4] - 2025-03-01
 
 ### Added
-- Added display metrics for printing for flattening and deflattening processes.
+- Added more metrics for flattening and deflattening processes.
+
+### Changed
+- Remove absolute path from the printing of the source and destination directories.
 
 ## [0.3.3] - 2025-03-01
 

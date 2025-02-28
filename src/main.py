@@ -20,19 +20,15 @@ def get_unique_filename(destination_file):
     return unique_destination_file
 
 
+def get_relative_path(path, base_path):
+    try:
+        return os.path.relpath(path, base_path)
+    except ValueError:
+        return path
+
+
 def flatten_dir(source_dir, dest_dir, exclude_dirs=None, exclude_exts=None, clear_dest_dir=False):
-    """
-    Flattens the folder structure by copying all .py files into a single destination directory.
-    Files are prefixed with their parent directory names separated by double underscores.
-
-    :param source_dir: Path to the source directory
-    :param dest_dir: Path to the destination directory
-    :param exclude_dirs: List of directory names to exclude (default: DEFAULT_EXCLUDE_DIRS)
-    :param exclude_exts: List of file extensions to exclude (default: DEFAULT_EXCLUDE_EXTENSIONS)
-    :param clear_dest_dir: Whether to clear the destination directory before copying (default: False)
-    """
-
-    # Set default values for exclude_dirs and exclude_extensions if not provided
+    # Set default values
     exclude_dirs = exclude_dirs or DEFAULT_EXCLUDE_DIRS
     exclude_exts = exclude_exts or DEFAULT_EXCLUDE_EXTENSIONS
 
@@ -99,9 +95,10 @@ def flatten_dir(source_dir, dest_dir, exclude_dirs=None, exclude_exts=None, clea
                 stats["files_copied"] += 1
                 stats["bytes_copied"] += os.path.getsize(source_file)
 
-                # Only print every 10th file to avoid console spam
-                if stats["files_copied"] % 10 == 0:
-                    print(f"Processed {stats['files_copied']} files...")
+                # Print relative paths with arrow
+                rel_source = get_relative_path(source_file, os.getcwd())
+                rel_dest = get_relative_path(unique_destination_file, os.getcwd())
+                print(f"{rel_source} → {rel_dest}")
             else:
                 stats["skipped_files"] += 1
 
@@ -112,7 +109,7 @@ def flatten_dir(source_dir, dest_dir, exclude_dirs=None, exclude_exts=None, clea
     print("\n" + "=" * 50)
     print("FLATTENING COMPLETE")
     print("=" * 50)
-    print(f"Time taken: {duration:.2f} seconds")
+    print(f"Time taken: {duration:.6f} seconds")
     print(f"Directories traversed: {stats['dirs_traversed']}")
     print(f"Maximum nesting level: {stats['max_nesting_level']}")
     print(f"Total files scanned: {stats['total_files_processed']}")
@@ -126,15 +123,7 @@ def flatten_dir(source_dir, dest_dir, exclude_dirs=None, exclude_exts=None, clea
 
 
 def deflatten_dir(flattened_dir, dest_dir, clear_dest_dir=False):
-    """
-    Reverts the flattening process by recreating the original directory structure
-    based on the file names in the flattened directory.
-
-    :param flattened_dir: Path to the flattened directory
-    :param dest_dir: Path to the destination directory
-    :param clear_dest_dir: Whether to clear the destination directory before copying (default: False)
-    """
-    # Convert to absolute paths to avoid issues with relative paths
+    # Convert to absolute paths
     flattened_dir = os.path.abspath(flattened_dir)
     dest_dir = os.path.abspath(dest_dir)
 
@@ -172,7 +161,7 @@ def deflatten_dir(flattened_dir, dest_dir, clear_dest_dir=False):
 
             # Skip if destination would overwrite source
             if os.path.abspath(original_dir).startswith(flattened_dir):
-                print(f"Skipping to avoid overwriting source: {flattened_file}")
+                print(f"Skipping to avoid overwriting source: {get_relative_path(flattened_file, os.getcwd())}")
                 stats["skipped_files"] += 1
                 continue
 
@@ -189,9 +178,10 @@ def deflatten_dir(flattened_dir, dest_dir, clear_dest_dir=False):
             stats["files_copied"] += 1
             stats["bytes_copied"] += os.path.getsize(flattened_file)
 
-            # Only print every 10th file
-            if stats["files_copied"] % 10 == 0:
-                print(f"Processed {stats['files_copied']} files...")
+            # Print relative paths with arrow
+            rel_source = get_relative_path(flattened_file, os.getcwd())
+            rel_dest = get_relative_path(unique_destination_file, os.getcwd())
+            print(f"{rel_source} → {rel_dest}")
         else:
             stats["skipped_files"] += 1
 
@@ -202,7 +192,7 @@ def deflatten_dir(flattened_dir, dest_dir, clear_dest_dir=False):
     print("\n" + "=" * 50)
     print("DEFLATTEN COMPLETE")
     print("=" * 50)
-    print(f"Time taken: {duration:.2f} seconds")
+    print(f"Time taken: {duration:.6f} seconds")
     print(f"Directories created: {stats['dirs_created']}")
     print(f"Total files scanned: {stats['total_files_processed']}")
     print(f"Files copied: {stats['files_copied']}")
