@@ -76,6 +76,11 @@ Command:
 ```bash
 codebase-unraveller --src src --dest flat
 ```
+or
+```bash
+# First two arguments can be src and dest without flags
+codebase-unraveller src flat
+```
 
 #### Example 2: With Directory Prefixes
 ```
@@ -124,6 +129,10 @@ src/                               flat/
 Command:
 ```bash
 codebase-unraveller --src src --dest flat --exclude-dirs .idea .git __pycache__ .venv docs tests --exclude-extensions .md .pyc .csv .json
+```
+or
+```bash
+codebase-unraveller src flat --exclude-dirs .idea .git __pycache__ .venv docs tests --exclude-extensions .md .pyc .csv .json
 ```
 
 #### Example 4: Deflattening a Directory
