@@ -130,13 +130,9 @@ def main():
     )
 
     parser.add_argument("src",
-                        nargs="?",
-                        default=None,
-                        help="Source directory path (optional)")
+                        help="Source directory path (required)")
     parser.add_argument("dest",
-                        nargs="?",
-                        default=None,
-                        help="Destination directory path (optional)")
+                        help="Destination directory path (required)")
     parser.add_argument("--exclude-dirs",
                         nargs="+",
                         default=DEFAULT_EXCLUDE_DIRS,
