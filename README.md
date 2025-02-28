@@ -52,6 +52,7 @@ pip install git+https://github.com/josephchay/codepeek.git
 | `--exclude-extensions` | No       | `[".pyc", ".pyo", "__init__.py"]`                              | File extensions to exclude (default: `DEFAULT_EXCLUDE_EXTENSIONS`)              |
 | `--clear-dest-dir`     | No       | `False`                                                        | Clear the destination directory before copying files                            |
 | `--deflatten`          | No       | `False`                                                        | Deflatten the directory instead of flattening (reverses the flattening process) |
+| `--no-log`             | No       | `False`                                                        | Disable logging output                                                          |
 
 ## Usage Examples
 
@@ -199,6 +200,13 @@ To deflatten the directory, run:
 codepeek --src . --dest . --deflatten
 ```
 
+### Logging
+
+To suppress logging output, add the `--no-log` flag:
+```bash
+codepeek --src src --dest flat --no-log
+```
+
 ## Development
 
 Clone the Repository:
@@ -214,7 +222,8 @@ Install Locally:
 pip install .
 ```
 
-Run Tests:
+### Testing
+
 To test functionality during development, you can run:
 
 ```bash

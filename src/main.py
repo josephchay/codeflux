@@ -27,7 +27,7 @@ def get_relative_path(path, base_path):
         return path
 
 
-def flatten_dir(source_dir, dest_dir, exclude_dirs=None, exclude_exts=None, clear_dest_dir=False):
+def flatten_dir(source_dir, dest_dir, exclude_dirs=None, exclude_exts=None, clear_dest_dir=False, silent=False):
     # Set default values
     exclude_dirs = exclude_dirs or DEFAULT_EXCLUDE_DIRS
     exclude_exts = exclude_exts or DEFAULT_EXCLUDE_EXTENSIONS
@@ -54,9 +54,9 @@ def flatten_dir(source_dir, dest_dir, exclude_dirs=None, exclude_exts=None, clea
     source_dir_parts = len(os.path.normpath(source_dir).split(os.sep))
     start_time = time.time()
 
-    print(f"Starting directory flattening process...")
-    print(f"Source: {source_dir}")
-    print(f"Destination: {dest_dir}")
+    if not silent:
+        print(f"Source: {get_relative_path(source_dir, os.getcwd())}")
+        print(f"Destination: {get_relative_path(dest_dir, os.getcwd())}\n")
 
     for root, dirs, files in os.walk(source_dir):
         stats["dirs_traversed"] += 1
@@ -98,31 +98,32 @@ def flatten_dir(source_dir, dest_dir, exclude_dirs=None, exclude_exts=None, clea
                 # Print relative paths with arrow
                 rel_source = get_relative_path(source_file, os.getcwd())
                 rel_dest = get_relative_path(unique_destination_file, os.getcwd())
-                print(f"{rel_source} → {rel_dest}")
+                if not silent:
+                    print(f"{rel_source} → {rel_dest}")
             else:
                 stats["skipped_files"] += 1
 
     end_time = time.time()
     duration = end_time - start_time
 
-    # Print summary
-    print("\n" + "=" * 50)
-    print("FLATTENING COMPLETE")
-    print("=" * 50)
-    print(f"Time taken: {duration:.6f} seconds")
-    print(f"Directories traversed: {stats['dirs_traversed']}")
-    print(f"Maximum nesting level: {stats['max_nesting_level']}")
-    print(f"Total files scanned: {stats['total_files_processed']}")
-    print(f"Files copied: {stats['files_copied']}")
-    print(f"Files skipped: {stats['skipped_files']}")
-    print(f"Total data copied: {stats['bytes_copied'] / 1024:.2f} KB")
-    print(f"Files per second: {stats['files_copied'] / max(duration, 0.1):.2f}")
-    print("=" * 50)
+    if not silent:
+        print("\n" + "=" * 50)
+        print("FLATTENING COMPLETE")
+        print("=" * 50)
+        print(f"Time taken: {duration:.6f} seconds")
+        print(f"Directories traversed: {stats['dirs_traversed']}")
+        print(f"Maximum nesting level: {stats['max_nesting_level']}")
+        print(f"Total files scanned: {stats['total_files_processed']}")
+        print(f"Files copied: {stats['files_copied']}")
+        print(f"Files skipped: {stats['skipped_files']}")
+        print(f"Total data copied: {stats['bytes_copied'] / 1024:.2f} KB")
+        print(f"Files per second: {stats['files_copied'] / max(duration, 0.1):.2f}")
+        print("=" * 50)
 
     return stats
 
 
-def deflatten_dir(flattened_dir, dest_dir, clear_dest_dir=False):
+def deflatten_dir(flattened_dir, dest_dir, clear_dest_dir=False, silent=False):
     # Convert to absolute paths
     flattened_dir = os.path.abspath(flattened_dir)
     dest_dir = os.path.abspath(dest_dir)
@@ -144,9 +145,9 @@ def deflatten_dir(flattened_dir, dest_dir, clear_dest_dir=False):
 
     start_time = time.time()
 
-    print(f"Starting deflatten process...")
-    print(f"Source: {flattened_dir}")
-    print(f"Destination: {dest_dir}")
+    if not silent:
+        print(f"Source: {get_relative_path(flattened_dir, os.getcwd())}")
+        print(f"Destination: {get_relative_path(dest_dir, os.getcwd())}\n")
 
     for file in os.listdir(flattened_dir):
         stats["total_files_processed"] += 1
@@ -181,25 +182,26 @@ def deflatten_dir(flattened_dir, dest_dir, clear_dest_dir=False):
             # Print relative paths with arrow
             rel_source = get_relative_path(flattened_file, os.getcwd())
             rel_dest = get_relative_path(unique_destination_file, os.getcwd())
-            print(f"{rel_source} → {rel_dest}")
+            if not silent:
+                print(f"{rel_source} → {rel_dest}")
         else:
             stats["skipped_files"] += 1
 
     end_time = time.time()
     duration = end_time - start_time
 
-    # Print summary
-    print("\n" + "=" * 50)
-    print("DEFLATTEN COMPLETE")
-    print("=" * 50)
-    print(f"Time taken: {duration:.6f} seconds")
-    print(f"Directories created: {stats['dirs_created']}")
-    print(f"Total files scanned: {stats['total_files_processed']}")
-    print(f"Files copied: {stats['files_copied']}")
-    print(f"Files skipped: {stats['skipped_files']}")
-    print(f"Total data copied: {stats['bytes_copied'] / 1024:.2f} KB")
-    print(f"Files per second: {stats['files_copied'] / max(duration, 0.1):.2f}")
-    print("=" * 50)
+    if not silent:
+        print("\n" + "=" * 50)
+        print("DEFLATTEN COMPLETE")
+        print("=" * 50)
+        print(f"Time taken: {duration:.6f} seconds")
+        print(f"Directories created: {stats['dirs_created']}")
+        print(f"Total files scanned: {stats['total_files_processed']}")
+        print(f"Files copied: {stats['files_copied']}")
+        print(f"Files skipped: {stats['skipped_files']}")
+        print(f"Total data copied: {stats['bytes_copied'] / 1024:.2f} KB")
+        print(f"Files per second: {stats['files_copied'] / max(duration, 0.1):.2f}")
+        print("=" * 50)
 
     return stats
 
@@ -233,6 +235,9 @@ def main():
     parser.add_argument("--clear-dest-dir",
                         action="store_true",
                         help="Clear the destination directory before copying (default: False)")
+    parser.add_argument('--no-log',
+                        action='store_true',
+                        help="Suppress all output logs.")
 
     args = parser.parse_args()
 
