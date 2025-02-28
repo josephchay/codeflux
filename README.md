@@ -1,6 +1,7 @@
-# Codebase Unraveller
+# Codepeek - Unravel Your Codebase
 
-*Effortlessly declutter and organize your project by flattening nested `.py` files into a single folder.*
+_Effortlessly declutter and organize your project by flattening nested `.py` files into a single folder or
+reconstructing the original directory structure from flattened files._
 
 > [!NOTE] 
 > _Currently only supports python files._
@@ -8,7 +9,7 @@
 ## Overview
 
 Do you often find yourself digging through multiple nested directories to find Python files?  
-**Codebase Unraveller** is here to simplify your life! This lightweight CLI tool scans through your source directory (and all its subdirectories), collects all `.py` files (excluding `__init__.py`), and copies them into a single destination directory — all while automatically renaming conflicting files. 
+**Codepeek** is here to simplify your life! This lightweight CLI tool scans through your source directory (and all its subdirectories), collects all `.py` files (excluding `__init__.py`), and copies them into a single destination directory — all while automatically renaming conflicting files. 
 
 It's perfect for organizing large codebases, consolidating scripts, or preparing for migration or backup.
 
@@ -32,13 +33,13 @@ It's perfect for organizing large codebases, consolidating scripts, or preparing
 > [!WARNING]
 > Uninstall the Package (If you have already installed a previous version of the package):
 > ```bash
-> pip uninstall codebase-unraveller
+> pip uninstall codepeek
 > ```
 
 Install the package from source:
 
 ```bash
-pip install git+https://github.com/josephchay/codebase-unraveller.git
+pip install git+https://github.com/josephchay/codepeek.git
 ```
 
 ## Command-Line Arguments
@@ -56,12 +57,12 @@ pip install git+https://github.com/josephchay/codebase-unraveller.git
 
 Here are various scenarios and how to use the tool:
 
-| Scenario                | Command                                                                    | Description                                                                                               |
-|-------------------------|----------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------|
-| Basic Flattening        | `codebase-unraveller --src src --dest flat`                                | Flattens all `.py` files (except `__init__.py`) into the 'flat' directory                                 |
-| Exclude Directories     | `codebase-unraveller --src src --dest flat --exclude-dirs .idea .venv`     | Excludes the `.idea` and `.venv` directories from the flattening process                                  |
-| Exclude File Extensions | `codebase-unraveller --src src --dest flat --exclude-extensions .txt .csv` | Excludes files with `.txt` and `.csv` extensions from the flattening process                              |
-| Deflatten Directory     | `codebase-unraveller --src flattened --dest original --deflatten`          | Reverts the flattening process and restores the original directory structure from the flattened directory |
+| Scenario                | Command                                                         | Description                                                                                               |
+|-------------------------|-----------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------|
+| Basic Flattening        | `codepeek --src src --dest flat`                                | Flattens all `.py` files (except `__init__.py`) into the 'flat' directory                                 |
+| Exclude Directories     | `codepeek --src src --dest flat --exclude-dirs .idea .venv`     | Excludes the `.idea` and `.venv` directories from the flattening process                                  |
+| Exclude File Extensions | `codepeek --src src --dest flat --exclude-extensions .txt .csv` | Excludes files with `.txt` and `.csv` extensions from the flattening process                              |
+| Deflatten Directory     | `codepeek --src flattened --dest original --deflatten`          | Reverts the flattening process and restores the original directory structure from the flattened directory |
 
 ### Example Directory Transformations
 
@@ -80,12 +81,12 @@ src/                               flat/
 
 Command: 
 ```bash
-codebase-unraveller --src src --dest flat
+codepeek --src src --dest flat
 ```
 or
 ```bash
 # First two arguments can be src and dest without flags
-codebase-unraveller src flat
+codepeek src flat
 ```
 
 #### Example 2: With Directory Prefixes
@@ -104,7 +105,7 @@ src/                               flat/
 
 Command:
 ```bash
-codebase-unraveller --src src --dest flat
+codepeek --src src --dest flat
 ```
 
 #### Example 3: Excluding Directories and File Extensions
@@ -134,11 +135,11 @@ src/                               flat/
 
 Command:
 ```bash
-codebase-unraveller --src src --dest flat --exclude-dirs .idea .git __pycache__ .venv docs tests --exclude-extensions .md .pyc .csv .json
+codepeek --src src --dest flat --exclude-dirs .idea .git __pycache__ .venv docs tests --exclude-extensions .md .pyc .csv .json
 ```
 or
 ```bash
-codebase-unraveller src flat --exclude-dirs .idea .git __pycache__ .venv docs tests --exclude-extensions .md .pyc .csv .json
+codepeek src flat --exclude-dirs .idea .git __pycache__ .venv docs tests --exclude-extensions .md .pyc .csv .json
 ```
 
 #### Example 4: Deflattening a Directory
@@ -157,7 +158,7 @@ flat/                              original/
 
 Command:
 ```bash
-codebase-unraveller --src flat --dest original --deflatten
+codepeek --src flat --dest original --deflatten
 ```
 
 #### Example 5: Flattening with Duplicated Filenames
@@ -177,52 +178,34 @@ src/                                                     flat/
 
 Command:
 ```bash
-codebase-unraveller --src src --dest flat
+codepeek --src src --dest flat
 ```
 
 You can also flatten
 ```bash
-codebase-unraveller --src . --dest flat
+codepeek --src . --dest flat
 ```
 or
 ```bash
-codebase-unraveller --src flat --dest .
+codepeek --src flat --dest .
 ```
 or
 ```bash
-codebase-unraveller . flat
+codepeek . flat
 ```
 
 To deflatten the directory, run:
 ```bash
-codebase-unraveller --src . --dest . --deflatten
+codepeek --src . --dest . --deflatten
 ```
-
-## How It Works
-1. **Directory Traversal**: Recursively scans through the source directory using `os.walk()`.
-2. **File Filtering**: Selects `.py` files, skipping files and folders with excluded extensions. `__init__.py` files are excluded by default.
-3. **Directory and File Exclusion**: Skips directories specified in the `--exclude-dirs` argument and files specified in `--exclude-extensions`.
-4. **Conflict Resolution**: Renames files if conflicts are detected in the destination folder.
-5. **Copy Operation**: Uses `shutil.copy2()` to preserve metadata while copying files.
-6. **Clean Destination**: Ensures the destination folder is emptied before starting if the `--clear-dest-dir` argument is provided.
-7. **Unique Filenames**: Generates unique filenames by appending a counter to the filename if a file with the same name already exists in the destination directory.
-8. **Deflattening**: If the `--deflatten` argument is provided, reconstructs the original directory structure from the flattened files.
-
-## Why Use Codebase Unraveller?
-- Save time navigating large, deeply nested projects.
-- Quickly consolidate files for migration, sharing, or debugging.
-- Eliminate clutter while maintaining file integrity.
-- Fully automated with zero manual intervention required.
-- Easily exclude specific directories and file extensions from the flattening process.
-- Revert the flattening process and restore the original directory structure when needed.
 
 ## Development
 
 Clone the Repository:
 
 ```bash
-git clone https://github.com/josephchay/codebase-unraveller.git
-cd codebase-unraveller
+git clone https://github.com/josephchay/codepeek.git
+cd codepeek
 ```
 
 Install Locally:
@@ -251,6 +234,6 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE.txt) f
 ## Support
 Need help? Have a question? Feel free to reach out:
 * **Email**: [josephemmanuelchay@gmail.com](mailto:josephemmanuelchay@gmail.com)
-* **GitHub Issues**: [Issues](https://github.com/josephchay/codebase-unraveller/issues)
+* **GitHub Issues**: [Issues](https://github.com/josephchay/codepeek/issues)
 
-Make your life easier and your projects cleaner — flatten your directories today!
+Make your projects cleaner — flatten and deflatten your directories today!
