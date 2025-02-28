@@ -39,8 +39,8 @@ pip install git+https://github.com/josephchay/codebase-unraveller.git
 
 | Argument               | Required | Default                                                        | Description                                                                     |
 |------------------------|----------|----------------------------------------------------------------|---------------------------------------------------------------------------------|
-| `--src`                | Yes      | -                                                              | Source directory containing the Python files to flatten                         |
-| `--dest`               | Yes      | -                                                              | Destination directory where files will be copied                                |
+| `[src]`                | Yes      | -                                                              | Source directory containing the Python files to flatten                         |
+| `[dest]`               | Yes      | -                                                              | Destination directory where files will be copied                                |
 | `--exclude-dirs`       | No       | `["__pycache__", ".git", ".idea", ".vscode", ".venv", "venv"]` | Directory names to exclude (default: `DEFAULT_EXCLUDE_DIRS`)                    |
 | `--exclude-extensions` | No       | `[".pyc", ".pyo", "__init__.py"]`                              | File extensions to exclude (default: `DEFAULT_EXCLUDE_EXTENSIONS`)              |
 | `--clear-dest-dir`     | No       | `False`                                                        | Clear the destination directory before copying files                            |
@@ -211,6 +211,15 @@ codebase-unraveller --src . --dest . --deflatten
 - Revert the flattening process and restore the original directory structure when needed.
 
 ## Development
+
+(If you have already installed a previous version of the package, uninstall it first.)
+
+Uninstall the Package:
+
+```bash
+pip uninstall codebase-unraveller
+```
+
 Clone the Repository:
 
 ```bash

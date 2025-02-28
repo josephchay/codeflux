@@ -137,7 +137,6 @@ def main():
     )
 
     # Make both positional and named arguments accept the same parameters
-    # This is the key change! Support BOTH styles of arguments
     src_group = parser.add_argument_group('source')
     src_group.add_argument("src_pos", nargs="?", help="Source directory path (positional)")
     src_group.add_argument("--src", dest="src_named", help="Source directory path (named)")
@@ -168,7 +167,6 @@ def main():
     source_dir = args.src_named if args.src_named else args.src_pos
     dest_dir = args.dest_named if args.dest_named else args.dest_pos
 
-    # Validate that we have both source and destination
     if not source_dir or not dest_dir:
         parser.print_help()
         print("\nError: Both source and destination directories are required.")
