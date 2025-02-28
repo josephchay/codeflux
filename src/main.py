@@ -2,19 +2,13 @@ import os
 import shutil
 import argparse
 import sys
-
+import time
 
 DEFAULT_EXCLUDE_DIRS = ["__pycache__", ".git", ".idea", ".vscode", ".venv", "venv"]
 DEFAULT_EXCLUDE_EXTENSIONS = [".pyc", ".pyo", "__init__.py"]
 
 
 def get_unique_filename(destination_file):
-    """
-    Generates a unique filename by appending a counter if the file already exists.
-
-    :param destination_file: The original destination file path
-    :return: The unique file path
-    """
     counter = 2
     name, ext = os.path.splitext(destination_file)
     unique_destination_file = destination_file
@@ -42,47 +36,93 @@ def flatten_dir(source_dir, dest_dir, exclude_dirs=None, exclude_exts=None, clea
     exclude_dirs = exclude_dirs or DEFAULT_EXCLUDE_DIRS
     exclude_exts = exclude_exts or DEFAULT_EXCLUDE_EXTENSIONS
 
-    # Convert to absolute paths to avoid issues with relative paths
+    # Convert to absolute paths
     source_dir = os.path.abspath(source_dir)
     dest_dir = os.path.abspath(dest_dir)
 
-    if clear_dest_dir:
-        # Clear the destination directory if it exists
-        if os.path.exists(dest_dir):
-            shutil.rmtree(dest_dir)
+    # Stats tracking
+    stats = {
+        "total_files_processed": 0,
+        "dirs_traversed": 0,
+        "files_copied": 0,
+        "bytes_copied": 0,
+        "skipped_files": 0,
+        "max_nesting_level": 0
+    }
+
+    if clear_dest_dir and os.path.exists(dest_dir):
+        shutil.rmtree(dest_dir)
 
     os.makedirs(dest_dir, exist_ok=True)
 
     source_dir_parts = len(os.path.normpath(source_dir).split(os.sep))
+    start_time = time.time()
+
+    print(f"Starting directory flattening process...")
+    print(f"Source: {source_dir}")
+    print(f"Destination: {dest_dir}")
 
     for root, dirs, files in os.walk(source_dir):
-        # Exclude specified directories and the destination directory itself
+        stats["dirs_traversed"] += 1
+
+        # Calculate nesting level
+        current_nesting = len(os.path.relpath(root, source_dir).split(os.sep))
+        stats["max_nesting_level"] = max(stats["max_nesting_level"], current_nesting)
+
+        # Exclude directories
         dirs[:] = [
             d for d in dirs
             if d not in exclude_dirs and os.path.abspath(os.path.join(root, d)) != dest_dir
         ]
 
         for file in files:
-            # Filter Python files based on exclude_extensions
+            stats["total_files_processed"] += 1
+
+            # Filter Python files
             if file.endswith(".py") and not any(file.endswith(ext) for ext in exclude_exts):
                 source_file = os.path.join(root, file)
 
-                # Get the relative path components after the source directory
+                # Get path components
                 path_parts = os.path.normpath(root).split(os.sep)[source_dir_parts:]
 
-                # Create the new filename with directory prefixes
+                # Create new filename
                 if path_parts:
                     new_filename = "___".join(path_parts + [file])
                 else:
                     new_filename = file
 
                 destination_file = os.path.join(dest_dir, new_filename)
-
-                # Generate a unique filename if the file already exists in the destination
                 unique_destination_file = get_unique_filename(destination_file)
 
+                # Copy file
                 shutil.copy2(source_file, unique_destination_file)
-                print(f"Copied: {source_file} -> {unique_destination_file}")
+                stats["files_copied"] += 1
+                stats["bytes_copied"] += os.path.getsize(source_file)
+
+                # Only print every 10th file to avoid console spam
+                if stats["files_copied"] % 10 == 0:
+                    print(f"Processed {stats['files_copied']} files...")
+            else:
+                stats["skipped_files"] += 1
+
+    end_time = time.time()
+    duration = end_time - start_time
+
+    # Print summary
+    print("\n" + "=" * 50)
+    print("FLATTENING COMPLETE")
+    print("=" * 50)
+    print(f"Time taken: {duration:.2f} seconds")
+    print(f"Directories traversed: {stats['dirs_traversed']}")
+    print(f"Maximum nesting level: {stats['max_nesting_level']}")
+    print(f"Total files scanned: {stats['total_files_processed']}")
+    print(f"Files copied: {stats['files_copied']}")
+    print(f"Files skipped: {stats['skipped_files']}")
+    print(f"Total data copied: {stats['bytes_copied'] / 1024:.2f} KB")
+    print(f"Files per second: {stats['files_copied'] / max(duration, 0.1):.2f}")
+    print("=" * 50)
+
+    return stats
 
 
 def deflatten_dir(flattened_dir, dest_dir, clear_dest_dir=False):
@@ -98,37 +138,80 @@ def deflatten_dir(flattened_dir, dest_dir, clear_dest_dir=False):
     flattened_dir = os.path.abspath(flattened_dir)
     dest_dir = os.path.abspath(dest_dir)
 
-    if clear_dest_dir:
-        # Clear the destination directory if it exists
-        if os.path.exists(dest_dir):
-            shutil.rmtree(dest_dir)
+    # Stats tracking
+    stats = {
+        "total_files_processed": 0,
+        "dirs_created": 0,
+        "files_copied": 0,
+        "bytes_copied": 0,
+        "skipped_files": 0
+    }
+
+    if clear_dest_dir and os.path.exists(dest_dir):
+        shutil.rmtree(dest_dir)
 
     os.makedirs(dest_dir, exist_ok=True)
+    stats["dirs_created"] += 1
+
+    start_time = time.time()
+
+    print(f"Starting deflatten process...")
+    print(f"Source: {flattened_dir}")
+    print(f"Destination: {dest_dir}")
 
     for file in os.listdir(flattened_dir):
+        stats["total_files_processed"] += 1
+
         if file.endswith(".py"):
             flattened_file = os.path.join(flattened_dir, file)
 
-            # Get the original directory structure from the file name
+            # Get original structure from filename
             path_parts = file.split("___")
             original_file = path_parts[-1]
             original_dir = os.path.join(dest_dir, *path_parts[:-1])
 
-            # Skip if the destination would be the source itself to avoid overwriting
+            # Skip if destination would overwrite source
             if os.path.abspath(original_dir).startswith(flattened_dir):
                 print(f"Skipping to avoid overwriting source: {flattened_file}")
+                stats["skipped_files"] += 1
                 continue
 
-            # Create the original directory structure if it doesn't exist
-            os.makedirs(original_dir, exist_ok=True)
+            # Create directory structure
+            if not os.path.exists(original_dir):
+                os.makedirs(original_dir, exist_ok=True)
+                stats["dirs_created"] += 1
 
             destination_file = os.path.join(original_dir, original_file)
-
-            # Generate a unique filename if the file already exists in the destination
             unique_destination_file = get_unique_filename(destination_file)
 
+            # Copy file
             shutil.copy2(flattened_file, unique_destination_file)
-            print(f"Copied: {flattened_file} -> {unique_destination_file}")
+            stats["files_copied"] += 1
+            stats["bytes_copied"] += os.path.getsize(flattened_file)
+
+            # Only print every 10th file
+            if stats["files_copied"] % 10 == 0:
+                print(f"Processed {stats['files_copied']} files...")
+        else:
+            stats["skipped_files"] += 1
+
+    end_time = time.time()
+    duration = end_time - start_time
+
+    # Print summary
+    print("\n" + "=" * 50)
+    print("DEFLATTEN COMPLETE")
+    print("=" * 50)
+    print(f"Time taken: {duration:.2f} seconds")
+    print(f"Directories created: {stats['dirs_created']}")
+    print(f"Total files scanned: {stats['total_files_processed']}")
+    print(f"Files copied: {stats['files_copied']}")
+    print(f"Files skipped: {stats['skipped_files']}")
+    print(f"Total data copied: {stats['bytes_copied'] / 1024:.2f} KB")
+    print(f"Files per second: {stats['files_copied'] / max(duration, 0.1):.2f}")
+    print("=" * 50)
+
+    return stats
 
 
 def main():
@@ -136,7 +219,7 @@ def main():
         description="Flatten or deflatten a directory of Python files."
     )
 
-    # Make both positional and named arguments accept the same parameters
+    # Support both positional and named arguments
     src_group = parser.add_argument_group('source')
     src_group.add_argument("src_pos", nargs="?", help="Source directory path (positional)")
     src_group.add_argument("--src", dest="src_named", help="Source directory path (named)")
@@ -163,7 +246,7 @@ def main():
 
     args = parser.parse_args()
 
-    # Determine source and destination directories
+    # Get source and destination
     source_dir = args.src_named if args.src_named else args.src_pos
     dest_dir = args.dest_named if args.dest_named else args.dest_pos
 
@@ -174,17 +257,17 @@ def main():
 
     try:
         if args.deflatten:
-            deflatten_dir(source_dir, dest_dir, args.clear_dest_dir)
+            stats = deflatten_dir(source_dir, dest_dir, args.clear_dest_dir)
         else:
-            flatten_dir(source_dir, dest_dir, args.exclude_dirs, args.exclude_extensions, args.clear_dest_dir)
-        print("Operation completed successfully.")
+            stats = flatten_dir(source_dir, dest_dir, args.exclude_dirs, args.exclude_extensions, args.clear_dest_dir)
+
+        return 0
     except ValueError as e:
         print(f"Error: {e}")
         return 1
     except Exception as e:
-        print(f"Unexpected error: {e}")
+        print(f"Unexpected error: {str(e)}")
         return 1
-    return 0
 
 
 if __name__ == "__main__":
