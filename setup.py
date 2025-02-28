@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='codebase-unraveller',
-    version='0.3.0',
+    version='0.3.3',
     description='A lightweight CLI tool to flatten nested Python files into a single directory',
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',
