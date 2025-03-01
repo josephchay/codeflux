@@ -1,7 +1,7 @@
 # Codepeek - Unravel Your Codebase
 
 _Effortlessly declutter and organize your project by flattening nested `.py` files into a single folder or
-reconstructing the original directory structure from flattened files._
+reconstruct the original directory structure from flattened files._
 
 > [!NOTE] 
 > _Currently only supports python files._
@@ -229,13 +229,6 @@ To test functionality during development, you can run:
 ```bash
 python -m src.main --src <source_dir> --dest <dest_dir>
 ```
-
-## Contributing
-Contributions are welcome! If you'd like to report a bug, suggest a feature, or submit a PR:
-1. Fork the repository.
-2. Create a feature branch (`git checkout -b feature-name`).
-3. Commit your changes (`git commit -m "Description of changes"`).
-4. Push your branch and open a PR.
 
 ## License
 This project is licensed under the MIT License. See the [LICENSE](LICENSE.txt) file for details.

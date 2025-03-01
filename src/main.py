@@ -111,13 +111,19 @@ def flatten_dir(source_dir, dest_dir, exclude_dirs=None, exclude_exts=None, clea
         print("FLATTENING COMPLETE")
         print("=" * 50)
         print(f"Time taken: {duration:.6f} seconds")
-        print(f"Directories traversed: {stats['dirs_traversed']}")
+
+        # Processing stats section
+        print("\n[INPUT PROCESSING]")
+        print(f"Directories scanned: {stats['dirs_traversed']}")
         print(f"Maximum nesting level: {stats['max_nesting_level']}")
         print(f"Total files scanned: {stats['total_files_processed']}")
-        print(f"Files copied: {stats['files_copied']}")
-        print(f"Files skipped: {stats['skipped_files']}")
-        print(f"Total data copied: {stats['bytes_copied'] / 1024:.2f} KB")
-        print(f"Files per second: {stats['files_copied'] / max(duration, 0.1):.2f}")
+        print(f"Files skipped: {stats['skipped_files']} (non-Python or excluded)")
+
+        # Output stats section
+        print("\n[OUTPUT RESULT]")
+        print(f"Files in flattened output: {stats['files_copied']}")
+        print(f"Data in flattened output: {stats['bytes_copied'] / 1024:.2f} KB")
+        print(f"Processing rate: {stats['files_copied'] / max(duration, 0.1):.2f} files/second")
         print("=" * 50)
 
     return stats
@@ -195,12 +201,18 @@ def deflatten_dir(flattened_dir, dest_dir, clear_dest_dir=False, silent=False):
         print("DEFLATTEN COMPLETE")
         print("=" * 50)
         print(f"Time taken: {duration:.6f} seconds")
-        print(f"Directories created: {stats['dirs_created']}")
+
+        # Processing stats section
+        print("\n[INPUT PROCESSING]")
         print(f"Total files scanned: {stats['total_files_processed']}")
-        print(f"Files copied: {stats['files_copied']}")
-        print(f"Files skipped: {stats['skipped_files']}")
-        print(f"Total data copied: {stats['bytes_copied'] / 1024:.2f} KB")
-        print(f"Files per second: {stats['files_copied'] / max(duration, 0.1):.2f}")
+        print(f"Files skipped: {stats['skipped_files']} (non-Python)")
+
+        # Output stats section
+        print("\n[OUTPUT RESULT]")
+        print(f"Directories created: {stats['dirs_created']}")
+        print(f"Files in structured output: {stats['files_copied']}")
+        print(f"Data in structured output: {stats['bytes_copied'] / 1024:.2f} KB")
+        print(f"Processing rate: {stats['files_copied'] / max(duration, 0.1):.2f} files/second")
         print("=" * 50)
 
     return stats
@@ -252,9 +264,9 @@ def main():
 
     try:
         if args.deflatten:
-            stats = deflatten_dir(source_dir, dest_dir, args.clear_dest_dir)
+            stats = deflatten_dir(source_dir, dest_dir, args.clear_dest_dir, args.no_log)
         else:
-            stats = flatten_dir(source_dir, dest_dir, args.exclude_dirs, args.exclude_extensions, args.clear_dest_dir)
+            stats = flatten_dir(source_dir, dest_dir, args.exclude_dirs, args.exclude_extensions, args.clear_dest_dir, args.no_log)
 
         return 0
     except ValueError as e:
