@@ -27,9 +27,6 @@ def get_relative_path(path, base_path):
 
 def print_stats(operation_type, stats, duration):
     """Print statistics about the flattening/deflattening operation"""
-    print("\n" + "=" * 50)
-    print(f"{operation_type.upper()} COMPLETE")
-    print("=" * 50)
     print(f"Time taken: {duration:.6f} seconds")
 
     # Processing stats section
