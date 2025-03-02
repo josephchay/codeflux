@@ -11,8 +11,10 @@ from handlers.jsts_handler import (
     flatten_js_dir,
     deflatten_js_dir,
     DEFAULT_JS_EXCLUDE_DIRS,
-    DEFAULT_JS_EXCLUDE_EXTENSIONS
+    DEFAULT_JS_EXCLUDE_EXTENSIONS,
+    JS_EXTENSIONS
 )
+from utils import get_relative_path
 
 
 def merge_stats(stats_list):
@@ -50,19 +52,41 @@ def flatten_dir(source_dir, dest_dir, file_types=None, exclude_dirs=None, exclud
 
     # Process Python files
     if "py" in file_types:
-        py_dest_dir = os.path.join(dest_dir, "python")
+        py_dest_dir = os.path.join(dest_dir, "py")
         if not silent:
             print("\n================ PYTHON FILES ================\n")
         py_stats = flatten_python_dir(source_dir, py_dest_dir, exclude_dirs, exclude_exts, clear_dest_dir, silent)
-        all_stats.append(py_stats)
+
+        # Only keep the stats if files were actually copied
+        if py_stats["files_copied"] > 0:
+            all_stats.append(py_stats)
+        # Remove the directory if no files were copied
+        elif os.path.exists(py_dest_dir) and not os.listdir(py_dest_dir):
+            try:
+                os.rmdir(py_dest_dir)
+                if not silent:
+                    print(f"Removed empty directory: {py_dest_dir}")
+            except OSError:
+                pass
 
     # Process JavaScript/TypeScript files
     if "js" in file_types:
-        js_dest_dir = os.path.join(dest_dir, "javascript")
+        js_dest_dir = os.path.join(dest_dir, "jsts")
         if not silent:
             print("\n============= JAVASCRIPT FILES ==============\n")
         js_stats = flatten_js_dir(source_dir, js_dest_dir, exclude_dirs, exclude_exts, clear_dest_dir, silent)
-        all_stats.append(js_stats)
+
+        # Only keep the stats if files were actually copied
+        if js_stats["files_copied"] > 0:
+            all_stats.append(js_stats)
+        # Remove the directory if no files were copied
+        elif os.path.exists(js_dest_dir) and not os.listdir(js_dest_dir):
+            try:
+                os.rmdir(js_dest_dir)
+                if not silent:
+                    print(f"Removed empty directory: {js_dest_dir}")
+            except OSError:
+                pass
 
     # Merge and return all stats
     return merge_stats(all_stats)
@@ -79,8 +103,8 @@ def deflatten_dir(flattened_dir, dest_dir, file_types=None, clear_dest_dir=False
 
     # Process Python files
     if "py" in file_types:
-        py_source_dir = os.path.join(flattened_dir, "python")
-        if os.path.exists(py_source_dir):
+        py_source_dir = os.path.join(flattened_dir, "py")
+        if os.path.exists(py_source_dir) and os.listdir(py_source_dir):
             if not silent:
                 print("\n================ PYTHON FILES ================\n")
             py_stats = deflatten_python_dir(py_source_dir, dest_dir, clear_dest_dir, silent)
@@ -88,8 +112,8 @@ def deflatten_dir(flattened_dir, dest_dir, file_types=None, clear_dest_dir=False
 
     # Process JavaScript/TypeScript files
     if "js" in file_types:
-        js_source_dir = os.path.join(flattened_dir, "javascript")
-        if os.path.exists(js_source_dir):
+        js_source_dir = os.path.join(flattened_dir, "jsts")
+        if os.path.exists(js_source_dir) and os.listdir(js_source_dir):
             if not silent:
                 print("\n============= JAVASCRIPT FILES ==============\n")
             js_stats = deflatten_js_dir(js_source_dir, dest_dir, clear_dest_dir, silent)
@@ -114,19 +138,19 @@ def main():
     dest_group.add_argument("--dest", dest="dest_named", help="Destination directory path (named)")
 
     # File type options
-    parser.add_argument("--filetypes",
+    parser.add_argument("--file-types",
                         nargs="+",
                         choices=["py", "js"],
                         default=["py", "js"],
-                        help="File types to process: 'py' for Python, 'js' for JS/TS/JSX/TSX (default: both)")
+                        help="File types to process: 'py' for Python, 'js' for JavaScript/TypeScript (default: both)")
 
     # Exclusion options
     parser.add_argument("--exclude-dirs",
                         nargs="+",
                         help="Directory names to exclude")
-    parser.add_argument("--exclude-exts",
+    parser.add_argument("--exclude-extensions",
                         nargs="+",
-                        help="File exts to exclude")
+                        help="File extensions to exclude")
 
     # Operation options
     parser.add_argument("--deflatten",
@@ -150,9 +174,9 @@ def main():
         print("\nError: Both source and destination directories are required.")
         return 1
 
-    # Set default exclude directories and exts based on file types
+    # Set default exclude directories and extensions based on file types
     exclude_dirs = args.exclude_dirs
-    exclude_exts = args.exclude_exts
+    exclude_exts = args.exclude_extensions
 
     # If no custom exclusions provided, use defaults from both handlers
     if exclude_dirs is None:
@@ -163,9 +187,9 @@ def main():
 
     try:
         if args.deflatten:
-            stats = deflatten_dir(source_dir, dest_dir, args.filetypes, args.clear_dest_dir, args.no_log)
+            stats = deflatten_dir(source_dir, dest_dir, args.file_types, args.clear_dest_dir, args.no_log)
         else:
-            stats = flatten_dir(source_dir, dest_dir, args.filetypes, exclude_dirs, exclude_exts, args.clear_dest_dir, args.no_log)
+            stats = flatten_dir(source_dir, dest_dir, args.file_types, exclude_dirs, exclude_exts, args.clear_dest_dir, args.no_log)
 
         return 0
     except ValueError as e:
