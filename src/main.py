@@ -1,18 +1,17 @@
 import os
 import argparse
 import sys
-from exts.py_handler import (
+from handlers.py_handler import (
     flatten_python_dir,
     deflatten_python_dir,
     DEFAULT_PYTHON_EXCLUDE_DIRS,
     DEFAULT_PYTHON_EXCLUDE_EXTENSIONS
 )
-from exts.jsts_handler import (
+from handlers import (
     flatten_js_dir,
     deflatten_js_dir,
     DEFAULT_JS_EXCLUDE_DIRS,
-    DEFAULT_JS_EXCLUDE_EXTENSIONS,
-    JS_EXTENSIONS
+    DEFAULT_JS_EXCLUDE_EXTENSIONS
 )
 
 
