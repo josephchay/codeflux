@@ -33,15 +33,29 @@ It's perfect for organizing large codebases, consolidating scripts, or preparing
 
 > [!WARNING]
 > Uninstall the Package (If you have already installed a previous version of the package):
-> ```bash
-> pip uninstall codepeek
-> ```
 
-Install the package from source:
+### Python Projects
 
 ```bash
 pip install git+https://github.com/josephchay/codepeek.git
 ```
+
+### NodeJS Projects
+
+```bash
+npm install --save-dev git+https://github.com/josephchay/codepeek.git
+```
+or
+```bash
+yarn add git+https://github.com/josephchay/codepeek.git --dev
+```
+or
+```bash
+pnpm add git+https://github.com/josephchay/codepeek.git --save-dev
+```
+
+Occasionally, check on the `staging` branch, as they may be some new features or bug fixes 
+that have not been merged into the `main` branch.
 
 ## Command-Line Arguments
 
