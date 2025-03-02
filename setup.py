@@ -9,7 +9,7 @@ setup(
     author='Joseph Chay',
     author_email='josephemmanuelchay@gmail.com',
     url='https://github.com/josephchay/codepeek',
-    py_modules=['main'],
+    packages=find_packages(where='src'),
     package_dir={'': 'src'},
     entry_points={
         'console_scripts': [

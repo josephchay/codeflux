@@ -12,10 +12,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `--no-log` flag to suppress logging.
 - Supports `.js`, `.jsx`, `.ts`, and `.tsx` extensions.
 - `--file-exts` flag to specify file extensions to flatten.
+- `__init__.py` file in `src/exts`.
 
 ### Fixed
 
 - Corrected argument parsing for `--exclude-exts`, and `--filetypes` flags.
+- Replace `py_modules=['main']` with `packages=find_packages(where='src')` in `setup.py`.
 
 ### Changed
 
