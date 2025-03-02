@@ -3,7 +3,7 @@
 _Effortlessly declutter and organize your project by flattening nested files into a single folder or
 reconstruct the original directory structure from flattened files._
 
-> [!NOTE] 
+> [!NOTE]
 > _Currently only supports .py, .js, .ts, .jsx, .tsx file extensions._
 
 ## Overview
@@ -17,6 +17,7 @@ It's perfect for organizing large codebases, consolidating scripts, or preparing
 ---
 
 ## Features
+
 - **Flattens Nested Directories**: Gathers all required files into a single folder, no matter how deeply nested they are.
 - **Exclude Options**: Allows excluding specific directories and file extensions from the process.
 - **Handles File Name Conflicts**: Renames files with duplicate names to ensure no overwriting.
@@ -102,13 +103,13 @@ Command:
 ```bash
 codepeek --src src --dest flat
 ```
-or
+or without explicitly specifying the first two arguments:
 ```bash
-# First two arguments can be src and dest without flags
 codepeek src flat
 ```
 
 #### Example 2: With Directory Prefixes
+
 ```
 Before:                             After:
 src/                               flat/
@@ -128,6 +129,7 @@ codepeek --src src --dest flat
 ```
 
 #### Example 3: Excluding Directories and File Extensions
+
 ```
 Before:                            After (Currently only supports python files):
 src/                               flat/
@@ -162,6 +164,7 @@ codepeek src flat --exclude-dirs .idea .git __pycache__ .venv docs tests --exclu
 ```
 
 #### Example 4: Deflattening a Directory
+
 ```
 Before:                             After:
 flat/                              original/
@@ -181,6 +184,7 @@ codepeek --src flat --dest original --deflatten
 ```
 
 #### Example 5: Flattening with Duplicated Filenames
+
 ```
 Before (Third Flattening with modified files):           After (Third Flatten):
 src/                                                     flat/
@@ -264,9 +268,11 @@ python -m src.main --src <source_dir> --dest <dest_dir>
 ```
 
 ## License
+
 This project is licensed under the MIT License. See the [LICENSE](LICENSE.txt) file for details.
 
 ## Support
+
 Need help? Have a question? Feel free to reach out:
 * **Email**: [josephemmanuelchay@gmail.com](mailto:josephemmanuelchay@gmail.com)
 * **GitHub Issues**: [Issues](https://github.com/josephchay/codepeek/issues)
