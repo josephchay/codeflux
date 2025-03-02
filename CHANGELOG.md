@@ -13,7 +13,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Supports `.js`, `.jsx`, `.ts`, and `.tsx` extensions.
 - `--file-exts` flag to specify file extensions to flatten.
 
+### Fixed
+
+- Corrected argument parsing for `--exclude-exts`, and `--filetypes` flags.
+
 ### Changed
+
 - Moved handling for python file flattening and deflattening to `exts/py_handler.py` module.
 - Moved general utility functions to `utils.py` module.
 

@@ -153,7 +153,7 @@ def main():
 
     # Set default exclude directories and exts based on file types
     exclude_dirs = args.exclude_dirs
-    exclude_exts = args.exclude_extensions
+    exclude_exts = args.exclude_exts
 
     # If no custom exclusions provided, use defaults from both handlers
     if exclude_dirs is None:
@@ -164,10 +164,9 @@ def main():
 
     try:
         if args.deflatten:
-            stats = deflatten_dir(source_dir, dest_dir, args.file_types, args.clear_dest_dir, args.no_log)
+            stats = deflatten_dir(source_dir, dest_dir, args.filetypes, args.clear_dest_dir, args.no_log)
         else:
-            stats = flatten_dir(source_dir, dest_dir, args.file_types, exclude_dirs, exclude_exts, args.clear_dest_dir,
-                                args.no_log)
+            stats = flatten_dir(source_dir, dest_dir, args.filetypes, exclude_dirs, exclude_exts, args.clear_dest_dir, args.no_log)
 
         return 0
     except ValueError as e:
