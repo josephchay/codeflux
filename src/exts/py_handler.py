@@ -1,7 +1,7 @@
 import os
 import shutil
 import time
-from src.utils import get_unique_filename, get_relative_path, print_stats
+from utils import get_unique_filename, get_relative_path, print_stats
 
 
 # Default exclusions for Python files

@@ -9,11 +9,12 @@ setup(
     author='Joseph Chay',
     author_email='josephemmanuelchay@gmail.com',
     url='https://github.com/josephchay/codepeek',
-    packages=find_packages('src'),
-    package_dir={'': 'src'},
+    package_dir={"": "src"},
+    packages=find_packages(where="src"),
+    py_modules=["main", "utils"],
     entry_points={
         'console_scripts': [
-            'codepeek=codepeek.main:main',
+            'codepeek=main:main',
         ],
     },
     classifiers=[
