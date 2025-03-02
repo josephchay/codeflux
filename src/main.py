@@ -1,226 +1,108 @@
 import os
-import shutil
 import argparse
 import sys
-import time
-
-DEFAULT_EXCLUDE_DIRS = ["__pycache__", ".git", ".idea", ".vscode", ".venv", "venv"]
-DEFAULT_EXCLUDE_EXTENSIONS = [".pyc", ".pyo", "__init__.py"]
-
-
-def get_unique_filename(destination_file):
-    counter = 2
-    name, ext = os.path.splitext(destination_file)
-    unique_destination_file = destination_file
-
-    while os.path.exists(unique_destination_file):
-        unique_destination_file = f"{name}_{counter}{ext}"
-        counter += 1
-
-    return unique_destination_file
+from exts.py_handler import (
+    flatten_python_dir,
+    deflatten_python_dir,
+    DEFAULT_PYTHON_EXCLUDE_DIRS,
+    DEFAULT_PYTHON_EXCLUDE_EXTENSIONS
+)
+from exts.jsts_handler import (
+    flatten_js_dir,
+    deflatten_js_dir,
+    DEFAULT_JS_EXCLUDE_DIRS,
+    DEFAULT_JS_EXCLUDE_EXTENSIONS,
+    JS_EXTENSIONS
+)
 
 
-def get_relative_path(path, base_path):
-    try:
-        return os.path.relpath(path, base_path)
-    except ValueError:
-        return path
-
-
-def flatten_dir(source_dir, dest_dir, exclude_dirs=None, exclude_exts=None, clear_dest_dir=False, silent=False):
-    # Set default values
-    exclude_dirs = exclude_dirs or DEFAULT_EXCLUDE_DIRS
-    exclude_exts = exclude_exts or DEFAULT_EXCLUDE_EXTENSIONS
-
-    # Convert to absolute paths
-    source_dir = os.path.abspath(source_dir)
-    dest_dir = os.path.abspath(dest_dir)
-
-    # Stats tracking
-    stats = {
+def merge_stats(stats_list):
+    """Merge multiple statistics dictionaries into one"""
+    merged_stats = {
         "total_files_processed": 0,
         "dirs_traversed": 0,
         "files_copied": 0,
         "bytes_copied": 0,
         "skipped_files": 0,
-        "max_nesting_level": 0
+        "max_nesting_level": 0,
+        "dirs_created": 0
     }
 
-    if clear_dest_dir and os.path.exists(dest_dir):
-        shutil.rmtree(dest_dir)
+    for stats in stats_list:
+        for key, value in stats.items():
+            if key in merged_stats:
+                merged_stats[key] += value
+                # For max_nesting_level, keep the maximum value
+                if key == "max_nesting_level":
+                    merged_stats[key] = max(merged_stats[key], value)
 
-    os.makedirs(dest_dir, exist_ok=True)
-
-    source_dir_parts = len(os.path.normpath(source_dir).split(os.sep))
-    start_time = time.time()
-
-    if not silent:
-        print(f"Source: {get_relative_path(source_dir, os.getcwd())}")
-        print(f"Destination: {get_relative_path(dest_dir, os.getcwd())}\n")
-
-    for root, dirs, files in os.walk(source_dir):
-        stats["dirs_traversed"] += 1
-
-        # Calculate nesting level
-        current_nesting = len(os.path.relpath(root, source_dir).split(os.sep))
-        stats["max_nesting_level"] = max(stats["max_nesting_level"], current_nesting)
-
-        # Exclude directories
-        dirs[:] = [
-            d for d in dirs
-            if d not in exclude_dirs and os.path.abspath(os.path.join(root, d)) != dest_dir
-        ]
-
-        for file in files:
-            stats["total_files_processed"] += 1
-
-            # Filter Python files
-            if file.endswith(".py") and not any(file.endswith(ext) for ext in exclude_exts):
-                source_file = os.path.join(root, file)
-
-                # Get path components
-                path_parts = os.path.normpath(root).split(os.sep)[source_dir_parts:]
-
-                # Create new filename
-                if path_parts:
-                    new_filename = "___".join(path_parts + [file])
-                else:
-                    new_filename = file
-
-                destination_file = os.path.join(dest_dir, new_filename)
-                unique_destination_file = get_unique_filename(destination_file)
-
-                # Copy file
-                shutil.copy2(source_file, unique_destination_file)
-                stats["files_copied"] += 1
-                stats["bytes_copied"] += os.path.getsize(source_file)
-
-                # Print relative paths with arrow
-                rel_source = get_relative_path(source_file, os.getcwd())
-                rel_dest = get_relative_path(unique_destination_file, os.getcwd())
-                if not silent:
-                    print(f"{rel_source} → {rel_dest}")
-            else:
-                stats["skipped_files"] += 1
-
-    end_time = time.time()
-    duration = end_time - start_time
-
-    if not silent:
-        print("\n" + "=" * 50)
-        print("FLATTENING COMPLETE")
-        print("=" * 50)
-        print(f"Time taken: {duration:.6f} seconds")
-
-        # Processing stats section
-        print("\n[INPUT PROCESSING]")
-        print(f"Directories scanned: {stats['dirs_traversed']}")
-        print(f"Maximum nesting level: {stats['max_nesting_level']}")
-        print(f"Total files scanned: {stats['total_files_processed']}")
-        print(f"Files skipped: {stats['skipped_files']} (non-Python or excluded)")
-
-        # Output stats section
-        print("\n[OUTPUT RESULT]")
-        print(f"Files in flattened output: {stats['files_copied']}")
-        print(f"Data in flattened output: {stats['bytes_copied'] / 1024:.2f} KB")
-        print(f"Processing rate: {stats['files_copied'] / max(duration, 0.1):.2f} files/second")
-        print("=" * 50)
-
-    return stats
+    return merged_stats
 
 
-def deflatten_dir(flattened_dir, dest_dir, clear_dest_dir=False, silent=False):
-    # Convert to absolute paths
-    flattened_dir = os.path.abspath(flattened_dir)
-    dest_dir = os.path.abspath(dest_dir)
+def flatten_dir(source_dir, dest_dir, file_types=None, exclude_dirs=None, exclude_exts=None, clear_dest_dir=False,
+                silent=False):
+    """
+    Flatten a directory structure for specified file types
+    """
+    if file_types is None:
+        file_types = ["py", "js"]
 
-    # Stats tracking
-    stats = {
-        "total_files_processed": 0,
-        "dirs_created": 0,
-        "files_copied": 0,
-        "bytes_copied": 0,
-        "skipped_files": 0
-    }
+    all_stats = []
 
-    if clear_dest_dir and os.path.exists(dest_dir):
-        shutil.rmtree(dest_dir)
+    # Process Python files
+    if "py" in file_types:
+        py_dest_dir = os.path.join(dest_dir, "python")
+        if not silent:
+            print("\n================ PYTHON FILES ================\n")
+        py_stats = flatten_python_dir(source_dir, py_dest_dir, exclude_dirs, exclude_exts, clear_dest_dir, silent)
+        all_stats.append(py_stats)
 
-    os.makedirs(dest_dir, exist_ok=True)
-    stats["dirs_created"] += 1
+    # Process JavaScript/TypeScript files
+    if "js" in file_types:
+        js_dest_dir = os.path.join(dest_dir, "javascript")
+        if not silent:
+            print("\n============= JAVASCRIPT FILES ==============\n")
+        js_stats = flatten_js_dir(source_dir, js_dest_dir, exclude_dirs, exclude_exts, clear_dest_dir, silent)
+        all_stats.append(js_stats)
 
-    start_time = time.time()
+    # Merge and return all stats
+    return merge_stats(all_stats)
 
-    if not silent:
-        print(f"Source: {get_relative_path(flattened_dir, os.getcwd())}")
-        print(f"Destination: {get_relative_path(dest_dir, os.getcwd())}\n")
 
-    for file in os.listdir(flattened_dir):
-        stats["total_files_processed"] += 1
+def deflatten_dir(flattened_dir, dest_dir, file_types=None, clear_dest_dir=False, silent=False):
+    """
+    Deflatten a directory for specified file types
+    """
+    if file_types is None:
+        file_types = ["py", "js"]
 
-        if file.endswith(".py"):
-            flattened_file = os.path.join(flattened_dir, file)
+    all_stats = []
 
-            # Get original structure from filename
-            path_parts = file.split("___")
-            original_file = path_parts[-1]
-            original_dir = os.path.join(dest_dir, *path_parts[:-1])
-
-            # Skip if destination would overwrite source
-            if os.path.abspath(original_dir).startswith(flattened_dir):
-                print(f"Skipping to avoid overwriting source: {get_relative_path(flattened_file, os.getcwd())}")
-                stats["skipped_files"] += 1
-                continue
-
-            # Create directory structure
-            if not os.path.exists(original_dir):
-                os.makedirs(original_dir, exist_ok=True)
-                stats["dirs_created"] += 1
-
-            destination_file = os.path.join(original_dir, original_file)
-            unique_destination_file = get_unique_filename(destination_file)
-
-            # Copy file
-            shutil.copy2(flattened_file, unique_destination_file)
-            stats["files_copied"] += 1
-            stats["bytes_copied"] += os.path.getsize(flattened_file)
-
-            # Print relative paths with arrow
-            rel_source = get_relative_path(flattened_file, os.getcwd())
-            rel_dest = get_relative_path(unique_destination_file, os.getcwd())
+    # Process Python files
+    if "py" in file_types:
+        py_source_dir = os.path.join(flattened_dir, "python")
+        if os.path.exists(py_source_dir):
             if not silent:
-                print(f"{rel_source} → {rel_dest}")
-        else:
-            stats["skipped_files"] += 1
+                print("\n================ PYTHON FILES ================\n")
+            py_stats = deflatten_python_dir(py_source_dir, dest_dir, clear_dest_dir, silent)
+            all_stats.append(py_stats)
 
-    end_time = time.time()
-    duration = end_time - start_time
+    # Process JavaScript/TypeScript files
+    if "js" in file_types:
+        js_source_dir = os.path.join(flattened_dir, "javascript")
+        if os.path.exists(js_source_dir):
+            if not silent:
+                print("\n============= JAVASCRIPT FILES ==============\n")
+            js_stats = deflatten_js_dir(js_source_dir, dest_dir, clear_dest_dir, silent)
+            all_stats.append(js_stats)
 
-    if not silent:
-        print("\n" + "=" * 50)
-        print("DEFLATTEN COMPLETE")
-        print("=" * 50)
-        print(f"Time taken: {duration:.6f} seconds")
-
-        # Processing stats section
-        print("\n[INPUT PROCESSING]")
-        print(f"Total files scanned: {stats['total_files_processed']}")
-        print(f"Files skipped: {stats['skipped_files']} (non-Python)")
-
-        # Output stats section
-        print("\n[OUTPUT RESULT]")
-        print(f"Directories created: {stats['dirs_created']}")
-        print(f"Files in structured output: {stats['files_copied']}")
-        print(f"Data in structured output: {stats['bytes_copied'] / 1024:.2f} KB")
-        print(f"Processing rate: {stats['files_copied'] / max(duration, 0.1):.2f} files/second")
-        print("=" * 50)
-
-    return stats
+    # Merge and return all stats
+    return merge_stats(all_stats)
 
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Flatten or deflatten a directory of Python files."
+        description="Flatten or deflatten a directory of Python, JavaScript, and TypeScript files."
     )
 
     # Support both positional and named arguments
@@ -232,15 +114,22 @@ def main():
     dest_group.add_argument("dest_pos", nargs="?", help="Destination directory path (positional)")
     dest_group.add_argument("--dest", dest="dest_named", help="Destination directory path (named)")
 
+    # File type options
+    parser.add_argument("--filetypes",
+                        nargs="+",
+                        choices=["py", "js"],
+                        default=["py", "js"],
+                        help="File types to process: 'py' for Python, 'js' for JS/TS/JSX/TSX (default: both)")
+
+    # Exclusion options
     parser.add_argument("--exclude-dirs",
                         nargs="+",
-                        default=DEFAULT_EXCLUDE_DIRS,
-                        help="Directory names to exclude (default: \"__pycache__\", \".git\", "
-                             "\".idea\", \".vscode\", \".venv\", \"venv\")")
-    parser.add_argument("--exclude-extensions",
+                        help="Directory names to exclude")
+    parser.add_argument("--exclude-exts",
                         nargs="+",
-                        default=DEFAULT_EXCLUDE_EXTENSIONS,
-                        help="File extensions to exclude (default: \".pyc\", \".pyo\", \"__init__.py\")")
+                        help="File exts to exclude")
+
+    # Operation options
     parser.add_argument("--deflatten",
                         action="store_true",
                         help="Deflatten the directory instead of flattening (default: False)")
@@ -262,11 +151,23 @@ def main():
         print("\nError: Both source and destination directories are required.")
         return 1
 
+    # Set default exclude directories and exts based on file types
+    exclude_dirs = args.exclude_dirs
+    exclude_exts = args.exclude_extensions
+
+    # If no custom exclusions provided, use defaults from both handlers
+    if exclude_dirs is None:
+        exclude_dirs = list(set(DEFAULT_PYTHON_EXCLUDE_DIRS + DEFAULT_JS_EXCLUDE_DIRS))
+
+    if exclude_exts is None:
+        exclude_exts = list(set(DEFAULT_PYTHON_EXCLUDE_EXTENSIONS + DEFAULT_JS_EXCLUDE_EXTENSIONS))
+
     try:
         if args.deflatten:
-            stats = deflatten_dir(source_dir, dest_dir, args.clear_dest_dir, args.no_log)
+            stats = deflatten_dir(source_dir, dest_dir, args.file_types, args.clear_dest_dir, args.no_log)
         else:
-            stats = flatten_dir(source_dir, dest_dir, args.exclude_dirs, args.exclude_extensions, args.clear_dest_dir, args.no_log)
+            stats = flatten_dir(source_dir, dest_dir, args.file_types, exclude_dirs, exclude_exts, args.clear_dest_dir,
+                                args.no_log)
 
         return 0
     except ValueError as e:

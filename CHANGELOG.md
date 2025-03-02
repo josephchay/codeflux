@@ -10,6 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - `--no-log` flag to suppress logging.
+- Supports `.js`, `.jsx`, `.ts`, and `.tsx` extensions.
+- `--file-exts` flag to specify file extensions to flatten.
+
+### Changed
+- Moved handling for python file flattening and deflattening to `exts/py_handler.py` module.
+- Moved general utility functions to `utils.py` module.
 
 ## [0.3.4] - 2025-03-01
 

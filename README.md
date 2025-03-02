@@ -1,23 +1,24 @@
 # Codepeek - Unravel Your Codebase
 
-_Effortlessly declutter and organize your project by flattening nested `.py` files into a single folder or
+_Effortlessly declutter and organize your project by flattening nested files into a single folder or
 reconstruct the original directory structure from flattened files._
 
 > [!NOTE] 
-> _Currently only supports python files._
+> _Currently only supports .py, .js, .ts, .jsx, .tsx file extensions._
 
 ## Overview
 
-Do you often find yourself digging through multiple nested directories to find Python files?  
-**Codepeek** is here to simplify your life! This lightweight CLI tool scans through your source directory (and all its subdirectories), collects all `.py` files (excluding `__init__.py`), and copies them into a single destination directory — all while automatically renaming conflicting files. 
+Do you often find yourself digging through multiple nested directories to find files?  
+**Codepeek** is here to simplify your life! This lightweight CLI tool scans through your source directory (and all its subdirectories), 
+collects all designated files and copies them into a single destination directory - all while automatically renaming conflicting files. 
 
 It's perfect for organizing large codebases, consolidating scripts, or preparing for migration or backup.
 
 ---
 
 ## Features
-- **Flattens Nested Directories**: Gathers all `.py` files into a single folder, no matter how deeply nested they are.
-- **Excludes `__init__.py`**: Avoids copying module definition files (`__init__.py`) by default.
+- **Flattens Nested Directories**: Gathers all required files into a single folder, no matter how deeply nested they are.
+- **Exclude Options**: Allows excluding specific directories and file extensions from the process.
 - **Handles File Name Conflicts**: Renames files with duplicate names to ensure no overwriting.
 - **Clean Destination Directory**: Automatically clears the destination folder before copying.
 - **Command-Line Simplicity**: Provides an easy-to-use CLI interface.
@@ -48,6 +49,7 @@ pip install git+https://github.com/josephchay/codepeek.git
 |------------------------|----------|----------------------------------------------------------------|---------------------------------------------------------------------------------|
 | `[src]`                | Yes      | -                                                              | Source directory containing the Python files to flatten                         |
 | `[dest]`               | Yes      | -                                                              | Destination directory where files will be copied                                |
+| `--filetypes`          | No       | `.py`, `.js`, `.ts`, `.jsx`, `.tsx`                            | File extensions types to process                                                |
 | `--exclude-dirs`       | No       | `["__pycache__", ".git", ".idea", ".vscode", ".venv", "venv"]` | Directory names to exclude (default: `DEFAULT_EXCLUDE_DIRS`)                    |
 | `--exclude-extensions` | No       | `[".pyc", ".pyo", "__init__.py"]`                              | File extensions to exclude (default: `DEFAULT_EXCLUDE_EXTENSIONS`)              |
 | `--clear-dest-dir`     | No       | `False`                                                        | Clear the destination directory before copying files                            |
@@ -64,6 +66,8 @@ Here are various scenarios and how to use the tool:
 | Exclude Directories     | `codepeek --src src --dest flat --exclude-dirs .idea .venv`     | Excludes the `.idea` and `.venv` directories from the flattening process                                  |
 | Exclude File Extensions | `codepeek --src src --dest flat --exclude-extensions .txt .csv` | Excludes files with `.txt` and `.csv` extensions from the flattening process                              |
 | Deflatten Directory     | `codepeek --src flattened --dest original --deflatten`          | Reverts the flattening process and restores the original directory structure from the flattened directory |
+| Disable Logging         | `codepeek --src src --dest flat --no-log`                       | Suppresses all the logging output                                                                         |
+| Specifying file types   | `codepeek -src src --dest flat --filetypes py`                  | Selects only the given file types to flatten or deflatten                                                 |
 
 ### Example Directory Transformations
 
@@ -136,11 +140,11 @@ src/                               flat/
 
 Command:
 ```bash
-codepeek --src src --dest flat --exclude-dirs .idea .git __pycache__ .venv docs tests --exclude-extensions .md .pyc .csv .json
+codepeek --src src --dest flat --exclude-dirs .idea .git __pycache__ .venv docs tests --exclude-exts .md .pyc .csv .json
 ```
 or
 ```bash
-codepeek src flat --exclude-dirs .idea .git __pycache__ .venv docs tests --exclude-extensions .md .pyc .csv .json
+codepeek src flat --exclude-dirs .idea .git __pycache__ .venv docs tests --exclude-exts .md .pyc .csv .json
 ```
 
 #### Example 4: Deflattening a Directory
@@ -198,6 +202,21 @@ codepeek . flat
 To deflatten the directory, run:
 ```bash
 codepeek --src . --dest . --deflatten
+```
+
+All the samples above apply the same for files with other extensions.
+
+### Specifying File Extensions
+
+Without using the `--filetypes` flag, all files will be flattened.
+
+To specify only JS/TS/JSX/TSX file extensions to flatten, use the `--filetypes` flag:
+```bash
+codepeek src flat --filetypes js
+```
+or only for Python files:
+```bash
+codepeek src flat --filetypes py
 ```
 
 ### Logging
