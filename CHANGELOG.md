@@ -22,6 +22,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Moved handling for python file flattening and deflattening to `exts/py_handler.py` module.
 - Moved general utility functions to `utils.py` module.
 
+### Removed
+
+- Unnecessary `setup_2.py` file in root directory.
+
 ## [0.3.4] - 2025-03-01
 
 ### Added
