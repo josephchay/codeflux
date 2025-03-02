@@ -1,7 +1,8 @@
 import os
 import shutil
 import time
-from utils import get_unique_filename, get_relative_path, print_stats
+from src.utils import get_unique_filename, get_relative_path, print_stats
+
 
 # Default exclusions for Python files
 DEFAULT_PYTHON_EXCLUDE_DIRS = ["__pycache__", ".git", ".idea", ".vscode", ".venv", "venv"]

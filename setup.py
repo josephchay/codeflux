@@ -2,15 +2,15 @@ from setuptools import setup, find_packages
 
 setup(
     name='codepeek',
-    version='0.3.4',
-    description='A lightweight CLI tool to flatten nested Python files into a single directory',
+    version='0.4.0',
+    description='A lightweight CLI tool to flatten nested Python, JavaScript, and TypeScript files',
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',
     author='Joseph Chay',
     author_email='josephemmanuelchay@gmail.com',
     url='https://github.com/josephchay/codepeek',
-    packages=find_packages(where='codepeek'),
-    package_dir={'': 'codepeek'},
+    packages=find_packages('src'),
+    package_dir={'': 'src'},
     entry_points={
         'console_scripts': [
             'codepeek=codepeek.main:main',

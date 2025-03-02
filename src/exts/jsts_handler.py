@@ -1,14 +1,14 @@
 import os
 import shutil
 import time
-from utils import get_unique_filename, get_relative_path, print_stats
+from src.utils import get_unique_filename, get_relative_path, print_stats
 
 
 # Default exclusions for JavaScript/TypeScript files
 DEFAULT_JS_EXCLUDE_DIRS = [".git", "node_modules", "dist", "build", ".next", ".vscode", ".idea"]
 DEFAULT_JS_EXCLUDE_EXTENSIONS = ["d.ts", ".test.js", ".test.ts", ".spec.js", ".spec.ts", ".min.js"]
 
-# JavaScript/TypeScript related exts
+# JavaScript/TypeScript related extensions
 JS_EXTENSIONS = [".js", ".jsx", ".ts", ".tsx"]
 
 

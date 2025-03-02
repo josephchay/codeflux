@@ -1,14 +1,14 @@
 import os
 
 
-def get_unique_filename(dest_file):
+def get_unique_filename(destination_file):
     """
     Generate a unique filename if the destination file already exists
     by appending an incrementing counter
     """
     counter = 2
-    name, ext = os.path.splitext(dest_file)
-    unique_destination_file = dest_file
+    name, ext = os.path.splitext(destination_file)
+    unique_destination_file = destination_file
 
     while os.path.exists(unique_destination_file):
         unique_destination_file = f"{name}_{counter}{ext}"
@@ -26,7 +26,7 @@ def get_relative_path(path, base_path):
 
 
 def print_stats(operation_type, stats, duration):
-    """Print the processing and output stats"""
+    """Print statistics about the flattening/deflattening operation"""
     print("\n" + "=" * 50)
     print(f"{operation_type.upper()} COMPLETE")
     print("=" * 50)

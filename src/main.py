@@ -1,13 +1,13 @@
 import os
 import argparse
 import sys
-from exts.py_handler import (
+from src.exts.py_handler import (
     flatten_python_dir,
     deflatten_python_dir,
     DEFAULT_PYTHON_EXCLUDE_DIRS,
     DEFAULT_PYTHON_EXCLUDE_EXTENSIONS
 )
-from exts.jsts_handler import (
+from src.exts.jsts_handler import (
     flatten_js_dir,
     deflatten_js_dir,
     DEFAULT_JS_EXCLUDE_DIRS,
@@ -115,19 +115,19 @@ def main():
     dest_group.add_argument("--dest", dest="dest_named", help="Destination directory path (named)")
 
     # File type options
-    parser.add_argument("--filetypes",
+    parser.add_argument("--file-types",
                         nargs="+",
                         choices=["py", "js"],
                         default=["py", "js"],
-                        help="File types to process: 'py' for Python, 'js' for JS/TS/JSX/TSX (default: both)")
+                        help="File types to process: 'py' for Python, 'js' for JavaScript/TypeScript (default: both)")
 
     # Exclusion options
     parser.add_argument("--exclude-dirs",
                         nargs="+",
                         help="Directory names to exclude")
-    parser.add_argument("--exclude-exts",
+    parser.add_argument("--exclude-extensions",
                         nargs="+",
-                        help="File exts to exclude")
+                        help="File extensions to exclude")
 
     # Operation options
     parser.add_argument("--deflatten",
@@ -151,9 +151,9 @@ def main():
         print("\nError: Both source and destination directories are required.")
         return 1
 
-    # Set default exclude directories and exts based on file types
+    # Set default exclude directories and extensions based on file types
     exclude_dirs = args.exclude_dirs
-    exclude_exts = args.exclude_exts
+    exclude_exts = args.exclude_extensions
 
     # If no custom exclusions provided, use defaults from both handlers
     if exclude_dirs is None:
@@ -164,9 +164,10 @@ def main():
 
     try:
         if args.deflatten:
-            stats = deflatten_dir(source_dir, dest_dir, args.filetypes, args.clear_dest_dir, args.no_log)
+            stats = deflatten_dir(source_dir, dest_dir, args.file_types, args.clear_dest_dir, args.no_log)
         else:
-            stats = flatten_dir(source_dir, dest_dir, args.filetypes, exclude_dirs, exclude_exts, args.clear_dest_dir, args.no_log)
+            stats = flatten_dir(source_dir, dest_dir, args.file_types, exclude_dirs, exclude_exts, args.clear_dest_dir,
+                                args.no_log)
 
         return 0
     except ValueError as e:
