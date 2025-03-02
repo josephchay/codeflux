@@ -1,13 +1,13 @@
 import os
 import argparse
 import sys
-from handlers.python_handler import (
+from handlers.py_handler import (
     flatten_python_dir,
     deflatten_python_dir,
     DEFAULT_PYTHON_EXCLUDE_DIRS,
     DEFAULT_PYTHON_EXCLUDE_EXTENSIONS
 )
-from handlers.js_handler import (
+from handlers.jsts_handler import (
     flatten_js_dir,
     deflatten_js_dir,
     DEFAULT_JS_EXCLUDE_DIRS,
