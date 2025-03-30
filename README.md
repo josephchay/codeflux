@@ -277,4 +277,4 @@ Need help? Have a question? Feel free to reach out:
 * **Email**: [josephemmanuelchay@gmail.com](mailto:josephemmanuelchay@gmail.com)
 * **GitHub Issues**: [Issues](https://github.com/josephchay/codepeek/issues)
 
-Make your projects cleaner — flatten and deflatten your directories today!
+Make your projects cleaner - flatten and deflatten your directories today!
