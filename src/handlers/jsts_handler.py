@@ -2,15 +2,8 @@ import os
 import shutil
 import time
 
+from constants import DEFAULT_JS_EXCLUDE_DIRS, DEFAULT_JS_EXCLUDE_EXTENSIONS, DEFAULT_JS_EXCLUDE_FILENAMES
 from utils import get_unique_filename, get_relative_path, print_stats
-
-
-# Default exclusions for JavaScript/TypeScript files
-DEFAULT_JS_EXCLUDE_DIRS = [".git", "node_modules", "dist", "build", ".next", ".vscode", ".idea"]
-DEFAULT_JS_EXCLUDE_EXTENSIONS = ["d.ts", ".test.js", ".test.ts", ".spec.js", ".spec.ts", ".min.js"]
-DEFAULT_JS_EXCLUDE_FILENAMES = ["babel.config.js", "jest.config.js", "webpack.config.js"]
-
-JS_EXTENSIONS = [".js", ".jsx", ".ts", ".tsx"]
 
 
 def flatten_js_dir(source_dir, dest_dir, exclude_dirs=None, exclude_exts=None, exclude_files=None,

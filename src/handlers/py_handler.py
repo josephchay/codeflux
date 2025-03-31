@@ -2,12 +2,8 @@ import os
 import shutil
 import time
 
+from constants import DEFAULT_PYTHON_EXCLUDE_DIRS, DEFAULT_PYTHON_EXCLUDE_EXTENSIONS, DEFAULT_PYTHON_EXCLUDE_FILENAMES
 from utils import get_unique_filename, get_relative_path, print_stats
-
-
-DEFAULT_PYTHON_EXCLUDE_DIRS = ["__pycache__", ".git", ".idea", ".vscode", ".venv", "venv"]
-DEFAULT_PYTHON_EXCLUDE_EXTENSIONS = [".pyc", ".pyo", "__init__.py"]
-DEFAULT_PYTHON_EXCLUDE_FILENAMES = ["setup.py", "conftest.py"]
 
 
 def flatten_python_dir(source_dir, dest_dir, exclude_dirs=None, exclude_exts=None, exclude_files=None,

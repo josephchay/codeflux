@@ -3,48 +3,30 @@ import argparse
 import sys
 import time
 
+from constants import *
+from handlers.yml_handler import flatten_yaml_dir, deflatten_yaml_dir
 from utils import get_relative_path, print_stats
-from handlers.py_handler import (
-    flatten_python_dir,
-    deflatten_python_dir,
-    DEFAULT_PYTHON_EXCLUDE_DIRS,
-    DEFAULT_PYTHON_EXCLUDE_EXTENSIONS,
-    DEFAULT_PYTHON_EXCLUDE_FILENAMES
-)
-from handlers.jsts_handler import (
-    flatten_js_dir,
-    deflatten_js_dir,
-    DEFAULT_JS_EXCLUDE_DIRS,
-    DEFAULT_JS_EXCLUDE_EXTENSIONS,
-    DEFAULT_JS_EXCLUDE_FILENAMES,
-    JS_EXTENSIONS
-)
-from handlers.md_handler import (
-    flatten_md_dir,
-    deflatten_md_dir,
-    DEFAULT_MD_EXCLUDE_DIRS,
-    DEFAULT_MD_EXCLUDE_EXTENSIONS,
-    DEFAULT_MD_EXCLUDE_FILENAMES,
-    MD_EXTENSIONS
-)
+from handlers.py_handler import flatten_python_dir, deflatten_python_dir
+from handlers.jsts_handler import flatten_js_dir, deflatten_js_dir
+from handlers.md_handler import flatten_md_dir, deflatten_md_dir
 
 
 def bundle_files(source_dir, output_file, file_types=None, exclude_dirs=None, exclude_exts=None,
                  exclude_files=None, include_files=None, silent=False):
     # Combine default exclusions from all handlers
     if exclude_dirs is None:
-        exclude_dirs = list(set(DEFAULT_PYTHON_EXCLUDE_DIRS + DEFAULT_JS_EXCLUDE_DIRS + DEFAULT_MD_EXCLUDE_DIRS))
+        exclude_dirs = list(set(DEFAULT_PYTHON_EXCLUDE_DIRS + DEFAULT_JS_EXCLUDE_DIRS + DEFAULT_MD_EXCLUDE_DIRS + DEFAULT_YAML_EXCLUDE_DIRS))
 
     if exclude_exts is None:
-        exclude_exts = list(set(DEFAULT_PYTHON_EXCLUDE_EXTENSIONS + DEFAULT_JS_EXCLUDE_EXTENSIONS + DEFAULT_MD_EXCLUDE_EXTENSIONS))
+        exclude_exts = list(set(DEFAULT_PYTHON_EXCLUDE_EXTENSIONS + DEFAULT_JS_EXCLUDE_EXTENSIONS + DEFAULT_MD_EXCLUDE_EXTENSIONS + DEFAULT_YAML_EXCLUDE_EXTENSIONS))
 
     if exclude_files is None:
-        exclude_files = list(set(DEFAULT_PYTHON_EXCLUDE_FILENAMES + DEFAULT_JS_EXCLUDE_FILENAMES + DEFAULT_MD_EXCLUDE_FILENAMES))
+        exclude_files = list(set(DEFAULT_PYTHON_EXCLUDE_FILENAMES + DEFAULT_JS_EXCLUDE_FILENAMES + DEFAULT_MD_EXCLUDE_FILENAMES + DEFAULT_YAML_EXCLUDE_FILENAMES))
     else:
         exclude_files = list(exclude_files)
 
     if file_types is None:
-        file_types = ["py", "js", "md"]
+        file_types = ["py", "js", "md", "yaml"]
 
     # Convert to absolute paths
     source_dir = os.path.abspath(source_dir)
@@ -75,6 +57,8 @@ def bundle_files(source_dir, output_file, file_types=None, exclude_dirs=None, ex
         included_extensions.extend(JS_EXTENSIONS)
     if "md" in file_types:
         included_extensions.extend(MD_EXTENSIONS)
+    if "yaml" in file_types:
+        included_extensions.extend(YAML_EXTENSIONS)
 
     start_time = time.time()
 
@@ -236,11 +220,11 @@ def flatten_dir(source_dir, dest_dir, file_types=None, exclude_dirs=None, exclud
     Flatten a directory structure for specified file types
     """
     if file_types is None:
-        file_types = ["py", "js", "md"]
+        file_types = ["py", "js", "md", "yaml"]
 
     # Combine default exclusions for files
     if exclude_files is None:
-        exclude_files = list(set(DEFAULT_PYTHON_EXCLUDE_FILENAMES + DEFAULT_JS_EXCLUDE_FILENAMES + DEFAULT_MD_EXCLUDE_FILENAMES))
+        exclude_files = list(set(DEFAULT_PYTHON_EXCLUDE_FILENAMES + DEFAULT_JS_EXCLUDE_FILENAMES + DEFAULT_MD_EXCLUDE_FILENAMES + DEFAULT_YAML_EXCLUDE_FILENAMES))
 
     all_stats = []
     start_time = time.time()
@@ -302,6 +286,25 @@ def flatten_dir(source_dir, dest_dir, file_types=None, exclude_dirs=None, exclud
             except OSError:
                 pass
 
+    # Process YAML files
+    if "yaml" in file_types:
+        yaml_dest_dir = os.path.join(dest_dir, "yaml")
+        if not silent:
+            print("\n================ YAML FILES ================\n")
+        yaml_stats = flatten_yaml_dir(source_dir, yaml_dest_dir, exclude_dirs, exclude_exts, exclude_files, include_files, clear_dest_dir, silent)
+
+        # Only keep the stats if files were actually copied
+        if yaml_stats["files_copied"] > 0:
+            all_stats.append(yaml_stats)
+        # Remove the directory if no files were copied
+        elif os.path.exists(yaml_dest_dir) and not os.listdir(yaml_dest_dir):
+            try:
+                os.rmdir(yaml_dest_dir)
+                if not silent:
+                    print(f"Removed empty directory: {yaml_dest_dir}")
+            except OSError:
+                pass
+
     # Merge stats and print overall summary
     merged_stats = merge_stats(all_stats)
 
@@ -311,7 +314,7 @@ def flatten_dir(source_dir, dest_dir, file_types=None, exclude_dirs=None, exclud
     # Print overall summary if we have files and not in silent mode
     if not silent and merged_stats["files_copied"] > 0:
         print("\n================ OVERALL SUMMARY ================\n")
-        print_stats("flatten", merged_stats, duration)
+        print_stats("flattening", merged_stats, duration)
 
     return merged_stats
 
@@ -322,11 +325,11 @@ def deflatten_dir(flattened_dir, dest_dir, file_types=None, exclude_files=None, 
     Deflatten a directory for specified file types
     """
     if file_types is None:
-        file_types = ["py", "js", "md"]
+        file_types = ["py", "js", "md", "yaml"]
 
     # Combine default exclusions for files
     if exclude_files is None:
-        exclude_files = list(set(DEFAULT_PYTHON_EXCLUDE_FILENAMES + DEFAULT_JS_EXCLUDE_FILENAMES + DEFAULT_MD_EXCLUDE_FILENAMES))
+        exclude_files = list(set(DEFAULT_PYTHON_EXCLUDE_FILENAMES + DEFAULT_JS_EXCLUDE_FILENAMES + DEFAULT_MD_EXCLUDE_FILENAMES + DEFAULT_YAML_EXCLUDE_FILENAMES))
 
     all_stats = []
     start_time = time.time()
@@ -358,6 +361,15 @@ def deflatten_dir(flattened_dir, dest_dir, file_types=None, exclude_files=None, 
             md_stats = deflatten_md_dir(md_source_dir, dest_dir, exclude_files, include_files, clear_dest_dir, silent)
             all_stats.append(md_stats)
 
+    # Process YAML files
+    if "yaml" in file_types:
+        yaml_source_dir = os.path.join(flattened_dir, "yaml")
+        if os.path.exists(yaml_source_dir) and os.listdir(yaml_source_dir):
+            if not silent:
+                print("\n================ YAML FILES ================\n")
+            yaml_stats = deflatten_yaml_dir(yaml_source_dir, dest_dir, exclude_files, include_files, clear_dest_dir, silent)
+            all_stats.append(yaml_stats)
+
     # Merge stats and print overall summary
     merged_stats = merge_stats(all_stats)
 
@@ -373,7 +385,8 @@ def deflatten_dir(flattened_dir, dest_dir, file_types=None, exclude_files=None, 
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Flatten, deflatten, or bundle a directory of Python, JavaScript, TypeScript, and Markdown files.")
+    parser = argparse.ArgumentParser(
+        description="Flatten, deflatten, or bundle a directory of Python, JavaScript, TypeScript, Markdown, and YAML files.")
 
     # Support both positional and named arguments
     src_group = parser.add_argument_group('source')
@@ -387,9 +400,9 @@ def main():
     # File type options
     parser.add_argument("--file-types",
                         nargs="+",
-                        choices=["py", "js", "md"],
-                        default=["py", "js", "md"],
-                        help="File types to process: 'py' for Python, 'js' for JavaScript/TypeScript, 'md' for Markdown (default: all)")
+                        choices=["py", "js", "md", "yaml"],
+                        default=["py", "js", "md", "yaml"],
+                        help="File types to process: 'py' for Python, 'js' for JavaScript/TypeScript, 'md' for Markdown, 'yaml' for YAML (default: all)")
 
     # Exclusion options
     parser.add_argument("--exclude-dirs",
@@ -441,13 +454,13 @@ def main():
 
     # If no custom exclusions provided, use defaults from all handlers
     if exclude_dirs is None:
-        exclude_dirs = list(set(DEFAULT_PYTHON_EXCLUDE_DIRS + DEFAULT_JS_EXCLUDE_DIRS + DEFAULT_MD_EXCLUDE_DIRS))
+        exclude_dirs = list(set(DEFAULT_PYTHON_EXCLUDE_DIRS + DEFAULT_JS_EXCLUDE_DIRS + DEFAULT_MD_EXCLUDE_DIRS + DEFAULT_YAML_EXCLUDE_DIRS))
 
     if exclude_exts is None:
-        exclude_exts = list(set(DEFAULT_PYTHON_EXCLUDE_EXTENSIONS + DEFAULT_JS_EXCLUDE_EXTENSIONS + DEFAULT_MD_EXCLUDE_EXTENSIONS))
+        exclude_exts = list(set(DEFAULT_PYTHON_EXCLUDE_EXTENSIONS + DEFAULT_JS_EXCLUDE_EXTENSIONS + DEFAULT_MD_EXCLUDE_EXTENSIONS + DEFAULT_YAML_EXCLUDE_EXTENSIONS))
 
     if exclude_files is None:
-        exclude_files = list(set(DEFAULT_PYTHON_EXCLUDE_FILENAMES + DEFAULT_JS_EXCLUDE_FILENAMES + DEFAULT_MD_EXCLUDE_FILENAMES))
+        exclude_files = list(set(DEFAULT_PYTHON_EXCLUDE_FILENAMES + DEFAULT_JS_EXCLUDE_FILENAMES + DEFAULT_MD_EXCLUDE_FILENAMES + DEFAULT_YAML_EXCLUDE_FILENAMES))
 
     try:
         if args.deflatten:

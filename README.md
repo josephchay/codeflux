@@ -37,10 +37,14 @@ _More extensions to be added in the future._
 - **Exclude Specific Directories**: Allows excluding certain directories from the flattening process.
 - **Exclude Specific File Extensions**: Allows excluding files with certain extensions.
 - **Exclude Specific Files**: Allows excluding specific files by name.
-- **Include Specific Files**: Allows processing only specific files by name (new feature!).
+- **Include Specific Files**: Allows processing only specific files by name.
 - **Deflatten Functionality**: Provides the ability to revert the flattening process and restore the original directory structure.
 - **Bundle Functionality**: Bundles all files into a single text file while preserving path information.
-- **Markdown Support**: Now handles Markdown (.md) and text files alongside code files.
+- **Multiple File Format Support**: 
+  - Python files (.py)
+  - JavaScript/TypeScript files (.js, .jsx, .ts, .tsx)
+  - Markdown files (.md, .markdown, etc.)
+  - YAML files (.yaml, .yml)
 
 ---
 
@@ -69,34 +73,26 @@ or
 pnpm add git+https://github.com/josephchay/codebundle.git --save-dev
 ```
 
-### Current Development
-
 Occasionally, check on the `staging` branch, as they may be some new features or bug fixes 
 that have not been merged into the `main` branch.
 
-```bash
-pip install git+https://github.com/josephchay/codebundle.git@staging
-```
-or
-```bash
-pip install git+https://github.com/josephchay/codebundle.git@test/functionality/main
-```
-
 ## Command-Line Arguments
 
-| Argument               | Required | Default                     | Description                                                                               |
-|------------------------|----------|-----------------------------|-------------------------------------------------------------------------------------------|
-| `[src]`                | Yes      | -                           | Source directory containing the files to flatten                                          |
-| `[dest]`               | Yes      | -                           | Destination directory/file where files will be copied                                     |
-| `--file-types`         | No       | `py`, `js`, `md`            | File types to process: 'py' for Python, 'js' for JavaScript/TypeScript, 'md' for Markdown |
-| `--exclude-dirs`       | No       | Various default directories | Directory names to exclude                                                                |
-| `--exclude-extensions` | No       | Various default extensions  | File extensions to exclude                                                                |
-| `--exclude-files`      | No       | Various common files        | Specific filenames to exclude (e.g., setup.py, jest.config.js)                            |
-| `--include-files`      | No       | None                        | Specific filenames to include (only these will be processed)                              |
-| `--clear-dest-dir`     | No       | `False`                     | Clear the destination directory before copying files                                      |
-| `--deflatten`          | No       | `False`                     | Deflatten the directory instead of flattening (reverses the flattening process)           |
-| `--bundle`             | No       | `False`                     | Bundle all files into a single text file with path information                            |
-| `--no-log`             | No       | `False`                     | Disable logging output                                                                    |
+| Argument               | Required | Default                     | Description                                                                                                |
+|------------------------|----------|-----------------------------|------------------------------------------------------------------------------------------------------------|
+| `[src]`                | Yes      | -                           | Source directory containing the files to flatten                                                           |
+| `[dest]`               | Yes      | -                           | Destination directory/file where files will be copied                                                      |
+| `--file-types`         | No       | `py`, `js`, `md`, `yaml`    | File types to process: 'py' for Python, 'js' for JavaScript/TypeScript, 'md' for Markdown, 'yaml' for YAML |
+| `--exclude-dirs`       | No       | Various default directories | Directory names to exclude                                                                                 |
+| `--exclude-extensions` | No       | Various default extensions  | File extensions to exclude                                                                                 |
+| `--exclude-files`      | No       | Various common files        | Specific filenames to exclude (e.g., setup.py, jest.config.js)                                             |
+| `--include-files`      | No       | None                        | Specific filenames to include (only these will be processed)                                               |
+| `--clear-dest-dir`     | No       | `False`                     | Clear the destination directory before copying files                                                       |
+| `--deflatten`          | No       | `False`                     | Deflatten the directory instead of flattening (reverses the flattening process)                            |
+| `--bundle`             | No       | `False`                     | Bundle all files into a single text file with path information                                             |
+| `--no-log`             | No       | `False`                     | Disable logging output                                                                                     |
+
+For detailed information on the default values on the arguments, refer to the [constants]].
 
 ## Usage Examples
 
@@ -104,15 +100,17 @@ Here are various scenarios and how to use the tool:
 
 | Scenario                    | Command                                                                                       | Description                                                                                               |
 |-----------------------------|-----------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------|
-| Basic Flattening            | `codebundle --src src --dest flat`                                                            | Flattens all Python, JavaScript, and Markdown files into the 'flat' directory                             |
+| Basic Flattening            | `codebundle --src src --dest flat`                                                            | Flattens all supported files into the 'flat' directory                                                    |
+| Process Specific Types      | `codebundle --src src --dest flat --file-types py yaml`                                       | Process only Python and YAML files, ignoring other types                                                  |
 | Exclude Directories         | `codebundle --src src --dest flat --exclude-dirs .idea .venv`                                 | Excludes the `.idea` and `.venv` directories from the flattening process                                  |
 | Exclude File Extensions     | `codebundle --src src --dest flat --exclude-extensions .txt .csv`                             | Excludes files with `.txt` and `.csv` extensions from the flattening process                              |
 | Exclude Specific Files      | `codebundle --src src --dest flat --exclude-files setup.py package.json`                      | Excludes specific files like setup.py and package.json from the flattening process                        |
-| Include Only Specific Files | `codebundle --src src --dest flat --include-files main.py index.js README.md`                 | Processes only the specified files, ignoring all others                                                   |
+| Include Only Specific Files | `codebundle --src src --dest flat --include-files main.py index.js config.yaml`               | Processes only the specified files, ignoring all others                                                   |
 | Deflatten Directory         | `codebundle --src flattened --dest original --deflatten`                                      | Reverts the flattening process and restores the original directory structure from the flattened directory |
 | Bundle Files                | `codebundle --src src --dest bundled.txt --bundle`                                            | Bundles all files into a single text file with clear file separators and path information                 |
-| Bundle Only Specific Files  | `codebundle --src src --dest bundle.txt --bundle --include-files config.py app.js`            | Bundles only the specified files into a single text file                                                  |
+| Bundle Only Specific Files  | `codebundle --src src --dest bundle.txt --bundle --include-files config.yaml app.js`          | Bundles only the specified files into a single text file                                                  |
 | Combine Exclusions          | `codebundle --src src --dest flat --exclude-dirs node_modules --exclude-files .env config.js` | Uses multiple exclusion types together                                                                    |
+
 
 ### Example Directory Transformations
 
@@ -120,13 +118,18 @@ Here are various scenarios and how to use the tool:
 ```
 Before:                             After:
 src/                               flat/
-├── module1/                       ├── module1___script1.py
-│   ├── script1.py                 ├── module1___utils___helper.py
-│   ├── __init__.py                └── module2___script2.py
-│   └── utils/
-│       └── helper.py
-└── module2/
-    └── script2.py
+├── module1/                       ├── py/
+│   ├── script1.py                 │   ├── module1___script1.py
+│   ├── __init__.py                │   └── module1___utils___helper.py
+│   └── utils/                     ├── jsts/
+│       └── helper.py              │   └── module2___script2.js
+├── module2/                       ├── md/
+│   └── script2.js                 │   └── docs___README.md
+└── docs/                          └── yaml/
+    ├── README.md                      ├── config___app.yaml
+    └── config/                        └── config___env.yml
+        ├── app.yaml
+        └── env.yml
 ```
 
 Command: 
@@ -138,7 +141,7 @@ or without explicitly specifying the first two arguments:
 codepeek src flat
 ```
 
-#### Example 2: With Directory Prefixes
+#### Example 2: Flattening with Directory Prefixes
 
 ```
 Before:                             After:
@@ -280,19 +283,22 @@ codebundle --src src --dest flat --exclude-files setup.py config.js README.md
 #### Example 7: Including Only Specific Files
 
 ```
-Before:                            After:
+Before:                             After:
 src/                               flat/
 ├── module1/                       ├── py/
 │   ├── script1.py                 │   └── module1___script1.py
-│   ├── setup.py                   └── md/
-│   └── utils/                         └── docs___README.md
+│   ├── setup.py                   └── yaml/
+│   └── utils/                         └── config___settings.yaml
 │       └── helper.py              
-└── module2/                       
-    ├── utils.js                   
-    ├── config.js                  
-    └── docs/                      
-        ├── README.md              
-        └── GUIDE.md               
+├── module2/                       
+│   ├── utils.js                   
+│   ├── config.js                  
+│   └── docs/                      
+│       ├── README.md              
+│       └── GUIDE.md               
+└── config/
+    ├── settings.yaml
+    └── env.yml
 ```
 
 Command:

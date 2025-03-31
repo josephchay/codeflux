@@ -2,16 +2,8 @@ import os
 import shutil
 import time
 
+from constants import DEFAULT_MD_EXCLUDE_DIRS, DEFAULT_MD_EXCLUDE_EXTENSIONS, DEFAULT_MD_EXCLUDE_FILENAMES, MD_EXTENSIONS
 from utils import get_unique_filename, get_relative_path, print_stats
-
-
-# Default exclusions for Markdown files
-DEFAULT_MD_EXCLUDE_DIRS = ["__pycache__", ".git", ".idea", ".vscode", ".venv", "venv", "node_modules"]
-DEFAULT_MD_EXCLUDE_EXTENSIONS = []  # No specific exclusions for markdown
-DEFAULT_MD_EXCLUDE_FILENAMES = ["LICENSE.md", "CONTRIBUTING.md", "CODE_OF_CONDUCT.md"]
-
-# Markdown related extensions
-MD_EXTENSIONS = [".md", ".markdown", ".mdown", ".mkdn", ".mkd", ".mdwn", ".mdtxt", ".mdtext", ".txt"]
 
 
 def flatten_md_dir(source_dir, dest_dir, exclude_dirs=None, exclude_exts=None, exclude_files=None,

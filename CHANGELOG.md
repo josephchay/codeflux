@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `--exclude-files` argument for file exclusion for python, javascript/typescript, and markdown files.
 - `CHANGELOG.md` file to be excluded from the markdown files during process handling.
 - `--include-files` argument for file inclusion for python, javascript/typescript, and markdown files.
+- `src/constants.py` file for constant values.
+- File handling for `yaml` files.
 
 ### Fixed
 
