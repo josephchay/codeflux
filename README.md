@@ -27,7 +27,7 @@ It's perfect for organizing large codebases, consolidating scripts, or preparing
 - **Exclude Specific Directories**: Allows excluding certain directories from the flattening process.
 - **Exclude Specific File Extensions**: Allows excluding files with certain extensions.
 - **Deflatten Functionality**: Provides the ability to revert the flattening process and restore the original directory structure.
-- **Bundle Functionality**: Packs all files into a single text file while preserving path information.
+- **Bundle Functionality**: Bundles all files into a single text file while preserving path information.
 
 ---
 
@@ -70,7 +70,7 @@ that have not been merged into the `main` branch.
 | `--exclude-extensions` | No       | `[".pyc", ".pyo", "__init__.py"]`                              | File extensions to exclude (default: `DEFAULT_EXCLUDE_EXTENSIONS`)              |
 | `--clear-dest-dir`     | No       | `False`                                                        | Clear the destination directory before copying files                            |
 | `--deflatten`          | No       | `False`                                                        | Deflatten the directory instead of flattening (reverses the flattening process) |
-| `--pack`               | No       | `False`                                                        | Pack all files into a single text file with path information                    |
+| `--bundle`             | No       | `False`                                                        | Bundle all files into a single text file with path information                  |
 | `--no-log`             | No       | `False`                                                        | Disable logging output                                                          |
 
 ## Usage Examples
@@ -83,7 +83,7 @@ Here are various scenarios and how to use the tool:
 | Exclude Directories     | `codebundle --src src --dest flat --exclude-dirs .idea .venv`     | Excludes the `.idea` and `.venv` directories from the flattening process                                  |
 | Exclude File Extensions | `codebundle --src src --dest flat --exclude-extensions .txt .csv` | Excludes files with `.txt` and `.csv` extensions from the flattening process                              |
 | Deflatten Directory     | `codebundle --src flattened --dest original --deflatten`          | Reverts the flattening process and restores the original directory structure from the flattened directory |
-| Pack Files              | `codebundle --src src --dest packed.txt --pack`                   | Packs all files into a single text file with clear file separators and path information                   |
+| Bundle Files            | `codebundle --src src --dest bundled.txt --bundle`                | Bundles all files into a single text file with clear file separators and path information                 |
 | Disable Logging         | `codebundle --src src --dest flat --no-log`                       | Suppresses all the logging output                                                                         |
 | Specifying file types   | `codebundle -src src --dest flat --filetypes py`                  | Selects only the given file types to flatten or deflatten                                                 |
 
@@ -186,7 +186,7 @@ Command:
 codebundle --src flat --dest original --deflatten
 ```
 
-#### Example 5: Packing Files into a Single Text File
+#### Example 5: Bundling Files into a Single Text File
 
 Before:
 ```
@@ -199,10 +199,10 @@ src/
     └── script2.py
 ```
 
-After (packed.txt):
+After (bundled.txt):
 ```
 ================================================================================
-PACKED FILES FROM: /path/to/src
+BUNDLED FILES FROM: /path/to/src
 CREATED: 2025-03-31 10:15:30
 ================================================================================
 
@@ -225,13 +225,13 @@ FILE: module2___script2.py
 # Content of script2.py
 
 ================================================================================
-END OF PACKED FILES (3 files)
+END OF BUNDLED FILES (3 files)
 ================================================================================
 ```
 
 Command:
 ```bash
-codebundle --src src --dest packed.txt --pack
+codebundle --src src --dest bundled.txt --bundle
 ```
 
 #### Example 6: Flattening with Duplicated Filenames
@@ -273,9 +273,9 @@ To deflatten the directory, run:
 codebundle --src . --dest . --deflatten
 ```
 
-To pack all files, run:
+To bundle all files, run:
 ```bash
-codebundle --src . --dest project_packed.txt --pack
+codebundle --src . --dest project_bundled.txt --bundle
 ```
 
 All the samples above apply the same for files with other extensions.
@@ -293,9 +293,9 @@ or only for Python files:
 codebundle src flat --filetypes py
 ```
 
-The same applies to packing:
+The same applies to bundling:
 ```bash
-codebundle src packed.txt --pack --filetypes py
+codebundle src bundled.txt --bundle --filetypes py
 ```
 
 ### Logging
@@ -338,4 +338,4 @@ Need help? Have a question? Feel free to reach out:
 * **Email**: [josephemmanuelchay@gmail.com](mailto:josephemmanuelchay@gmail.com)
 * **GitHub Issues**: [Issues](https://github.com/josephchay/codebundle/issues)
 
-Make your projects cleaner - flatten, deflatten, or pack your directories today!
+Make your projects cleaner - flatten, deflatten, or bundled your directories today!
