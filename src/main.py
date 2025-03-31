@@ -7,13 +7,15 @@ from handlers.py_handler import (
     flatten_python_dir,
     deflatten_python_dir,
     DEFAULT_PYTHON_EXCLUDE_DIRS,
-    DEFAULT_PYTHON_EXCLUDE_EXTENSIONS
+    DEFAULT_PYTHON_EXCLUDE_EXTENSIONS,
+    DEFAULT_PYTHON_EXCLUDE_FILENAMES
 )
 from handlers.jsts_handler import (
     flatten_js_dir,
     deflatten_js_dir,
     DEFAULT_JS_EXCLUDE_DIRS,
     DEFAULT_JS_EXCLUDE_EXTENSIONS,
+    DEFAULT_JS_EXCLUDE_FILENAMES,
     JS_EXTENSIONS
 )
 from handlers.md_handler import (
@@ -21,12 +23,13 @@ from handlers.md_handler import (
     deflatten_md_dir,
     DEFAULT_MD_EXCLUDE_DIRS,
     DEFAULT_MD_EXCLUDE_EXTENSIONS,
+    DEFAULT_MD_EXCLUDE_FILENAMES,
     MD_EXTENSIONS
 )
 from utils import get_relative_path, print_stats
 
 
-def bundle_files(source_dir, output_file, file_types=None, exclude_dirs=None, exclude_exts=None, silent=False):
+def bundle_files(source_dir, output_file, file_types=None, exclude_dirs=None, exclude_exts=None, exclude_files=None, silent=False):
     """
     Bundle files from source_dir into a single text file with organized formatting
     """
@@ -35,8 +38,10 @@ def bundle_files(source_dir, output_file, file_types=None, exclude_dirs=None, ex
         exclude_dirs = list(set(DEFAULT_PYTHON_EXCLUDE_DIRS + DEFAULT_JS_EXCLUDE_DIRS + DEFAULT_MD_EXCLUDE_DIRS))
 
     if exclude_exts is None:
-        exclude_exts = list(
-            set(DEFAULT_PYTHON_EXCLUDE_EXTENSIONS + DEFAULT_JS_EXCLUDE_EXTENSIONS + DEFAULT_MD_EXCLUDE_EXTENSIONS))
+        exclude_exts = list(set(DEFAULT_PYTHON_EXCLUDE_EXTENSIONS + DEFAULT_JS_EXCLUDE_EXTENSIONS + DEFAULT_MD_EXCLUDE_EXTENSIONS))
+
+    if exclude_files is None:
+        exclude_files = list(set(DEFAULT_PYTHON_EXCLUDE_FILENAMES + DEFAULT_JS_EXCLUDE_FILENAMES + DEFAULT_MD_EXCLUDE_FILENAMES))
 
     if file_types is None:
         file_types = ["py", "js", "md"]
@@ -97,9 +102,10 @@ def bundle_files(source_dir, output_file, file_types=None, exclude_dirs=None, ex
 
                 # Check if file should be included
                 is_included = any(file.lower().endswith(ext) for ext in included_extensions)
-                is_excluded = any(file.endswith(ext) for ext in exclude_exts)
+                is_excluded_ext = any(file.endswith(ext) for ext in exclude_exts)
+                is_excluded_file = file in exclude_files
 
-                if is_included and not is_excluded:
+                if is_included and not is_excluded_ext and not is_excluded_file:
                     # Format path with ___ separator (similar to flatten function)
                     path_parts = os.path.normpath(root).split(os.sep)[source_dir_parts:]
                     if path_parts:
@@ -182,13 +188,16 @@ def merge_stats(stats_list):
     return merged_stats
 
 
-def flatten_dir(source_dir, dest_dir, file_types=None, exclude_dirs=None, exclude_exts=None, clear_dest_dir=False,
-                silent=False):
+def flatten_dir(source_dir, dest_dir, file_types=None, exclude_dirs=None, exclude_exts=None, exclude_files=None, clear_dest_dir=False, silent=False):
     """
     Flatten a directory structure for specified file types
     """
     if file_types is None:
         file_types = ["py", "js", "md"]
+
+    # Combine default exclusions for files
+    if exclude_files is None:
+        exclude_files = list(set(DEFAULT_PYTHON_EXCLUDE_FILENAMES + DEFAULT_JS_EXCLUDE_FILENAMES + DEFAULT_MD_EXCLUDE_FILENAMES))
 
     all_stats = []
     start_time = time.time()
@@ -198,7 +207,7 @@ def flatten_dir(source_dir, dest_dir, file_types=None, exclude_dirs=None, exclud
         py_dest_dir = os.path.join(dest_dir, "py")
         if not silent:
             print("\n================ PYTHON FILES ================\n")
-        py_stats = flatten_python_dir(source_dir, py_dest_dir, exclude_dirs, exclude_exts, clear_dest_dir, silent)
+        py_stats = flatten_python_dir(source_dir, py_dest_dir, exclude_dirs, exclude_exts, exclude_files, clear_dest_dir, silent)
 
         # Only keep the stats if files were actually copied
         if py_stats["files_copied"] > 0:
@@ -217,7 +226,7 @@ def flatten_dir(source_dir, dest_dir, file_types=None, exclude_dirs=None, exclud
         js_dest_dir = os.path.join(dest_dir, "jsts")
         if not silent:
             print("\n============= JAVASCRIPT FILES ==============\n")
-        js_stats = flatten_js_dir(source_dir, js_dest_dir, exclude_dirs, exclude_exts, clear_dest_dir, silent)
+        js_stats = flatten_js_dir(source_dir, js_dest_dir, exclude_dirs, exclude_exts, exclude_files, clear_dest_dir, silent)
 
         # Only keep the stats if files were actually copied
         if js_stats["files_copied"] > 0:
@@ -236,7 +245,7 @@ def flatten_dir(source_dir, dest_dir, file_types=None, exclude_dirs=None, exclud
         md_dest_dir = os.path.join(dest_dir, "md")
         if not silent:
             print("\n================ MARKDOWN FILES ================\n")
-        md_stats = flatten_md_dir(source_dir, md_dest_dir, exclude_dirs, exclude_exts, clear_dest_dir, silent)
+        md_stats = flatten_md_dir(source_dir, md_dest_dir, exclude_dirs, exclude_exts, exclude_files, clear_dest_dir, silent)
 
         # Only keep the stats if files were actually copied
         if md_stats["files_copied"] > 0:
@@ -264,12 +273,16 @@ def flatten_dir(source_dir, dest_dir, file_types=None, exclude_dirs=None, exclud
     return merged_stats
 
 
-def deflatten_dir(flattened_dir, dest_dir, file_types=None, clear_dest_dir=False, silent=False):
+def deflatten_dir(flattened_dir, dest_dir, file_types=None, exclude_files=None, clear_dest_dir=False, silent=False):
     """
     Deflatten a directory for specified file types
     """
     if file_types is None:
         file_types = ["py", "js", "md"]
+
+    # Combine default exclusions for files
+    if exclude_files is None:
+        exclude_files = list(set(DEFAULT_PYTHON_EXCLUDE_FILENAMES + DEFAULT_JS_EXCLUDE_FILENAMES + DEFAULT_MD_EXCLUDE_FILENAMES))
 
     all_stats = []
     start_time = time.time()
@@ -280,7 +293,7 @@ def deflatten_dir(flattened_dir, dest_dir, file_types=None, clear_dest_dir=False
         if os.path.exists(py_source_dir) and os.listdir(py_source_dir):
             if not silent:
                 print("\n================ PYTHON FILES ================\n")
-            py_stats = deflatten_python_dir(py_source_dir, dest_dir, clear_dest_dir, silent)
+            py_stats = deflatten_python_dir(py_source_dir, dest_dir, exclude_files, clear_dest_dir, silent)
             all_stats.append(py_stats)
 
     # Process JavaScript/TypeScript files
@@ -289,7 +302,7 @@ def deflatten_dir(flattened_dir, dest_dir, file_types=None, clear_dest_dir=False
         if os.path.exists(js_source_dir) and os.listdir(js_source_dir):
             if not silent:
                 print("\n============= JAVASCRIPT FILES ==============\n")
-            js_stats = deflatten_js_dir(js_source_dir, dest_dir, clear_dest_dir, silent)
+            js_stats = deflatten_js_dir(js_source_dir, dest_dir, exclude_files, clear_dest_dir, silent)
             all_stats.append(js_stats)
 
     # Process Markdown files
@@ -298,7 +311,7 @@ def deflatten_dir(flattened_dir, dest_dir, file_types=None, clear_dest_dir=False
         if os.path.exists(md_source_dir) and os.listdir(md_source_dir):
             if not silent:
                 print("\n================ MARKDOWN FILES ================\n")
-            md_stats = deflatten_md_dir(md_source_dir, dest_dir, clear_dest_dir, silent)
+            md_stats = deflatten_md_dir(md_source_dir, dest_dir, exclude_files, clear_dest_dir, silent)
             all_stats.append(md_stats)
 
     # Merge stats and print overall summary
@@ -341,6 +354,9 @@ def main():
     parser.add_argument("--exclude-extensions",
                         nargs="+",
                         help="File extensions to exclude")
+    parser.add_argument("--exclude-files",
+                        nargs="+",
+                        help="Specific filenames to exclude")
 
     operation_group = parser.add_mutually_exclusive_group()
     operation_group.add_argument("--deflatten",
@@ -371,6 +387,7 @@ def main():
     # Set default exclude directories and extensions based on file types
     exclude_dirs = args.exclude_dirs
     exclude_exts = args.exclude_extensions
+    exclude_files = args.exclude_files
 
     # If no custom exclusions provided, use defaults from all handlers
     if exclude_dirs is None:
@@ -379,13 +396,16 @@ def main():
     if exclude_exts is None:
         exclude_exts = list(set(DEFAULT_PYTHON_EXCLUDE_EXTENSIONS + DEFAULT_JS_EXCLUDE_EXTENSIONS + DEFAULT_MD_EXCLUDE_EXTENSIONS))
 
+    if exclude_files is None:
+        exclude_files = list(set(DEFAULT_PYTHON_EXCLUDE_FILENAMES + DEFAULT_JS_EXCLUDE_FILENAMES + DEFAULT_MD_EXCLUDE_FILENAMES))
+
     try:
         if args.deflatten:
-            stats = deflatten_dir(source_dir, dest_path, args.file_types, args.clear_dest_dir, args.no_log)
+            stats = deflatten_dir(source_dir, dest_path, args.file_types, exclude_files, args.clear_dest_dir, args.no_log)
         elif args.bundle:
-            stats = bundle_files(source_dir, dest_path, args.file_types, exclude_dirs, exclude_exts, args.no_log)
+            stats = bundle_files(source_dir, dest_path, args.file_types, exclude_dirs, exclude_exts, exclude_files, args.no_log)
         else:
-            stats = flatten_dir(source_dir, dest_path, args.file_types, exclude_dirs, exclude_exts, args.clear_dest_dir, args.no_log)
+            stats = flatten_dir(source_dir, dest_path, args.file_types, exclude_dirs, exclude_exts, exclude_files, args.clear_dest_dir, args.no_log)
 
         return 0
     except ValueError as e:
