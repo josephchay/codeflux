@@ -3,9 +3,6 @@
 _Effortlessly declutter and organize your project by flattening nested files into a single folder,
 reconstruct the original directory structure from flattened files, or bundle all files into a single text document._
 
-> [!NOTE]
-> _Currently only supports .py, .js, .ts, .jsx, .tsx file extensions._
-
 ## Overview
 
 Do you often find yourself digging through multiple nested directories to find files?  
@@ -13,6 +10,18 @@ Do you often find yourself digging through multiple nested directories to find f
 collects all designated files and copies them into a single destination directory - all while automatically renaming conflicting files. 
 
 It's perfect for organizing large codebases, consolidating scripts, or preparing for migration or backup.
+
+### Supported File Types
+
+| Language   | Extensions                                                                  |
+|------------|-----------------------------------------------------------------------------|
+| Python     | `.py`                                                                       |
+| JavaScript | `.js`, `.jsx`                                                               |
+| TypeScript | `.ts`, `.tsx`                                                               |
+| Markdown   | `.md`, `.markdown`, `.mdown`, `.mkdn`, `.mkd`, `.mdwn`, `.mdtxt`, `.mdtext` |
+| Plain Text | `.txt`                                                                      |
+
+_More extensions may be added in the future._
 
 ---
 
@@ -56,8 +65,16 @@ or
 pnpm add git+https://github.com/josephchay/codebundle.git --save-dev
 ```
 
-Occasionally, check on the `staging` branch, as they may be some new features or bug fixes 
+Occasionally, check on the `staging` or `test/functionality/main` branches, as they may be some new features or bug fixes 
 that have not been merged into the `main` branch.
+
+```bash
+pip install git+https://github.com/josephchay/codebundle.git@staging
+```
+or
+```bash
+pip install git+https://github.com/josephchay/codebundle.git@test/functionality/main
+```
 
 ## Command-Line Arguments
 

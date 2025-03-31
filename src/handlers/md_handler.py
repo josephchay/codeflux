@@ -8,7 +8,6 @@ from utils import get_unique_filename, get_relative_path, print_stats
 DEFAULT_MD_EXCLUDE_DIRS = ["__pycache__", ".git", ".idea", ".vscode", ".venv", "venv", "node_modules"]
 DEFAULT_MD_EXCLUDE_EXTENSIONS = []  # No specific exclusions for markdown
 
-# Markdown related extensions
 MD_EXTENSIONS = [".md", ".markdown", ".mdown", ".mkdn", ".mkd", ".mdwn", ".mdtxt", ".mdtext", ".txt"]
 
 
