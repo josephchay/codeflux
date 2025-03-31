@@ -3,6 +3,7 @@ import argparse
 import sys
 import time
 
+from utils import get_relative_path, print_stats
 from handlers.py_handler import (
     flatten_python_dir,
     deflatten_python_dir,
@@ -26,14 +27,10 @@ from handlers.md_handler import (
     DEFAULT_MD_EXCLUDE_FILENAMES,
     MD_EXTENSIONS
 )
-from utils import get_relative_path, print_stats
 
 
 def bundle_files(source_dir, output_file, file_types=None, exclude_dirs=None, exclude_exts=None,
                  exclude_files=None, include_files=None, silent=False):
-    """
-    Bundle files from source_dir into a single text file with organized formatting
-    """
     # Combine default exclusions from all handlers
     if exclude_dirs is None:
         exclude_dirs = list(set(DEFAULT_PYTHON_EXCLUDE_DIRS + DEFAULT_JS_EXCLUDE_DIRS + DEFAULT_MD_EXCLUDE_DIRS))
@@ -43,12 +40,21 @@ def bundle_files(source_dir, output_file, file_types=None, exclude_dirs=None, ex
 
     if exclude_files is None:
         exclude_files = list(set(DEFAULT_PYTHON_EXCLUDE_FILENAMES + DEFAULT_JS_EXCLUDE_FILENAMES + DEFAULT_MD_EXCLUDE_FILENAMES))
+    else:
+        exclude_files = list(exclude_files)
 
     if file_types is None:
         file_types = ["py", "js", "md"]
 
-    # Convert to absolute path
+    # Convert to absolute paths
     source_dir = os.path.abspath(source_dir)
+    output_file = os.path.abspath(output_file)
+
+    # Add the output file itself to the exclude list to prevent circular processing
+    output_filename = os.path.basename(output_file)
+    if output_filename not in exclude_files:
+        exclude_files.append(output_filename)
+
     source_dir_parts = len(os.path.normpath(source_dir).split(os.sep))
 
     # Stats tracking
@@ -77,6 +83,71 @@ def bundle_files(source_dir, output_file, file_types=None, exclude_dirs=None, ex
         print(f"Output file: {get_relative_path(output_file, os.getcwd())}\n")
         print(f"Bundling files into a single text file...")
 
+    # Collect files to bundle first to avoid opening the output file if there are no files to bundle
+    files_to_bundle = []
+
+    # Walk through the directory structure to collect files
+    for root, dirs, files in os.walk(source_dir):
+        stats["dirs_traversed"] += 1
+
+        # Calculate nesting level
+        current_nesting = len(os.path.relpath(root, source_dir).split(os.sep))
+        stats["max_nesting_level"] = max(stats["max_nesting_level"], current_nesting)
+
+        # Exclude directories
+        dirs[:] = [d for d in dirs if d not in exclude_dirs]
+
+        # Process files
+        for file in files:
+            stats["total_files_processed"] += 1
+            file_path = os.path.join(root, file)
+
+            # Skip the output file itself (double check)
+            if os.path.abspath(file_path) == output_file:
+                stats["skipped_files"] += 1
+                continue
+
+            file_ext = os.path.splitext(file)[1].lower()
+
+            # Check if file should be included
+            is_included_ext = any(file.lower().endswith(ext) for ext in included_extensions)
+            is_excluded_ext = any(file.endswith(ext) for ext in exclude_exts)
+            is_excluded_file = file in exclude_files
+
+            # If include_files is specified, only include those files
+            if include_files:
+                should_include = file in include_files
+            else:
+                should_include = is_included_ext and not is_excluded_ext and not is_excluded_file
+
+            if should_include:
+                # Format path with ___ separator
+                path_parts = os.path.normpath(root).split(os.sep)[source_dir_parts:]
+                if path_parts:
+                    formatted_path = "___".join(path_parts + [file])
+                else:
+                    formatted_path = file
+
+                # Store file info for bundling
+                files_to_bundle.append({
+                    'file_path': file_path,
+                    'formatted_path': formatted_path,
+                    'rel_path': os.path.relpath(file_path, source_dir)
+                })
+            else:
+                stats["skipped_files"] += 1
+
+    # If no files to bundle, return early
+    if not files_to_bundle:
+        if not silent:
+            print("No files found to bundle.")
+        end_time = time.time()
+        duration = end_time - start_time
+        if not silent:
+            print_stats("bundling", stats, duration)
+        return stats
+
+    # Now write the bundle file
     with open(output_file, 'w', encoding='utf-8') as outfile:
         # Write header
         outfile.write("=" * 80 + "\n")
@@ -84,79 +155,43 @@ def bundle_files(source_dir, output_file, file_types=None, exclude_dirs=None, ex
         outfile.write(f"CREATED: {time.strftime('%Y-%m-%d %H:%M:%S')}\n")
         outfile.write("=" * 80 + "\n\n")
 
-        # Walk through the directory structure
-        for root, dirs, files in os.walk(source_dir):
-            stats["dirs_traversed"] += 1
+        # Process each file
+        for file_info in files_to_bundle:
+            file_path = file_info['file_path']
+            formatted_path = file_info['formatted_path']
+            rel_path = file_info['rel_path']
 
-            # Calculate nesting level
-            current_nesting = len(os.path.relpath(root, source_dir).split(os.sep))
-            stats["max_nesting_level"] = max(stats["max_nesting_level"], current_nesting)
+            try:
+                # Read file content
+                with open(file_path, 'r', encoding='utf-8') as infile:
+                    content = infile.read()
 
-            # Exclude directories
-            dirs[:] = [d for d in dirs if d not in exclude_dirs]
+                # Write file separator
+                outfile.write("\n" + "=" * 80 + "\n")
+                outfile.write(f"FILE: {formatted_path}\n")
+                outfile.write("=" * 80 + "\n\n")
 
-            # Process files
-            for file in files:
-                stats["total_files_processed"] += 1
-                file_path = os.path.join(root, file)
-                file_ext = os.path.splitext(file)[1].lower()
+                # Write file content
+                outfile.write(content)
+                outfile.write("\n")
 
-                # Check if file should be included
-                is_included_ext = any(file.lower().endswith(ext) for ext in included_extensions)
-                is_excluded_ext = any(file.endswith(ext) for ext in exclude_exts)
-                is_excluded_file = file in exclude_files
+                # Update stats
+                stats["files_bundled"] += 1
+                stats["bytes_bundled"] += os.path.getsize(file_path)
 
-                # If include_files is specified, only include those files
-                if include_files:
-                    should_include = file in include_files
-                else:
-                    should_include = is_included_ext and not is_excluded_ext and not is_excluded_file
+                if not silent:
+                    print(f"Bundled: {rel_path}")
 
-                if should_include:
-                    # Format path with ___ separator (similar to flatten function)
-                    path_parts = os.path.normpath(root).split(os.sep)[source_dir_parts:]
-                    if path_parts:
-                        formatted_path = "___".join(path_parts + [file])
-                    else:
-                        formatted_path = file
+            except UnicodeDecodeError:
+                if not silent:
+                    print(f"Skipped binary file: {rel_path}")
+                stats["skipped_files"] += 1
+            except Exception as e:
+                if not silent:
+                    print(f"Error bundling {rel_path}: {str(e)}")
+                stats["skipped_files"] += 1
 
-                    # Get relative path for display in console
-                    rel_path = os.path.relpath(file_path, source_dir)
-
-                    try:
-                        # Read file content
-                        with open(file_path, 'r', encoding='utf-8') as infile:
-                            content = infile.read()
-
-                        # Write file separator
-                        outfile.write("\n" + "=" * 80 + "\n")
-                        outfile.write(f"FILE: {formatted_path}\n")
-                        outfile.write("=" * 80 + "\n\n")
-
-                        # Write file content
-                        outfile.write(content)
-                        outfile.write("\n")
-
-                        # Update stats
-                        stats["files_bundled"] += 1
-                        stats["bytes_bundled"] += os.path.getsize(file_path)
-
-                        if not silent:
-                            print(f"Bundled: {rel_path}")
-
-                    except UnicodeDecodeError:
-                        if not silent:
-                            print(f"Skipped binary file: {rel_path}")
-                        stats["skipped_files"] += 1
-                    except Exception as e:
-                        if not silent:
-                            print(f"Error bundling {rel_path}: {str(e)}")
-                        stats["skipped_files"] += 1
-                else:
-                    stats["skipped_files"] += 1
-
-    # Write footer
-    with open(output_file, 'a', encoding='utf-8') as outfile:
+        # Write footer
         outfile.write("\n" + "=" * 80 + "\n")
         outfile.write(f"END OF BUNDLED FILES ({stats['files_bundled']} files)\n")
         outfile.write("=" * 80 + "\n")
