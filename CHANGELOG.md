@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `--include-files` argument for file inclusion for python, javascript/typescript, and markdown files.
 - `src/constants.py` file for constant values.
 - File handling for `yaml` files.
+- `utils`, `constants` to the `py_modules` attribute in `setup.py` file.
 
 ### Fixed
 

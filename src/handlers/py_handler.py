@@ -2,8 +2,8 @@ import os
 import shutil
 import time
 
-from src.constants import DEFAULT_PYTHON_EXCLUDE_DIRS, DEFAULT_PYTHON_EXCLUDE_EXTENSIONS, DEFAULT_PYTHON_EXCLUDE_FILENAMES
-from src.utils import get_unique_filename, get_relative_path, print_stats
+from constants import DEFAULT_PYTHON_EXCLUDE_DIRS, DEFAULT_PYTHON_EXCLUDE_EXTENSIONS, DEFAULT_PYTHON_EXCLUDE_FILENAMES
+from utils import get_unique_filename, get_relative_path, print_stats
 
 
 def flatten_python_dir(source_dir, dest_dir, exclude_dirs=None, exclude_exts=None, exclude_files=None,

@@ -422,7 +422,7 @@ cd codebundle
 Install Locally:
 
 ```bash
-pip install .
+pip install -e .
 ```
 
 ### Testing

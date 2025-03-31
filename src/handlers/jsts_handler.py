@@ -2,8 +2,8 @@ import os
 import shutil
 import time
 
-from src.constants import DEFAULT_JS_EXCLUDE_DIRS, DEFAULT_JS_EXCLUDE_EXTENSIONS, DEFAULT_JS_EXCLUDE_FILENAMES, JS_EXTENSIONS
-from src.utils import get_unique_filename, get_relative_path, print_stats
+from constants import DEFAULT_JS_EXCLUDE_DIRS, DEFAULT_JS_EXCLUDE_EXTENSIONS, DEFAULT_JS_EXCLUDE_FILENAMES, JS_EXTENSIONS
+from utils import get_unique_filename, get_relative_path, print_stats
 
 
 def flatten_js_dir(source_dir, dest_dir, exclude_dirs=None, exclude_exts=None, exclude_files=None,

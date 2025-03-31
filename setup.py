@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='codebundle',
-    version='0.4.0',
+    version='0.5.0',
     description='A lightweight CLI tool to flatten nested Python, JavaScript, and TypeScript files',
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',
@@ -11,7 +11,7 @@ setup(
     url='https://github.com/josephchay/codebundle',
     package_dir={"": "src"},
     packages=find_packages(where="src"),
-    py_modules=["main"],
+    py_modules=["main", "constants", "utils"],
     entry_points={
         'console_scripts': [
             'codebundle=main:main',

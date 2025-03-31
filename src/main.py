@@ -3,8 +3,8 @@ import argparse
 import sys
 import time
 
-from src.constants import *
-from src.utils import get_relative_path, print_stats
+from constants import *
+from utils import get_relative_path, print_stats
 from handlers.yml_handler import flatten_yaml_dir, deflatten_yaml_dir
 from handlers.py_handler import flatten_python_dir, deflatten_python_dir
 from handlers.jsts_handler import flatten_js_dir, deflatten_js_dir
