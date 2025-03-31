@@ -3,7 +3,7 @@ import shutil
 import time
 
 from src.constants import DEFAULT_MD_EXCLUDE_DIRS, DEFAULT_MD_EXCLUDE_EXTENSIONS, DEFAULT_MD_EXCLUDE_FILENAMES, MD_EXTENSIONS
-from utils import get_unique_filename, get_relative_path, print_stats
+from src.utils import get_unique_filename, get_relative_path, print_stats
 
 
 def flatten_md_dir(source_dir, dest_dir, exclude_dirs=None, exclude_exts=None, exclude_files=None,

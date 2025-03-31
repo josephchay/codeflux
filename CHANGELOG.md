@@ -21,6 +21,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Proper renames from `pack` to `bundle` in `utils.py`.
 
+### Removed
+
+- `utils` from `py_modules` attribute in `setup.py` file.
+
 ## [0.4.0] - 2025-03-02
 
 ### Added

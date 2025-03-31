@@ -3,7 +3,7 @@ import shutil
 import time
 
 from src.constants import DEFAULT_YAML_EXCLUDE_EXTENSIONS, DEFAULT_YAML_EXCLUDE_DIRS, DEFAULT_YAML_EXCLUDE_FILENAMES, YAML_EXTENSIONS
-from utils import get_unique_filename, get_relative_path, print_stats
+from src.utils import get_unique_filename, get_relative_path, print_stats
 
 
 def flatten_yaml_dir(source_dir, dest_dir, exclude_dirs=None, exclude_exts=None, exclude_files=None,
