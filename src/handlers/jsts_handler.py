@@ -13,7 +13,8 @@ DEFAULT_JS_EXCLUDE_FILENAMES = ["babel.config.js", "jest.config.js", "webpack.co
 JS_EXTENSIONS = [".js", ".jsx", ".ts", ".tsx"]
 
 
-def flatten_js_dir(source_dir, dest_dir, exclude_dirs=None, exclude_exts=None, exclude_files=None, clear_dest_dir=False, silent=False):
+def flatten_js_dir(source_dir, dest_dir, exclude_dirs=None, exclude_exts=None, exclude_files=None,
+                   include_files=None, clear_dest_dir=False, silent=False):
     # Set default values
     exclude_dirs = exclude_dirs or DEFAULT_JS_EXCLUDE_DIRS
     exclude_exts = exclude_exts or DEFAULT_JS_EXCLUDE_EXTENSIONS
@@ -68,7 +69,13 @@ def flatten_js_dir(source_dir, dest_dir, exclude_dirs=None, exclude_exts=None, e
             is_excluded_ext = any(file.endswith(ext) for ext in exclude_exts)
             is_excluded_file = file in exclude_files
 
-            if is_js_file and not is_excluded_ext and not is_excluded_file:
+            # Check if file should be included based on include_files parameter
+            if include_files:
+                is_included = file in include_files
+            else:
+                is_included = is_js_file and not is_excluded_ext and not is_excluded_file
+
+            if is_included:
                 source_file = os.path.join(root, file)
 
                 # Get path components
@@ -105,7 +112,7 @@ def flatten_js_dir(source_dir, dest_dir, exclude_dirs=None, exclude_exts=None, e
     return stats
 
 
-def deflatten_js_dir(flattened_dir, dest_dir, exclude_files=None, clear_dest_dir=False, silent=False):
+def deflatten_js_dir(flattened_dir, dest_dir, exclude_files=None, include_files=None, clear_dest_dir=False, silent=False):
     # Set default values
     exclude_files = exclude_files or DEFAULT_JS_EXCLUDE_FILENAMES
 
@@ -140,10 +147,20 @@ def deflatten_js_dir(flattened_dir, dest_dir, exclude_files=None, clear_dest_dir
 
         # Check if it's a JS/TS file
         file_ext = os.path.splitext(file)[1]
-        # Skip excluded filenames
-        is_excluded_file = file.split("___")[-1] in exclude_files
 
-        if file_ext in JS_EXTENSIONS and not is_excluded_file:
+        # Get the original filename (last part after ___)
+        original_filename = file.split("___")[-1]
+
+        # Skip excluded filenames
+        is_excluded_file = original_filename in exclude_files
+
+        # Check if file should be included based on include_files parameter
+        if include_files:
+            is_included = original_filename in include_files
+        else:
+            is_included = file_ext in JS_EXTENSIONS and not is_excluded_file
+
+        if is_included:
             flattened_file = os.path.join(flattened_dir, file)
 
             # Get original structure from filename

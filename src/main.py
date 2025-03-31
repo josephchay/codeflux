@@ -29,7 +29,8 @@ from handlers.md_handler import (
 from utils import get_relative_path, print_stats
 
 
-def bundle_files(source_dir, output_file, file_types=None, exclude_dirs=None, exclude_exts=None, exclude_files=None, silent=False):
+def bundle_files(source_dir, output_file, file_types=None, exclude_dirs=None, exclude_exts=None,
+                 exclude_files=None, include_files=None, silent=False):
     """
     Bundle files from source_dir into a single text file with organized formatting
     """
@@ -101,11 +102,17 @@ def bundle_files(source_dir, output_file, file_types=None, exclude_dirs=None, ex
                 file_ext = os.path.splitext(file)[1].lower()
 
                 # Check if file should be included
-                is_included = any(file.lower().endswith(ext) for ext in included_extensions)
+                is_included_ext = any(file.lower().endswith(ext) for ext in included_extensions)
                 is_excluded_ext = any(file.endswith(ext) for ext in exclude_exts)
                 is_excluded_file = file in exclude_files
 
-                if is_included and not is_excluded_ext and not is_excluded_file:
+                # If include_files is specified, only include those files
+                if include_files:
+                    should_include = file in include_files
+                else:
+                    should_include = is_included_ext and not is_excluded_ext and not is_excluded_file
+
+                if should_include:
                     # Format path with ___ separator (similar to flatten function)
                     path_parts = os.path.normpath(root).split(os.sep)[source_dir_parts:]
                     if path_parts:
@@ -158,7 +165,7 @@ def bundle_files(source_dir, output_file, file_types=None, exclude_dirs=None, ex
     duration = end_time - start_time
 
     if not silent:
-        print_stats("bundle", stats, duration)
+        print_stats("bundling", stats, duration)
 
     return stats
 
@@ -188,7 +195,8 @@ def merge_stats(stats_list):
     return merged_stats
 
 
-def flatten_dir(source_dir, dest_dir, file_types=None, exclude_dirs=None, exclude_exts=None, exclude_files=None, clear_dest_dir=False, silent=False):
+def flatten_dir(source_dir, dest_dir, file_types=None, exclude_dirs=None, exclude_exts=None,
+                exclude_files=None, include_files=None, clear_dest_dir=False, silent=False):
     """
     Flatten a directory structure for specified file types
     """
@@ -207,7 +215,7 @@ def flatten_dir(source_dir, dest_dir, file_types=None, exclude_dirs=None, exclud
         py_dest_dir = os.path.join(dest_dir, "py")
         if not silent:
             print("\n================ PYTHON FILES ================\n")
-        py_stats = flatten_python_dir(source_dir, py_dest_dir, exclude_dirs, exclude_exts, exclude_files, clear_dest_dir, silent)
+        py_stats = flatten_python_dir(source_dir, py_dest_dir, exclude_dirs, exclude_exts, exclude_files, include_files, clear_dest_dir, silent)
 
         # Only keep the stats if files were actually copied
         if py_stats["files_copied"] > 0:
@@ -226,7 +234,7 @@ def flatten_dir(source_dir, dest_dir, file_types=None, exclude_dirs=None, exclud
         js_dest_dir = os.path.join(dest_dir, "jsts")
         if not silent:
             print("\n============= JAVASCRIPT FILES ==============\n")
-        js_stats = flatten_js_dir(source_dir, js_dest_dir, exclude_dirs, exclude_exts, exclude_files, clear_dest_dir, silent)
+        js_stats = flatten_js_dir(source_dir, js_dest_dir, exclude_dirs, exclude_exts, exclude_files, include_files, clear_dest_dir, silent)
 
         # Only keep the stats if files were actually copied
         if js_stats["files_copied"] > 0:
@@ -245,7 +253,7 @@ def flatten_dir(source_dir, dest_dir, file_types=None, exclude_dirs=None, exclud
         md_dest_dir = os.path.join(dest_dir, "md")
         if not silent:
             print("\n================ MARKDOWN FILES ================\n")
-        md_stats = flatten_md_dir(source_dir, md_dest_dir, exclude_dirs, exclude_exts, exclude_files, clear_dest_dir, silent)
+        md_stats = flatten_md_dir(source_dir, md_dest_dir, exclude_dirs, exclude_exts, exclude_files, include_files, clear_dest_dir, silent)
 
         # Only keep the stats if files were actually copied
         if md_stats["files_copied"] > 0:
@@ -273,7 +281,8 @@ def flatten_dir(source_dir, dest_dir, file_types=None, exclude_dirs=None, exclud
     return merged_stats
 
 
-def deflatten_dir(flattened_dir, dest_dir, file_types=None, exclude_files=None, clear_dest_dir=False, silent=False):
+def deflatten_dir(flattened_dir, dest_dir, file_types=None, exclude_files=None, include_files=None,
+                  clear_dest_dir=False, silent=False):
     """
     Deflatten a directory for specified file types
     """
@@ -293,7 +302,7 @@ def deflatten_dir(flattened_dir, dest_dir, file_types=None, exclude_files=None, 
         if os.path.exists(py_source_dir) and os.listdir(py_source_dir):
             if not silent:
                 print("\n================ PYTHON FILES ================\n")
-            py_stats = deflatten_python_dir(py_source_dir, dest_dir, exclude_files, clear_dest_dir, silent)
+            py_stats = deflatten_python_dir(py_source_dir, dest_dir, exclude_files, include_files, clear_dest_dir, silent)
             all_stats.append(py_stats)
 
     # Process JavaScript/TypeScript files
@@ -302,7 +311,7 @@ def deflatten_dir(flattened_dir, dest_dir, file_types=None, exclude_files=None, 
         if os.path.exists(js_source_dir) and os.listdir(js_source_dir):
             if not silent:
                 print("\n============= JAVASCRIPT FILES ==============\n")
-            js_stats = deflatten_js_dir(js_source_dir, dest_dir, exclude_files, clear_dest_dir, silent)
+            js_stats = deflatten_js_dir(js_source_dir, dest_dir, exclude_files, include_files, clear_dest_dir, silent)
             all_stats.append(js_stats)
 
     # Process Markdown files
@@ -311,7 +320,7 @@ def deflatten_dir(flattened_dir, dest_dir, file_types=None, exclude_files=None, 
         if os.path.exists(md_source_dir) and os.listdir(md_source_dir):
             if not silent:
                 print("\n================ MARKDOWN FILES ================\n")
-            md_stats = deflatten_md_dir(md_source_dir, dest_dir, exclude_files, clear_dest_dir, silent)
+            md_stats = deflatten_md_dir(md_source_dir, dest_dir, exclude_files, include_files, clear_dest_dir, silent)
             all_stats.append(md_stats)
 
     # Merge stats and print overall summary
@@ -358,6 +367,11 @@ def main():
                         nargs="+",
                         help="Specific filenames to exclude")
 
+    # Include options
+    parser.add_argument("--include-files",
+                        nargs="+",
+                        help="Specific filenames to include (only these will be processed)")
+
     operation_group = parser.add_mutually_exclusive_group()
     operation_group.add_argument("--deflatten",
                                  action="store_true",
@@ -388,6 +402,7 @@ def main():
     exclude_dirs = args.exclude_dirs
     exclude_exts = args.exclude_extensions
     exclude_files = args.exclude_files
+    include_files = args.include_files
 
     # If no custom exclusions provided, use defaults from all handlers
     if exclude_dirs is None:
@@ -401,11 +416,11 @@ def main():
 
     try:
         if args.deflatten:
-            stats = deflatten_dir(source_dir, dest_path, args.file_types, exclude_files, args.clear_dest_dir, args.no_log)
+            stats = deflatten_dir(source_dir, dest_path, args.file_types, exclude_files, include_files, args.clear_dest_dir, args.no_log)
         elif args.bundle:
-            stats = bundle_files(source_dir, dest_path, args.file_types, exclude_dirs, exclude_exts, exclude_files, args.no_log)
+            stats = bundle_files(source_dir, dest_path, args.file_types, exclude_dirs, exclude_exts, exclude_files, include_files, args.no_log)
         else:
-            stats = flatten_dir(source_dir, dest_path, args.file_types, exclude_dirs, exclude_exts, exclude_files, args.clear_dest_dir, args.no_log)
+            stats = flatten_dir(source_dir, dest_path, args.file_types, exclude_dirs, exclude_exts, exclude_files, include_files, args.clear_dest_dir, args.no_log)
 
         return 0
     except ValueError as e:

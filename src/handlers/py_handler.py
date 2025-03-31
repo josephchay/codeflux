@@ -5,13 +5,13 @@ import time
 from utils import get_unique_filename, get_relative_path, print_stats
 
 
-# Default exclusions for Python files
 DEFAULT_PYTHON_EXCLUDE_DIRS = ["__pycache__", ".git", ".idea", ".vscode", ".venv", "venv"]
 DEFAULT_PYTHON_EXCLUDE_EXTENSIONS = [".pyc", ".pyo", "__init__.py"]
 DEFAULT_PYTHON_EXCLUDE_FILENAMES = ["setup.py", "conftest.py"]
 
 
-def flatten_python_dir(source_dir, dest_dir, exclude_dirs=None, exclude_exts=None, exclude_files=None, clear_dest_dir=False, silent=False):
+def flatten_python_dir(source_dir, dest_dir, exclude_dirs=None, exclude_exts=None, exclude_files=None,
+                       include_files=None, clear_dest_dir=False, silent=False):
     # Set default values
     exclude_dirs = exclude_dirs or DEFAULT_PYTHON_EXCLUDE_DIRS
     exclude_exts = exclude_exts or DEFAULT_PYTHON_EXCLUDE_EXTENSIONS
@@ -64,7 +64,13 @@ def flatten_python_dir(source_dir, dest_dir, exclude_dirs=None, exclude_exts=Non
             is_excluded_ext = any(file.endswith(ext) for ext in exclude_exts)
             is_excluded_file = file in exclude_files
 
-            if file.endswith(".py") and not is_excluded_ext and not is_excluded_file:
+            # Check if file should be included based on include_files parameter
+            if include_files:
+                is_included = file in include_files
+            else:
+                is_included = file.endswith(".py") and not is_excluded_ext and not is_excluded_file
+
+            if is_included:
                 source_file = os.path.join(root, file)
 
                 # Get path components
@@ -101,7 +107,8 @@ def flatten_python_dir(source_dir, dest_dir, exclude_dirs=None, exclude_exts=Non
     return stats
 
 
-def deflatten_python_dir(flattened_dir, dest_dir, exclude_files=None, clear_dest_dir=False, silent=False):
+def deflatten_python_dir(flattened_dir, dest_dir, exclude_files=None, include_files=None, clear_dest_dir=False,
+                         silent=False):
     # Set default values
     exclude_files = exclude_files or DEFAULT_PYTHON_EXCLUDE_FILENAMES
 
@@ -134,10 +141,19 @@ def deflatten_python_dir(flattened_dir, dest_dir, exclude_files=None, clear_dest
     for file in os.listdir(flattened_dir):
         stats["total_files_processed"] += 1
 
-        # Skip excluded filenames
-        is_excluded_file = file.split("___")[-1] in exclude_files
+        # Get the original filename (last part after ___)
+        original_filename = file.split("___")[-1]
 
-        if file.endswith(".py") and not is_excluded_file:
+        # Skip excluded filenames
+        is_excluded_file = original_filename in exclude_files
+
+        # Check if file should be included based on include_files parameter
+        if include_files:
+            is_included = original_filename in include_files
+        else:
+            is_included = file.endswith(".py") and not is_excluded_file
+
+        if is_included:
             flattened_file = os.path.join(flattened_dir, file)
 
             # Get original structure from filename

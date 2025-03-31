@@ -21,7 +21,7 @@ It's perfect for organizing large codebases, consolidating scripts, or preparing
 | Markdown   | `.md`, `.markdown`, `.mdown`, `.mkdn`, `.mkd`, `.mdwn`, `.mdtxt`, `.mdtext` |
 | Plain Text | `.txt`                                                                      |
 
-_More extensions may be added in the future._
+_More extensions to be added in the future._
 
 ---
 
@@ -29,13 +29,15 @@ _More extensions may be added in the future._
 
 - **Flattens Nested Directories**: Gathers all required files into a single folder, no matter how deeply nested they are.
 - **Exclude Options**: Allows excluding specific directories, file extensions, and specific filenames from the process.
+- **Include Options**: Allows specifying exactly which files to process, ignoring all others.
 - **Handles File Name Conflicts**: Renames files with duplicate names to ensure no overwriting.
 - **Clean Destination Directory**: Automatically clears the destination folder before copying.
 - **Command-Line Simplicity**: Provides an easy-to-use CLI interface.
 - **Directory Path Preservation**: Option to prefix files with their original directory structure.
 - **Exclude Specific Directories**: Allows excluding certain directories from the flattening process.
 - **Exclude Specific File Extensions**: Allows excluding files with certain extensions.
-- **Exclude Specific Files**: Allows excluding specific files by name (new feature!).
+- **Exclude Specific Files**: Allows excluding specific files by name.
+- **Include Specific Files**: Allows processing only specific files by name (new feature!).
 - **Deflatten Functionality**: Provides the ability to revert the flattening process and restore the original directory structure.
 - **Bundle Functionality**: Bundles all files into a single text file while preserving path information.
 - **Markdown Support**: Now handles Markdown (.md) and text files alongside code files.
@@ -67,7 +69,9 @@ or
 pnpm add git+https://github.com/josephchay/codebundle.git --save-dev
 ```
 
-Occasionally, check on the `staging` or `test/functionality/main` branches, as they may be some new features or bug fixes 
+### Current Development
+
+Occasionally, check on the `staging` branch, as they may be some new features or bug fixes 
 that have not been merged into the `main` branch.
 
 ```bash
@@ -88,6 +92,7 @@ pip install git+https://github.com/josephchay/codebundle.git@test/functionality/
 | `--exclude-dirs`       | No       | Various default directories | Directory names to exclude                                                                |
 | `--exclude-extensions` | No       | Various default extensions  | File extensions to exclude                                                                |
 | `--exclude-files`      | No       | Various common files        | Specific filenames to exclude (e.g., setup.py, jest.config.js)                            |
+| `--include-files`      | No       | None                        | Specific filenames to include (only these will be processed)                              |
 | `--clear-dest-dir`     | No       | `False`                     | Clear the destination directory before copying files                                      |
 | `--deflatten`          | No       | `False`                     | Deflatten the directory instead of flattening (reverses the flattening process)           |
 | `--bundle`             | No       | `False`                     | Bundle all files into a single text file with path information                            |
@@ -97,15 +102,17 @@ pip install git+https://github.com/josephchay/codebundle.git@test/functionality/
 
 Here are various scenarios and how to use the tool:
 
-| Scenario                | Command                                                                                       | Description                                                                                               |
-|-------------------------|-----------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------|
-| Basic Flattening        | `codebundle --src src --dest flat`                                                            | Flattens all Python, JavaScript, and Markdown files into the 'flat' directory                             |
-| Exclude Directories     | `codebundle --src src --dest flat --exclude-dirs .idea .venv`                                 | Excludes the `.idea` and `.venv` directories from the flattening process                                  |
-| Exclude File Extensions | `codebundle --src src --dest flat --exclude-extensions .txt .csv`                             | Excludes files with `.txt` and `.csv` extensions from the flattening process                              |
-| Exclude Specific Files  | `codebundle --src src --dest flat --exclude-files setup.py package.json`                      | Excludes specific files like setup.py and package.json from the flattening process                        |
-| Deflatten Directory     | `codebundle --src flattened --dest original --deflatten`                                      | Reverts the flattening process and restores the original directory structure from the flattened directory |
-| Bundle Files            | `codebundle --src src --dest bundled.txt --bundle`                                            | Bundles all files into a single text file with clear file separators and path information                 |
-| Combine Exclusions      | `codebundle --src src --dest flat --exclude-dirs node_modules --exclude-files .env config.js` | Uses multiple exclusion types together                                                                    |
+| Scenario                    | Command                                                                                       | Description                                                                                               |
+|-----------------------------|-----------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------|
+| Basic Flattening            | `codebundle --src src --dest flat`                                                            | Flattens all Python, JavaScript, and Markdown files into the 'flat' directory                             |
+| Exclude Directories         | `codebundle --src src --dest flat --exclude-dirs .idea .venv`                                 | Excludes the `.idea` and `.venv` directories from the flattening process                                  |
+| Exclude File Extensions     | `codebundle --src src --dest flat --exclude-extensions .txt .csv`                             | Excludes files with `.txt` and `.csv` extensions from the flattening process                              |
+| Exclude Specific Files      | `codebundle --src src --dest flat --exclude-files setup.py package.json`                      | Excludes specific files like setup.py and package.json from the flattening process                        |
+| Include Only Specific Files | `codebundle --src src --dest flat --include-files main.py index.js README.md`                 | Processes only the specified files, ignoring all others                                                   |
+| Deflatten Directory         | `codebundle --src flattened --dest original --deflatten`                                      | Reverts the flattening process and restores the original directory structure from the flattened directory |
+| Bundle Files                | `codebundle --src src --dest bundled.txt --bundle`                                            | Bundles all files into a single text file with clear file separators and path information                 |
+| Bundle Only Specific Files  | `codebundle --src src --dest bundle.txt --bundle --include-files config.py app.js`            | Bundles only the specified files into a single text file                                                  |
+| Combine Exclusions          | `codebundle --src src --dest flat --exclude-dirs node_modules --exclude-files .env config.js` | Uses multiple exclusion types together                                                                    |
 
 ### Example Directory Transformations
 
@@ -130,7 +137,7 @@ codebundle --src src --dest flat
 #### Example 2: Excluding Specific Files
 
 ```
-Before:                             After:
+Before:                            After:
 src/                               flat/
 ├── module1/                       ├── py/
 │   ├── script1.py                 │   └── module1___utils___helper.py
@@ -150,7 +157,30 @@ Command:
 codebundle --src src --dest flat --exclude-files setup.py config.js README.md
 ```
 
-#### Example 3: Bundling With Exclusions
+#### Example 3: Including Only Specific Files
+
+```
+Before:                            After:
+src/                               flat/
+├── module1/                       ├── py/
+│   ├── script1.py                 │   └── module1___script1.py
+│   ├── setup.py                   └── md/
+│   └── utils/                         └── docs___README.md
+│       └── helper.py              
+└── module2/                       
+    ├── utils.js                   
+    ├── config.js                  
+    └── docs/                      
+        ├── README.md              
+        └── GUIDE.md               
+```
+
+Command:
+```bash
+codebundle --src src --dest flat --include-files script1.py README.md
+```
+
+#### Example 4: Bundling With Include Files
 
 ```
 Before:                            After (bundled.txt):
@@ -162,26 +192,21 @@ src/                               =====================================
 │       └── helper.py              =====================================
 └── module2/                       FILE: module1___script1.py
     ├── utils.js                   =====================================
-    └── config.js                  # Content of script1.py
-                                  
+    ├── main.js                    # Content of script1.py
+    └── config.js                  
                                    =====================================
-                                   FILE: module1___utils___helper.py
+                                   FILE: module2___main.js
                                    =====================================
-                                   # Content of helper.py
+                                   // Content of main.js
                                    
                                    =====================================
-                                   FILE: module2___utils.js
-                                   =====================================
-                                   // Content of utils.js
-                                   
-                                   =====================================
-                                   END OF BUNDLED FILES (3 files)
+                                   END OF BUNDLED FILES (2 files)
                                    =====================================
 ```
 
 Command:
 ```bash
-codebundle --src src --dest bundled.txt --bundle --exclude-files setup.py config.js
+codebundle --src src --dest bundled.txt --bundle --include-files script1.py main.js
 ```
 
 ## Development
