@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `--bundle` flag to bundle all files into a single `.txt` file with proper formatting.
 - `bundling`, `flattening`, and `deflattening` functionality for `markdown` files.
 - `--exclude-files` argument for file exclusion for python, javascript/typescript, and markdown files.
+- `CHANGELOG.md` file to be excluded from the markdown files during process handling.
 
 ### Fixed
 
