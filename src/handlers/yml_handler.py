@@ -2,7 +2,7 @@ import os
 import shutil
 import time
 
-from constants import DEFAULT_YAML_EXCLUDE_EXTENSIONS, DEFAULT_YAML_EXCLUDE_DIRS, DEFAULT_YAML_EXCLUDE_FILENAMES, YAML_EXTENSIONS
+from ..constants import DEFAULT_YAML_EXCLUDE_EXTENSIONS, DEFAULT_YAML_EXCLUDE_DIRS, DEFAULT_YAML_EXCLUDE_FILENAMES, YAML_EXTENSIONS
 from utils import get_unique_filename, get_relative_path, print_stats
 
 

@@ -2,7 +2,7 @@ import os
 import shutil
 import time
 
-from constants import DEFAULT_MD_EXCLUDE_DIRS, DEFAULT_MD_EXCLUDE_EXTENSIONS, DEFAULT_MD_EXCLUDE_FILENAMES, MD_EXTENSIONS
+from ..constants import DEFAULT_MD_EXCLUDE_DIRS, DEFAULT_MD_EXCLUDE_EXTENSIONS, DEFAULT_MD_EXCLUDE_FILENAMES, MD_EXTENSIONS
 from utils import get_unique_filename, get_relative_path, print_stats
 
 
