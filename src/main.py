@@ -138,7 +138,7 @@ def bundle_files(source_dir, output_file, file_types=None, exclude_dirs=None, ex
     duration = end_time - start_time
 
     if not silent:
-        print_stats("bundling", stats, duration)
+        print_stats("bundle", stats, duration)
 
     return stats
 
@@ -328,6 +328,8 @@ def main():
         return 1
     except Exception as e:
         print(f"Unexpected error: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return 1
 
 

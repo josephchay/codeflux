@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `--bundle` flag to bundle all files into a single `.txt` file with proper formatting.
 
+### Fixed
+
+- Proper renames from `pack` to `bundle` in `utils.py`.
+
 ## [0.4.0] - 2025-03-02
 
 ### Added

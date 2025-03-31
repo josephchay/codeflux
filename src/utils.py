@@ -30,28 +30,36 @@ def print_stats(operation_type, stats, duration):
 
     # Processing stats section
     print("\n[INPUT PROCESSING]")
-    if operation_type in ["flattening", "packing"]:
-        print(f"Directories scanned: {stats['dirs_traversed']}")
-        print(f"Maximum nesting level: {stats['max_nesting_level']}")
+    if operation_type in ["flattening", "bundle"]:
+        if "dirs_traversed" in stats:
+            print(f"Directories scanned: {stats['dirs_traversed']}")
+        if "max_nesting_level" in stats:
+            print(f"Maximum nesting level: {stats['max_nesting_level']}")
     print(f"Total files scanned: {stats['total_files_processed']}")
     print(f"Files skipped: {stats['skipped_files']} (non-target or excluded)")
 
     # Output stats section
     print("\n[OUTPUT RESULT]")
     if operation_type == "deflatten":
-        print(f"Directories created: {stats['dirs_created']}")
-        print(f"Files in {operation_type} output: {stats['files_copied']}")
-        print(f"Data in {operation_type} output: {stats['bytes_copied'] / 1024:.2f} KB")
-    elif operation_type == "packing":
-        print(f"Files packed: {stats['files_packed']}")
-        print(f"Data packed: {stats['bytes_packed'] / 1024:.2f} KB")
+        if "dirs_created" in stats:
+            print(f"Directories created: {stats['dirs_created']}")
+        if "files_copied" in stats:
+            print(f"Files in {operation_type} output: {stats['files_copied']}")
+            print(f"Data in {operation_type} output: {stats['bytes_copied'] / 1024:.2f} KB")
+    elif operation_type == "bundle":
+        if "files_bundled" in stats:
+            print(f"Files bundled: {stats['files_bundled']}")
+            print(f"Data bundled: {stats['bytes_bundled'] / 1024:.2f} KB")
     else:  # flattening
-        print(f"Files in {operation_type} output: {stats['files_copied']}")
-        print(f"Data in {operation_type} output: {stats['bytes_copied'] / 1024:.2f} KB")
+        if "files_copied" in stats:
+            print(f"Files in {operation_type} output: {stats['files_copied']}")
+            print(f"Data in {operation_type} output: {stats['bytes_copied'] / 1024:.2f} KB")
 
     # Calculate and print the appropriate processing rate
-    if operation_type == "packing":
-        print(f"Processing rate: {stats['files_packed'] / max(duration, 0.1):.2f} files/second")
+    if operation_type == "bundle":
+        if "files_bundled" in stats:
+            print(f"Processing rate: {stats['files_bundled'] / max(duration, 0.1):.2f} files/second")
     else:
-        print(f"Processing rate: {stats['files_copied'] / max(duration, 0.1):.2f} files/second")
+        if "files_copied" in stats:
+            print(f"Processing rate: {stats['files_copied'] / max(duration, 0.1):.2f} files/second")
     print("=" * 50)
