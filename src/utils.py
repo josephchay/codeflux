@@ -30,7 +30,7 @@ def print_stats(operation_type, stats, duration):
 
     # Processing stats section
     print("\n[INPUT PROCESSING]")
-    if operation_type in ["flattening", "bundle"]:
+    if operation_type in ["flatten", "bundle"]:
         if "dirs_traversed" in stats:
             print(f"Directories scanned: {stats['dirs_traversed']}")
         if "max_nesting_level" in stats:
@@ -50,7 +50,7 @@ def print_stats(operation_type, stats, duration):
         if "files_bundled" in stats:
             print(f"Files bundled: {stats['files_bundled']}")
             print(f"Data bundled: {stats['bytes_bundled'] / 1024:.2f} KB")
-    else:  # flattening
+    else:  # flatten
         if "files_copied" in stats:
             print(f"Files in {operation_type} output: {stats['files_copied']}")
             print(f"Data in {operation_type} output: {stats['bytes_copied'] / 1024:.2f} KB")

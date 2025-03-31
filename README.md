@@ -114,7 +114,6 @@ Here are various scenarios and how to use the tool:
 | Bundle Only Specific Files  | `codebundle --src src --dest bundle.txt --bundle --include-files config.py app.js`            | Bundles only the specified files into a single text file                                                  |
 | Combine Exclusions          | `codebundle --src src --dest flat --exclude-dirs node_modules --exclude-files .env config.js` | Uses multiple exclusion types together                                                                    |
 
-
 ### Example Directory Transformations
 
 #### Example 1: Basic Flattening
@@ -255,7 +254,53 @@ codepeek --src . --dest . --deflatten
 
 All the samples above apply the same for files with other extensions.
 
-#### Example 6: Bundling Files into a Single Text File
+#### Example 6: Excluding Specific Files
+
+```
+Before:                            After:
+src/                               flat/
+├── module1/                       ├── py/
+│   ├── script1.py                 │   └── module1___utils___helper.py
+│   ├── setup.py                   ├── jsts/
+│   └── utils/                     │   └── module2___utils.js
+│       └── helper.py              └── md/
+└── module2/                           └── GUIDE.md
+    ├── utils.js
+    ├── config.js
+    └── docs/
+        ├── README.md
+        └── GUIDE.md
+```
+
+Command:
+```bash
+codebundle --src src --dest flat --exclude-files setup.py config.js README.md
+```
+
+#### Example 7: Including Only Specific Files
+
+```
+Before:                            After:
+src/                               flat/
+├── module1/                       ├── py/
+│   ├── script1.py                 │   └── module1___script1.py
+│   ├── setup.py                   └── md/
+│   └── utils/                         └── docs___README.md
+│       └── helper.py              
+└── module2/                       
+    ├── utils.js                   
+    ├── config.js                  
+    └── docs/                      
+        ├── README.md              
+        └── GUIDE.md               
+```
+
+Command:
+```bash
+codebundle --src src --dest flat --include-files script1.py README.md
+```
+
+#### Example 8: Bundling Files into a Single Text File
 
 ```
 Before:                            After (bundled.txt):
@@ -296,52 +341,6 @@ or
 codebundle src bundled.txt --bundle
 ```
 
-#### Example 7: Excluding Specific Files
-
-```
-Before:                            After:
-src/                               flat/
-├── module1/                       ├── py/
-│   ├── script1.py                 │   └── module1___utils___helper.py
-│   ├── setup.py                   ├── jsts/
-│   └── utils/                     │   └── module2___utils.js
-│       └── helper.py              └── md/
-└── module2/                           └── GUIDE.md
-    ├── utils.js
-    ├── config.js
-    └── docs/
-        ├── README.md
-        └── GUIDE.md
-```
-
-Command:
-```bash
-codebundle --src src --dest flat --exclude-files setup.py config.js README.md
-```
-
-#### Example 8: Including Only Specific Files
-
-```
-Before:                            After:
-src/                               flat/
-├── module1/                       ├── py/
-│   ├── script1.py                 │   └── module1___script1.py
-│   ├── setup.py                   └── md/
-│   └── utils/                         └── docs___README.md
-│       └── helper.py              
-└── module2/                       
-    ├── utils.js                   
-    ├── config.js                  
-    └── docs/                      
-        ├── README.md              
-        └── GUIDE.md               
-```
-
-Command:
-```bash
-codebundle --src src --dest flat --include-files script1.py README.md
-```
-
 #### Example 9: Bundling With Exclusions
 
 ```
@@ -376,7 +375,7 @@ Command:
 codebundle --src src --dest bundled.txt --bundle --exclude-files setup.py config.js
 ```
 
-#### Example 9: Bundling only Specific Files (Inclusion)
+#### Example 10: Bundling only Specific Files (Inclusion)
 
 ```
 Before:                            After (bundled.txt):

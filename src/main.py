@@ -165,7 +165,7 @@ def bundle_files(source_dir, output_file, file_types=None, exclude_dirs=None, ex
     duration = end_time - start_time
 
     if not silent:
-        print_stats("bundling", stats, duration)
+        print_stats("bundle", stats, duration)
 
     return stats
 
@@ -276,7 +276,7 @@ def flatten_dir(source_dir, dest_dir, file_types=None, exclude_dirs=None, exclud
     # Print overall summary if we have files and not in silent mode
     if not silent and merged_stats["files_copied"] > 0:
         print("\n================ OVERALL SUMMARY ================\n")
-        print_stats("flattening", merged_stats, duration)
+        print_stats("flatten", merged_stats, duration)
 
     return merged_stats
 
