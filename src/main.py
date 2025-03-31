@@ -1,6 +1,8 @@
 import os
 import argparse
 import sys
+import time
+
 from handlers.py_handler import (
     flatten_python_dir,
     deflatten_python_dir,
@@ -14,7 +16,131 @@ from handlers.jsts_handler import (
     DEFAULT_JS_EXCLUDE_EXTENSIONS,
     JS_EXTENSIONS
 )
-from utils import get_relative_path
+from utils import get_relative_path, print_stats
+
+
+def bundle_files(source_dir, output_file, file_types=None, exclude_dirs=None, exclude_exts=None, silent=False):
+    # Combine default exclusions from both handlers
+    if exclude_dirs is None:
+        exclude_dirs = list(set(DEFAULT_PYTHON_EXCLUDE_DIRS + DEFAULT_JS_EXCLUDE_DIRS))
+
+    if exclude_exts is None:
+        exclude_exts = list(set(DEFAULT_PYTHON_EXCLUDE_EXTENSIONS + DEFAULT_JS_EXCLUDE_EXTENSIONS))
+
+    if file_types is None:
+        file_types = ["py", "js"]
+
+    # Convert to absolute path
+    source_dir = os.path.abspath(source_dir)
+    source_dir_parts = len(os.path.normpath(source_dir).split(os.sep))
+
+    # Stats tracking
+    stats = {
+        "total_files_processed": 0,
+        "dirs_traversed": 0,
+        "files_bundled": 0,
+        "bytes_bundled": 0,
+        "skipped_files": 0,
+        "max_nesting_level": 0
+    }
+
+    # Extensions to include based on file_types
+    included_extensions = []
+    if "py" in file_types:
+        included_extensions.append(".py")
+    if "js" in file_types:
+        included_extensions.extend(JS_EXTENSIONS)
+
+    start_time = time.time()
+
+    if not silent:
+        print(f"Source: {get_relative_path(source_dir, os.getcwd())}")
+        print(f"Output file: {get_relative_path(output_file, os.getcwd())}\n")
+        print(f"Bundling files into a single text file...")
+
+    with open(output_file, 'w', encoding='utf-8') as outfile:
+        # Write header
+        outfile.write("=" * 80 + "\n")
+        outfile.write(f"BUNDLED FILES FROM: {source_dir}\n")
+        outfile.write(f"CREATED: {time.strftime('%Y-%m-%d %H:%M:%S')}\n")
+        outfile.write("=" * 80 + "\n\n")
+
+        # Walk through the directory structure
+        for root, dirs, files in os.walk(source_dir):
+            stats["dirs_traversed"] += 1
+
+            # Calculate nesting level
+            current_nesting = len(os.path.relpath(root, source_dir).split(os.sep))
+            stats["max_nesting_level"] = max(stats["max_nesting_level"], current_nesting)
+
+            # Exclude directories
+            dirs[:] = [d for d in dirs if d not in exclude_dirs]
+
+            # Process files
+            for file in files:
+                stats["total_files_processed"] += 1
+                file_path = os.path.join(root, file)
+                file_ext = os.path.splitext(file)[1]
+
+                # Check if file should be included
+                if (file_ext in included_extensions and
+                        not any(file.endswith(ext) for ext in exclude_exts)):
+
+                    # Format path with ___ separator (similar to flatten function)
+                    path_parts = os.path.normpath(root).split(os.sep)[source_dir_parts:]
+                    if path_parts:
+                        formatted_path = "___".join(path_parts + [file])
+                    else:
+                        formatted_path = file
+
+                    # Get relative path for display in console
+                    rel_path = os.path.relpath(file_path, source_dir)
+
+                    try:
+                        # Read file content
+                        with open(file_path, 'r', encoding='utf-8') as infile:
+                            content = infile.read()
+
+                        # Write file separator
+                        outfile.write("\n" + "=" * 80 + "\n")
+                        outfile.write(f"FILE: {formatted_path}\n")
+                        outfile.write("=" * 80 + "\n\n")
+
+                        # Write file content
+                        outfile.write(content)
+                        outfile.write("\n")
+
+                        # Update stats
+                        stats["files_bundled"] += 1
+                        stats["bytes_bundled"] += os.path.getsize(file_path)
+
+                        if not silent:
+                            print(f"Bundled: {rel_path}")
+
+                    except UnicodeDecodeError:
+                        if not silent:
+                            print(f"Skipped binary file: {rel_path}")
+                        stats["skipped_files"] += 1
+                    except Exception as e:
+                        if not silent:
+                            print(f"Error bundling {rel_path}: {str(e)}")
+                        stats["skipped_files"] += 1
+                else:
+                    stats["skipped_files"] += 1
+
+    # Write footer
+    with open(output_file, 'a', encoding='utf-8') as outfile:
+        outfile.write("\n" + "=" * 80 + "\n")
+        outfile.write(f"END OF BUNDLED FILES ({stats['files_bundled']} files)\n")
+        outfile.write("=" * 80 + "\n")
+
+    end_time = time.time()
+    duration = end_time - start_time
+
+    if not silent:
+        print_stats("bundling", stats, duration)
+
+    return stats
 
 
 def merge_stats(stats_list):
@@ -26,7 +152,9 @@ def merge_stats(stats_list):
         "bytes_copied": 0,
         "skipped_files": 0,
         "max_nesting_level": 0,
-        "dirs_created": 0
+        "dirs_created": 0,
+        "files_bundled": 0,
+        "bytes_bundled": 0
     }
 
     for stats in stats_list:
@@ -40,8 +168,7 @@ def merge_stats(stats_list):
     return merged_stats
 
 
-def flatten_dir(source_dir, dest_dir, file_types=None, exclude_dirs=None, exclude_exts=None, clear_dest_dir=False,
-                silent=False):
+def flatten_dir(source_dir, dest_dir, file_types=None, exclude_dirs=None, exclude_exts=None, clear_dest_dir=False, silent=False):
     """
     Flatten a directory structure for specified file types
     """
@@ -124,9 +251,7 @@ def deflatten_dir(flattened_dir, dest_dir, file_types=None, clear_dest_dir=False
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Flatten or deflatten a directory of Python, JavaScript, and TypeScript files."
-    )
+    parser = argparse.ArgumentParser(description="Flatten, deflatten, or bundle a directory of Python, JavaScript, and TypeScript files.")
 
     # Support both positional and named arguments
     src_group = parser.add_argument_group('source')
@@ -134,8 +259,8 @@ def main():
     src_group.add_argument("--src", dest="src_named", help="Source directory path (named)")
 
     dest_group = parser.add_argument_group('destination')
-    dest_group.add_argument("dest_pos", nargs="?", help="Destination directory path (positional)")
-    dest_group.add_argument("--dest", dest="dest_named", help="Destination directory path (named)")
+    dest_group.add_argument("dest_pos", nargs="?", help="Destination directory or file path (positional)")
+    dest_group.add_argument("--dest", dest="dest_named", help="Destination directory or file path (named)")
 
     # File type options
     parser.add_argument("--file-types",
@@ -152,10 +277,14 @@ def main():
                         nargs="+",
                         help="File extensions to exclude")
 
-    # Operation options
-    parser.add_argument("--deflatten",
-                        action="store_true",
-                        help="Deflatten the directory instead of flattening (default: False)")
+    operation_group = parser.add_mutually_exclusive_group()
+    operation_group.add_argument("--deflatten",
+                                 action="store_true",
+                                 help="Deflatten the directory instead of flattening (default: False)")
+    operation_group.add_argument("--bundle",
+                                 action="store_true",
+                                 help="Bundle files into a single text file (default: False)")
+
     parser.add_argument("--clear-dest-dir",
                         action="store_true",
                         help="Clear the destination directory before copying (default: False)")
@@ -167,11 +296,11 @@ def main():
 
     # Get source and destination
     source_dir = args.src_named if args.src_named else args.src_pos
-    dest_dir = args.dest_named if args.dest_named else args.dest_pos
+    dest_path = args.dest_named if args.dest_named else args.dest_pos
 
-    if not source_dir or not dest_dir:
+    if not source_dir or not dest_path:
         parser.print_help()
-        print("\nError: Both source and destination directories are required.")
+        print("\nError: Both source and destination are required.")
         return 1
 
     # Set default exclude directories and extensions based on file types
@@ -187,9 +316,11 @@ def main():
 
     try:
         if args.deflatten:
-            stats = deflatten_dir(source_dir, dest_dir, args.file_types, args.clear_dest_dir, args.no_log)
+            stats = deflatten_dir(source_dir, dest_path, args.file_types, args.clear_dest_dir, args.no_log)
+        elif args.bundle:
+            stats = bundle_files(source_dir, dest_path, args.file_types, exclude_dirs, exclude_exts, args.no_log)
         else:
-            stats = flatten_dir(source_dir, dest_dir, args.file_types, exclude_dirs, exclude_exts, args.clear_dest_dir, args.no_log)
+            stats = flatten_dir(source_dir, dest_path, args.file_types, exclude_dirs, exclude_exts, args.clear_dest_dir, args.no_log)
 
         return 0
     except ValueError as e:

@@ -1,7 +1,7 @@
-# Codepeek - Unravel Your Codebase
+# Codebundle - Unravel Your Codebase
 
-_Effortlessly declutter and organize your project by flattening nested files into a single folder or
-reconstruct the original directory structure from flattened files._
+_Effortlessly declutter and organize your project by flattening nested files into a single folder,
+reconstruct the original directory structure from flattened files, or bundle all files into a single text document._
 
 > [!NOTE]
 > _Currently only supports .py, .js, .ts, .jsx, .tsx file extensions._
@@ -9,7 +9,7 @@ reconstruct the original directory structure from flattened files._
 ## Overview
 
 Do you often find yourself digging through multiple nested directories to find files?  
-**Codepeek** is here to simplify your life! This lightweight CLI tool scans through your source directory (and all its subdirectories), 
+**Codebundle** is here to simplify your life! This lightweight CLI tool scans through your source directory (and all its subdirectories), 
 collects all designated files and copies them into a single destination directory - all while automatically renaming conflicting files. 
 
 It's perfect for organizing large codebases, consolidating scripts, or preparing for migration or backup.
@@ -27,6 +27,7 @@ It's perfect for organizing large codebases, consolidating scripts, or preparing
 - **Exclude Specific Directories**: Allows excluding certain directories from the flattening process.
 - **Exclude Specific File Extensions**: Allows excluding files with certain extensions.
 - **Deflatten Functionality**: Provides the ability to revert the flattening process and restore the original directory structure.
+- **Bundle Functionality**: Packs all files into a single text file while preserving path information.
 
 ---
 
@@ -38,21 +39,21 @@ It's perfect for organizing large codebases, consolidating scripts, or preparing
 ### Python Projects
 
 ```bash
-pip install git+https://github.com/josephchay/codepeek.git
+pip install git+https://github.com/josephchay/codebundle.git
 ```
 
 ### NodeJS Projects
 
 ```bash
-npm install --save-dev git+https://github.com/josephchay/codepeek.git
+npm install --save-dev git+https://github.com/josephchay/codebundle.git
 ```
 or
 ```bash
-yarn add git+https://github.com/josephchay/codepeek.git --dev
+yarn add git+https://github.com/josephchay/codebundle.git --dev
 ```
 or
 ```bash
-pnpm add git+https://github.com/josephchay/codepeek.git --save-dev
+pnpm add git+https://github.com/josephchay/codebundle.git --save-dev
 ```
 
 Occasionally, check on the `staging` branch, as they may be some new features or bug fixes 
@@ -63,26 +64,28 @@ that have not been merged into the `main` branch.
 | Argument               | Required | Default                                                        | Description                                                                     |
 |------------------------|----------|----------------------------------------------------------------|---------------------------------------------------------------------------------|
 | `[src]`                | Yes      | -                                                              | Source directory containing the Python files to flatten                         |
-| `[dest]`               | Yes      | -                                                              | Destination directory where files will be copied                                |
+| `[dest]`               | Yes      | -                                                              | Destination directory/file where files will be copied                           |
 | `--filetypes`          | No       | `.py`, `.js`, `.ts`, `.jsx`, `.tsx`                            | File extensions types to process                                                |
 | `--exclude-dirs`       | No       | `["__pycache__", ".git", ".idea", ".vscode", ".venv", "venv"]` | Directory names to exclude (default: `DEFAULT_EXCLUDE_DIRS`)                    |
 | `--exclude-extensions` | No       | `[".pyc", ".pyo", "__init__.py"]`                              | File extensions to exclude (default: `DEFAULT_EXCLUDE_EXTENSIONS`)              |
 | `--clear-dest-dir`     | No       | `False`                                                        | Clear the destination directory before copying files                            |
 | `--deflatten`          | No       | `False`                                                        | Deflatten the directory instead of flattening (reverses the flattening process) |
+| `--pack`               | No       | `False`                                                        | Pack all files into a single text file with path information                    |
 | `--no-log`             | No       | `False`                                                        | Disable logging output                                                          |
 
 ## Usage Examples
 
 Here are various scenarios and how to use the tool:
 
-| Scenario                | Command                                                         | Description                                                                                               |
-|-------------------------|-----------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------|
-| Basic Flattening        | `codepeek --src src --dest flat`                                | Flattens all `.py` files (except `__init__.py`) into the 'flat' directory                                 |
-| Exclude Directories     | `codepeek --src src --dest flat --exclude-dirs .idea .venv`     | Excludes the `.idea` and `.venv` directories from the flattening process                                  |
-| Exclude File Extensions | `codepeek --src src --dest flat --exclude-extensions .txt .csv` | Excludes files with `.txt` and `.csv` extensions from the flattening process                              |
-| Deflatten Directory     | `codepeek --src flattened --dest original --deflatten`          | Reverts the flattening process and restores the original directory structure from the flattened directory |
-| Disable Logging         | `codepeek --src src --dest flat --no-log`                       | Suppresses all the logging output                                                                         |
-| Specifying file types   | `codepeek -src src --dest flat --filetypes py`                  | Selects only the given file types to flatten or deflatten                                                 |
+| Scenario                | Command                                                           | Description                                                                                               |
+|-------------------------|-------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------|
+| Basic Flattening        | `codebundle --src src --dest flat`                                | Flattens all `.py` files (except `__init__.py`) into the 'flat' directory                                 |
+| Exclude Directories     | `codebundle --src src --dest flat --exclude-dirs .idea .venv`     | Excludes the `.idea` and `.venv` directories from the flattening process                                  |
+| Exclude File Extensions | `codebundle --src src --dest flat --exclude-extensions .txt .csv` | Excludes files with `.txt` and `.csv` extensions from the flattening process                              |
+| Deflatten Directory     | `codebundle --src flattened --dest original --deflatten`          | Reverts the flattening process and restores the original directory structure from the flattened directory |
+| Pack Files              | `codebundle --src src --dest packed.txt --pack`                   | Packs all files into a single text file with clear file separators and path information                   |
+| Disable Logging         | `codebundle --src src --dest flat --no-log`                       | Suppresses all the logging output                                                                         |
+| Specifying file types   | `codebundle -src src --dest flat --filetypes py`                  | Selects only the given file types to flatten or deflatten                                                 |
 
 ### Example Directory Transformations
 
@@ -101,11 +104,11 @@ src/                               flat/
 
 Command: 
 ```bash
-codepeek --src src --dest flat
+codebundle --src src --dest flat
 ```
 or without explicitly specifying the first two arguments:
 ```bash
-codepeek src flat
+codebundle src flat
 ```
 
 #### Example 2: With Directory Prefixes
@@ -125,7 +128,7 @@ src/                               flat/
 
 Command:
 ```bash
-codepeek --src src --dest flat
+codebundle --src src --dest flat
 ```
 
 #### Example 3: Excluding Directories and File Extensions
@@ -156,11 +159,11 @@ src/                               flat/
 
 Command:
 ```bash
-codepeek --src src --dest flat --exclude-dirs .idea .git __pycache__ .venv docs tests --exclude-exts .md .pyc .csv .json
+codebundle --src src --dest flat --exclude-dirs .idea .git __pycache__ .venv docs tests --exclude-exts .md .pyc .csv .json
 ```
 or
 ```bash
-codepeek src flat --exclude-dirs .idea .git __pycache__ .venv docs tests --exclude-exts .md .pyc .csv .json
+codebundle src flat --exclude-dirs .idea .git __pycache__ .venv docs tests --exclude-exts .md .pyc .csv .json
 ```
 
 #### Example 4: Deflattening a Directory
@@ -180,10 +183,58 @@ flat/                              original/
 
 Command:
 ```bash
-codepeek --src flat --dest original --deflatten
+codebundle --src flat --dest original --deflatten
 ```
 
-#### Example 5: Flattening with Duplicated Filenames
+#### Example 5: Packing Files into a Single Text File
+
+Before:
+```
+src/
+├── module1/
+│   ├── script1.py
+│   └── utils/
+│       └── helper.py
+└── module2/
+    └── script2.py
+```
+
+After (packed.txt):
+```
+================================================================================
+PACKED FILES FROM: /path/to/src
+CREATED: 2025-03-31 10:15:30
+================================================================================
+
+================================================================================
+FILE: module1___script1.py
+================================================================================
+
+# Content of script1.py
+
+================================================================================
+FILE: module1___utils___helper.py
+================================================================================
+
+# Content of helper.py
+
+================================================================================
+FILE: module2___script2.py
+================================================================================
+
+# Content of script2.py
+
+================================================================================
+END OF PACKED FILES (3 files)
+================================================================================
+```
+
+Command:
+```bash
+codebundle --src src --dest packed.txt --pack
+```
+
+#### Example 6: Flattening with Duplicated Filenames
 
 ```
 Before (Third Flattening with modified files):           After (Third Flatten):
@@ -201,25 +252,30 @@ src/                                                     flat/
 
 Command:
 ```bash
-codepeek --src src --dest flat
+codebundle --src src --dest flat
 ```
 
 You can also flatten
 ```bash
-codepeek --src . --dest flat
+codebundle --src . --dest flat
 ```
 or
 ```bash
-codepeek --src flat --dest .
+codebundle --src flat --dest .
 ```
 or
 ```bash
-codepeek . flat
+codebundle . flat
 ```
 
 To deflatten the directory, run:
 ```bash
-codepeek --src . --dest . --deflatten
+codebundle --src . --dest . --deflatten
+```
+
+To pack all files, run:
+```bash
+codebundle --src . --dest project_packed.txt --pack
 ```
 
 All the samples above apply the same for files with other extensions.
@@ -230,18 +286,23 @@ Without using the `--filetypes` flag, all files will be flattened.
 
 To specify only JS/TS/JSX/TSX file extensions to flatten, use the `--filetypes` flag:
 ```bash
-codepeek src flat --filetypes js
+codebundle src flat --filetypes js
 ```
 or only for Python files:
 ```bash
-codepeek src flat --filetypes py
+codebundle src flat --filetypes py
+```
+
+The same applies to packing:
+```bash
+codebundle src packed.txt --pack --filetypes py
 ```
 
 ### Logging
 
 To suppress logging output, add the `--no-log` flag:
 ```bash
-codepeek --src src --dest flat --no-log
+codebundle --src src --dest flat --no-log
 ```
 
 ## Development
@@ -249,8 +310,8 @@ codepeek --src src --dest flat --no-log
 Clone the Repository:
 
 ```bash
-git clone https://github.com/josephchay/codepeek.git
-cd codepeek
+git clone https://github.com/josephchay/codebundle.git
+cd codebundle
 ```
 
 Install Locally:
@@ -275,6 +336,6 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE.txt) f
 
 Need help? Have a question? Feel free to reach out:
 * **Email**: [josephemmanuelchay@gmail.com](mailto:josephemmanuelchay@gmail.com)
-* **GitHub Issues**: [Issues](https://github.com/josephchay/codepeek/issues)
+* **GitHub Issues**: [Issues](https://github.com/josephchay/codebundle/issues)
 
-Make your projects cleaner - flatten and deflatten your directories today!
+Make your projects cleaner - flatten, deflatten, or pack your directories today!

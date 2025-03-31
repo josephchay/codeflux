@@ -26,12 +26,11 @@ def get_relative_path(path, base_path):
 
 
 def print_stats(operation_type, stats, duration):
-    """Print statistics about the flattening/deflattening operation"""
     print(f"Time taken: {duration:.6f} seconds")
 
     # Processing stats section
     print("\n[INPUT PROCESSING]")
-    if operation_type == "flattening":
+    if operation_type in ["flattening", "packing"]:
         print(f"Directories scanned: {stats['dirs_traversed']}")
         print(f"Maximum nesting level: {stats['max_nesting_level']}")
     print(f"Total files scanned: {stats['total_files_processed']}")
@@ -41,7 +40,18 @@ def print_stats(operation_type, stats, duration):
     print("\n[OUTPUT RESULT]")
     if operation_type == "deflatten":
         print(f"Directories created: {stats['dirs_created']}")
-    print(f"Files in {operation_type} output: {stats['files_copied']}")
-    print(f"Data in {operation_type} output: {stats['bytes_copied'] / 1024:.2f} KB")
-    print(f"Processing rate: {stats['files_copied'] / max(duration, 0.1):.2f} files/second")
+        print(f"Files in {operation_type} output: {stats['files_copied']}")
+        print(f"Data in {operation_type} output: {stats['bytes_copied'] / 1024:.2f} KB")
+    elif operation_type == "packing":
+        print(f"Files packed: {stats['files_packed']}")
+        print(f"Data packed: {stats['bytes_packed'] / 1024:.2f} KB")
+    else:  # flattening
+        print(f"Files in {operation_type} output: {stats['files_copied']}")
+        print(f"Data in {operation_type} output: {stats['bytes_copied'] / 1024:.2f} KB")
+
+    # Calculate and print the appropriate processing rate
+    if operation_type == "packing":
+        print(f"Processing rate: {stats['files_packed'] / max(duration, 0.1):.2f} files/second")
+    else:
+        print(f"Processing rate: {stats['files_copied'] / max(duration, 0.1):.2f} files/second")
     print("=" * 50)

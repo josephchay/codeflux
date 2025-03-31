@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Supports `.js`, `.jsx`, `.ts`, and `.tsx` extensions.
 - `--file-exts` flag to specify file extensions to flatten.
 - `__init__.py` file in `src/exts`.
+- `--bundle` flag to bundle all files into a single `.txt` file with proper formatting.
 
 ### Fixed
 
