@@ -2,7 +2,7 @@ import os
 import shutil
 import time
 
-from ..constants import DEFAULT_JS_EXCLUDE_DIRS, DEFAULT_JS_EXCLUDE_EXTENSIONS, DEFAULT_JS_EXCLUDE_FILENAMES
+from src.constants import DEFAULT_JS_EXCLUDE_DIRS, DEFAULT_JS_EXCLUDE_EXTENSIONS, DEFAULT_JS_EXCLUDE_FILENAMES
 from utils import get_unique_filename, get_relative_path, print_stats
 
 

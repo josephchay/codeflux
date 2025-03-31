@@ -133,7 +133,6 @@ def bundle_files(source_dir, output_file, file_types=None, exclude_dirs=None, ex
 
     # Now write the bundle file
     with open(output_file, 'w', encoding='utf-8') as outfile:
-        # Write header
         outfile.write("=" * 80 + "\n")
         outfile.write(f"BUNDLED FILES FROM: {source_dir}\n")
         outfile.write(f"CREATED: {time.strftime('%Y-%m-%d %H:%M:%S')}\n")
