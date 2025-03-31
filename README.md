@@ -114,27 +114,189 @@ Here are various scenarios and how to use the tool:
 | Bundle Only Specific Files  | `codebundle --src src --dest bundle.txt --bundle --include-files config.py app.js`            | Bundles only the specified files into a single text file                                                  |
 | Combine Exclusions          | `codebundle --src src --dest flat --exclude-dirs node_modules --exclude-files .env config.js` | Uses multiple exclusion types together                                                                    |
 
+
 ### Example Directory Transformations
 
 #### Example 1: Basic Flattening
 ```
 Before:                             After:
 src/                               flat/
-├── module1/                       ├── py/
-│   ├── script1.py                 │   ├── module1___script1.py
-│   ├── __init__.py                │   └── module1___utils___helper.py
-│   └── utils/                     ├── jsts/
-│       └── helper.py              │   └── module2___script2.js
-└── module2/                       └── md/
-    └── script2.js                     └── README.md
+├── module1/                       ├── module1___script1.py
+│   ├── script1.py                 ├── module1___utils___helper.py
+│   ├── __init__.py                └── module2___script2.py
+│   └── utils/
+│       └── helper.py
+└── module2/
+    └── script2.py
 ```
 
 Command: 
 ```bash
-codebundle --src src --dest flat
+codepeek --src src --dest flat
+```
+or without explicitly specifying the first two arguments:
+```bash
+codepeek src flat
 ```
 
-#### Example 2: Excluding Specific Files
+#### Example 2: With Directory Prefixes
+
+```
+Before:                             After:
+src/                               flat/
+├── auth/                          ├── auth___login.py
+│   ├── login.py                   ├── auth___utils___validator.py
+│   └── utils/                     ├── models___user.py
+│       └── validator.py           └── models___data___schema.py
+└── models/
+    ├── user.py
+    └── data/
+        └── schema.py
+```
+
+Command:
+```bash
+codepeek --src src --dest flat
+```
+
+#### Example 3: Excluding Directories and File Extensions
+
+```
+Before:                            After (Currently only supports python files):
+src/                               flat/
+├── .idea/                         ├── module1___script1.py
+├── .git/                          └── module2___script2.py
+├── __pycache__/                   
+├── .venv/                         
+├── docs/                          
+│   └── README.md                  
+├── tests/                         
+│   ├── test_script1.py            
+│   └── test_script2.py            
+├── module1/                       
+│   ├── script1.py                 
+│   ├── __init__.py                
+│   └── utils/                     
+│       └── helper.pyc             
+└── module2/                       
+    ├── script2.py                 
+    └── data/                      
+        ├── input.csv              
+        └── output.json            
+```
+
+Command:
+```bash
+codepeek --src src --dest flat --exclude-dirs .idea .git __pycache__ .venv docs tests --exclude-exts .md .pyc .csv .json
+```
+or
+```bash
+codepeek src flat --exclude-dirs .idea .git __pycache__ .venv docs tests --exclude-exts .md .pyc .csv .json
+```
+
+#### Example 4: Deflattening a Directory
+
+```
+Before:                             After:
+flat/                              original/
+├── module1___script.py            ├── module/
+├── module1___utils___helper.py    │   ├── script.py
+├── module2___script_2.py          │   └── utils/
+└── module2___data___schema.py     │       └── helper.py
+                                   └── module2/
+                                       ├── script_2.py
+                                       └── data/
+                                           └── schema.py
+```
+
+Command:
+```bash
+codepeek --src flat --dest original --deflatten
+```
+
+#### Example 5: Flattening with Duplicated Filenames
+
+```
+Before (Third Flattening with modified files):           After (Third Flatten):
+src/                                                     flat/
+├── utils/                                               ├── utils___helper.py
+│   └── helper.py                                        ├── models___user.py
+├── auth/                                                ├── data___schema.py
+│   └── utils/                                           ├── utils___helper_2.py
+│       └── helper.py                                    ├── models___user_2.py
+├── models/                                              ├── data___schema_2.py
+│   └── user.py                                          ├── utils___helper_3.py
+└── data/                                                ├── models___user_3.py
+    └── schema.py                                        └── data___schema_3.py
+```
+
+Command:
+```bash
+codepeek --src src --dest flat
+```
+
+You can also flatten
+```bash
+codepeek --src . --dest flat
+```
+or
+```bash
+codepeek --src flat --dest .
+```
+or
+```bash
+codepeek . flat
+```
+
+To deflatten the directory, run:
+```bash
+codepeek --src . --dest . --deflatten
+```
+
+All the samples above apply the same for files with other extensions.
+
+#### Example 6: Bundling Files into a Single Text File
+
+```
+Before:                            After (bundled.txt):
+src/                               =================================================================================
+├── module1/                       BUNDLED FILES FROM: /path/to/src
+│   ├── script1.py                 CREATED: 2025-03-31 10:15:30
+│   └── utils/                     =================================================================================
+│       └── helper.py
+└── module2/                       =================================================================================
+    └── script2.py                 FILE: module1___script1.py
+                                    =================================================================================
+
+                                    # Content of script1.py
+
+                                    =================================================================================
+                                    FILE: module1___utils___helper.py
+                                    =================================================================================
+
+                                    # Content of helper.py
+
+                                    =================================================================================
+                                    FILE: module2___script2.py
+                                    =================================================================================
+
+                                    # Content of script2.py
+
+                                    =================================================================================
+                                    END OF BUNDLED FILES (3 files)
+                                    =================================================================================
+```
+
+Command:
+```bash
+codebundle --src src --dest bundled.txt --bundle
+```
+or
+```bash
+codebundle src bundled.txt --bundle
+```
+
+#### Example 7: Excluding Specific Files
 
 ```
 Before:                            After:
@@ -157,7 +319,7 @@ Command:
 codebundle --src src --dest flat --exclude-files setup.py config.js README.md
 ```
 
-#### Example 3: Including Only Specific Files
+#### Example 8: Including Only Specific Files
 
 ```
 Before:                            After:
@@ -180,7 +342,41 @@ Command:
 codebundle --src src --dest flat --include-files script1.py README.md
 ```
 
-#### Example 4: Bundling With Include Files
+#### Example 9: Bundling With Exclusions
+
+```
+Before:                            After (bundled.txt):
+src/                               =====================================
+├── module1/                       BUNDLED FILES FROM: /path/to/src
+│   ├── script1.py                 CREATED: 2025-03-31 12:15:30
+│   ├── setup.py                   =====================================
+│   └── utils/
+│       └── helper.py              =====================================
+└── module2/                       FILE: module1___script1.py
+    ├── utils.js                   =====================================
+    └── config.js                  # Content of script1.py
+                                  
+                                   =====================================
+                                   FILE: module1___utils___helper.py
+                                   =====================================
+                                   # Content of helper.py
+                                   
+                                   =====================================
+                                   FILE: module2___utils.js
+                                   =====================================
+                                   // Content of utils.js
+                                   
+                                   =====================================
+                                   END OF BUNDLED FILES (3 files)
+                                   =====================================
+```
+
+Command:
+```bash
+codebundle --src src --dest bundled.txt --bundle --exclude-files setup.py config.js
+```
+
+#### Example 9: Bundling only Specific Files (Inclusion)
 
 ```
 Before:                            After (bundled.txt):
