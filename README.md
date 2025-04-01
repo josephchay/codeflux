@@ -20,6 +20,7 @@ It's perfect for organizing large codebases, consolidating scripts, or preparing
 | TypeScript | `.ts`, `.tsx`                                                               |
 | Markdown   | `.md`, `.markdown`, `.mdown`, `.mkdn`, `.mkd`, `.mdwn`, `.mdtxt`, `.mdtext` |
 | Plain Text | `.txt`                                                                      |
+| YAML       | `.yaml`, `.yml`                                                             |
 
 _More extensions to be added in the future._
 

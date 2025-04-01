@@ -10,7 +10,7 @@ from utils import get_relative_path, print_stats
 
 def bundle_files(source_dir, output_file, file_types=None, exclude_dirs=None, exclude_exts=None,
                  exclude_files=None, include_files=None, silent=False):
-    file_types = file_types or ["py", "js", "md", "yaml"]
+    file_types = file_types or ["py", "ipynb", "js", "md", "yaml"]
     exclude_dirs = exclude_dirs or DEFAULT_EXCLUDE_DIRS
     exclude_exts = exclude_exts or ALL_EXCLUDE_EXTENSIONS
     exclude_files = exclude_files or ALL_EXCLUDE_FILENAMES
@@ -186,7 +186,7 @@ def merge_stats(stats_list):
 
 def flatten_dir(source_dir, dest_dir, file_types=None, exclude_dirs=None, exclude_exts=None, exclude_files=None,
                 include_files=None, clear_dest_dir=False, silent=False):
-    file_types = file_types or ["py", "js", "md", "yaml"]
+    file_types = file_types or ["py", "ipynb", "js", "md", "yaml"]
     exclude_dirs = exclude_dirs or DEFAULT_EXCLUDE_DIRS
     exclude_exts = exclude_exts or ALL_EXCLUDE_EXTENSIONS
     exclude_files = exclude_files or ALL_EXCLUDE_FILENAMES
@@ -227,7 +227,7 @@ def flatten_dir(source_dir, dest_dir, file_types=None, exclude_dirs=None, exclud
 
 def deflatten_dir(flattened_dir, dest_dir, file_types=None, exclude_files=None, include_files=None, clear_dest_dir=False,
                   silent=False):
-    file_types = file_types or ["py", "js", "md", "yaml"]
+    file_types = file_types or ["py", "ipynb", "js", "md", "yaml"]
     exclude_files = exclude_files or ALL_EXCLUDE_FILENAMES
 
     all_stats = []
@@ -270,9 +270,9 @@ def main():
 
     parser.add_argument("--file-types",
                         nargs="+",
-                        choices=["py", "js", "md", "yaml"],
-                        default=["py", "js", "md", "yaml"],
-                        help="File types to process: 'py' for Python, 'js' for JavaScript/TypeScript, 'md' for Markdown, 'yaml' for YAML (default: all)")
+                        choices=["py", "ipynb", "js", "md", "yaml"],
+                        default=["py", "ipynb", "js", "md", "yaml"],
+                        help="File types to process: 'py' for Python, 'ipynb' for Python Notebooks, 'js' for JavaScript/TypeScript, 'md' for Markdown, 'yaml' for YAML (default: all)")
 
     parser.add_argument("--exclude-dirs",
                         nargs="+",
