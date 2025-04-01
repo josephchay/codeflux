@@ -92,7 +92,7 @@ that have not been merged into the `main` branch.
 | `--bundle`             | No       | `False`                     | Bundle all files into a single text file with path information                                             |
 | `--no-log`             | No       | `False`                     | Disable logging output                                                                                     |
 
-For detailed information on the default values on the arguments, refer to the [constants]].
+For detailed information on the default values on the arguments, refer to the [constants](src/constants.py) file.
 
 ## Usage Examples
 
@@ -408,6 +408,10 @@ src/                               =====================================
 Command:
 ```bash
 codebundle --src src --dest bundled.txt --bundle --include-files script1.py main.js
+```
+or
+```bash
+codebundle src bundled.txt --b --include-files script1.py main.js
 ```
 
 ## Development

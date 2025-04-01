@@ -3,43 +3,30 @@ import argparse
 import sys
 import time
 
-from constants import *
+from constants import DEFAULT_EXCLUDE_DIRS, ALL_EXCLUDE_EXTENSIONS, ALL_EXCLUDE_FILENAMES, ALL_EXTENSIONS
+from handlers import HANDLERS
 from utils import get_relative_path, print_stats
-from handlers.yml_handler import flatten_yaml_dir, deflatten_yaml_dir
-from handlers.py_handler import flatten_python_dir, deflatten_python_dir
-from handlers.jsts_handler import flatten_js_dir, deflatten_js_dir
-from handlers.md_handler import flatten_md_dir, deflatten_md_dir
 
 
 def bundle_files(source_dir, output_file, file_types=None, exclude_dirs=None, exclude_exts=None,
                  exclude_files=None, include_files=None, silent=False):
-    # Combine default exclusions from all handlers
-    if exclude_dirs is None:
-        exclude_dirs = list(set(DEFAULT_PYTHON_EXCLUDE_DIRS + DEFAULT_JS_EXCLUDE_DIRS + DEFAULT_MD_EXCLUDE_DIRS + DEFAULT_YAML_EXCLUDE_DIRS))
+    file_types = file_types or ["py", "js", "md", "yaml"]
+    exclude_dirs = exclude_dirs or DEFAULT_EXCLUDE_DIRS
+    exclude_exts = exclude_exts or ALL_EXCLUDE_EXTENSIONS
+    exclude_files = exclude_files or ALL_EXCLUDE_FILENAMES
 
-    if exclude_exts is None:
-        exclude_exts = list(set(DEFAULT_PYTHON_EXCLUDE_EXTENSIONS + DEFAULT_JS_EXCLUDE_EXTENSIONS + DEFAULT_MD_EXCLUDE_EXTENSIONS + DEFAULT_YAML_EXCLUDE_EXTENSIONS))
-
-    if exclude_files is None:
-        exclude_files = list(set(DEFAULT_PYTHON_EXCLUDE_FILENAMES + DEFAULT_JS_EXCLUDE_FILENAMES + DEFAULT_MD_EXCLUDE_FILENAMES + DEFAULT_YAML_EXCLUDE_FILENAMES))
-    else:
+    if isinstance(exclude_files, list):
         exclude_files = list(exclude_files)
+    else:
+        exclude_files = []
 
-    if file_types is None:
-        file_types = ["py", "js", "md", "yaml"]
-
-    # Convert to absolute paths
     source_dir = os.path.abspath(source_dir)
     output_file = os.path.abspath(output_file)
-
-    # Add the output file itself to the exclude list to prevent circular processing
     output_filename = os.path.basename(output_file)
     if output_filename not in exclude_files:
         exclude_files.append(output_filename)
-
     source_dir_parts = len(os.path.normpath(source_dir).split(os.sep))
 
-    # Stats tracking
     stats = {
         "total_files_processed": 0,
         "dirs_traversed": 0,
@@ -49,16 +36,11 @@ def bundle_files(source_dir, output_file, file_types=None, exclude_dirs=None, ex
         "max_nesting_level": 0
     }
 
-    # Extensions to include based on file_types
+    # Get all file extensions based on selected file types
     included_extensions = []
-    if "py" in file_types:
-        included_extensions.append(".py")
-    if "js" in file_types:
-        included_extensions.extend(JS_EXTENSIONS)
-    if "md" in file_types:
-        included_extensions.extend(MD_EXTENSIONS)
-    if "yaml" in file_types:
-        included_extensions.extend(YAML_EXTENSIONS)
+    for file_type in file_types:
+        if file_type in HANDLERS:
+            included_extensions.extend(HANDLERS[file_type].extensions)
 
     start_time = time.time()
 
@@ -67,10 +49,7 @@ def bundle_files(source_dir, output_file, file_types=None, exclude_dirs=None, ex
         print(f"Output file: {get_relative_path(output_file, os.getcwd())}\n")
         print(f"Bundling files into a single text file...")
 
-    # Collect files to bundle first to avoid opening the output file if there are no files to bundle
     files_to_bundle = []
-
-    # Walk through the directory structure to collect files
     for root, dirs, files in os.walk(source_dir):
         stats["dirs_traversed"] += 1
 
@@ -81,12 +60,9 @@ def bundle_files(source_dir, output_file, file_types=None, exclude_dirs=None, ex
         # Exclude directories
         dirs[:] = [d for d in dirs if d not in exclude_dirs]
 
-        # Process files
         for file in files:
             stats["total_files_processed"] += 1
             file_path = os.path.join(root, file)
-
-            # Skip the output file itself (double check)
             if os.path.abspath(file_path) == output_file:
                 stats["skipped_files"] += 1
                 continue
@@ -105,14 +81,12 @@ def bundle_files(source_dir, output_file, file_types=None, exclude_dirs=None, ex
                 should_include = is_included_ext and not is_excluded_ext and not is_excluded_file
 
             if should_include:
-                # Format path with ___ separator
                 path_parts = os.path.normpath(root).split(os.sep)[source_dir_parts:]
                 if path_parts:
                     formatted_path = "___".join(path_parts + [file])
                 else:
                     formatted_path = file
 
-                # Store file info for bundling
                 files_to_bundle.append({
                     'file_path': file_path,
                     'formatted_path': formatted_path,
@@ -121,7 +95,6 @@ def bundle_files(source_dir, output_file, file_types=None, exclude_dirs=None, ex
             else:
                 stats["skipped_files"] += 1
 
-    # If no files to bundle, return early
     if not files_to_bundle:
         if not silent:
             print("No files found to bundle.")
@@ -131,14 +104,12 @@ def bundle_files(source_dir, output_file, file_types=None, exclude_dirs=None, ex
             print_stats("bundling", stats, duration)
         return stats
 
-    # Now write the bundle file
     with open(output_file, 'w', encoding='utf-8') as outfile:
         outfile.write("=" * 80 + "\n")
         outfile.write(f"BUNDLED FILES FROM: {source_dir}\n")
         outfile.write(f"CREATED: {time.strftime('%Y-%m-%d %H:%M:%S')}\n")
         outfile.write("=" * 80 + "\n\n")
 
-        # Process each file
         for file_info in files_to_bundle:
             file_path = file_info['file_path']
             formatted_path = file_info['formatted_path']
@@ -213,169 +184,71 @@ def merge_stats(stats_list):
     return merged_stats
 
 
-def flatten_dir(source_dir, dest_dir, file_types=None, exclude_dirs=None, exclude_exts=None,
-                exclude_files=None, include_files=None, clear_dest_dir=False, silent=False):
-    """
-    Flatten a directory structure for specified file types
-    """
-    if file_types is None:
-        file_types = ["py", "js", "md", "yaml"]
-
-    # Combine default exclusions for files
-    if exclude_files is None:
-        exclude_files = list(set(DEFAULT_PYTHON_EXCLUDE_FILENAMES + DEFAULT_JS_EXCLUDE_FILENAMES + DEFAULT_MD_EXCLUDE_FILENAMES + DEFAULT_YAML_EXCLUDE_FILENAMES))
+def flatten_dir(source_dir, dest_dir, file_types=None, exclude_dirs=None, exclude_exts=None, exclude_files=None,
+                include_files=None, clear_dest_dir=False, silent=False):
+    file_types = file_types or ["py", "js", "md", "yaml"]
+    exclude_dirs = exclude_dirs or DEFAULT_EXCLUDE_DIRS
+    exclude_exts = exclude_exts or ALL_EXCLUDE_EXTENSIONS
+    exclude_files = exclude_files or ALL_EXCLUDE_FILENAMES
 
     all_stats = []
     start_time = time.time()
 
-    # Process Python files
-    if "py" in file_types:
-        py_dest_dir = os.path.join(dest_dir, "py")
-        if not silent:
-            print("\n================ PYTHON FILES ================\n")
-        py_stats = flatten_python_dir(source_dir, py_dest_dir, exclude_dirs, exclude_exts, exclude_files, include_files, clear_dest_dir, silent)
+    for file_type in file_types:
+        if file_type in HANDLERS:
+            handler = HANDLERS[file_type]
+            file_dest_dir = os.path.join(dest_dir, file_type)
 
-        # Only keep the stats if files were actually copied
-        if py_stats["files_copied"] > 0:
-            all_stats.append(py_stats)
-        # Remove the directory if no files were copied
-        elif os.path.exists(py_dest_dir) and not os.listdir(py_dest_dir):
-            try:
-                os.rmdir(py_dest_dir)
-                if not silent:
-                    print(f"Removed empty directory: {py_dest_dir}")
-            except OSError:
-                pass
+            if not silent:
+                print(f"\n================ {file_type.upper()} FILES ================\n")
 
-    # Process JavaScript/TypeScript files
-    if "js" in file_types:
-        js_dest_dir = os.path.join(dest_dir, "jsts")
-        if not silent:
-            print("\n============= JAVASCRIPT FILES ==============\n")
-        js_stats = flatten_js_dir(source_dir, js_dest_dir, exclude_dirs, exclude_exts, exclude_files, include_files, clear_dest_dir, silent)
+            file_stats = handler.flatten_dir(source_dir, file_dest_dir, exclude_dirs, exclude_exts, exclude_files, include_files, clear_dest_dir, silent)
 
-        # Only keep the stats if files were actually copied
-        if js_stats["files_copied"] > 0:
-            all_stats.append(js_stats)
-        # Remove the directory if no files were copied
-        elif os.path.exists(js_dest_dir) and not os.listdir(js_dest_dir):
-            try:
-                os.rmdir(js_dest_dir)
-                if not silent:
-                    print(f"Removed empty directory: {js_dest_dir}")
-            except OSError:
-                pass
+            if file_stats["files_copied"] > 0:
+                all_stats.append(file_stats)
+            elif os.path.exists(file_dest_dir) and not os.listdir(file_dest_dir):
+                try:
+                    os.rmdir(file_dest_dir)
+                    if not silent:
+                        print(f"Removed empty directory: {file_dest_dir}")
+                except OSError:
+                    pass
 
-    # Process Markdown files
-    if "md" in file_types:
-        md_dest_dir = os.path.join(dest_dir, "md")
-        if not silent:
-            print("\n================ MARKDOWN FILES ================\n")
-        md_stats = flatten_md_dir(source_dir, md_dest_dir, exclude_dirs, exclude_exts, exclude_files, include_files, clear_dest_dir, silent)
-
-        # Only keep the stats if files were actually copied
-        if md_stats["files_copied"] > 0:
-            all_stats.append(md_stats)
-        # Remove the directory if no files were copied
-        elif os.path.exists(md_dest_dir) and not os.listdir(md_dest_dir):
-            try:
-                os.rmdir(md_dest_dir)
-                if not silent:
-                    print(f"Removed empty directory: {md_dest_dir}")
-            except OSError:
-                pass
-
-    # Process YAML files
-    if "yaml" in file_types:
-        yaml_dest_dir = os.path.join(dest_dir, "yaml")
-        if not silent:
-            print("\n================ YAML FILES ================\n")
-        yaml_stats = flatten_yaml_dir(source_dir, yaml_dest_dir, exclude_dirs, exclude_exts, exclude_files, include_files, clear_dest_dir, silent)
-
-        # Only keep the stats if files were actually copied
-        if yaml_stats["files_copied"] > 0:
-            all_stats.append(yaml_stats)
-        # Remove the directory if no files were copied
-        elif os.path.exists(yaml_dest_dir) and not os.listdir(yaml_dest_dir):
-            try:
-                os.rmdir(yaml_dest_dir)
-                if not silent:
-                    print(f"Removed empty directory: {yaml_dest_dir}")
-            except OSError:
-                pass
-
-    # Merge stats and print overall summary
     merged_stats = merge_stats(all_stats)
-
     end_time = time.time()
     duration = end_time - start_time
 
-    # Print overall summary if we have files and not in silent mode
     if not silent and merged_stats["files_copied"] > 0:
         print("\n================ OVERALL SUMMARY ================\n")
-        print_stats("flattening", merged_stats, duration)
+        print_stats("flatten", merged_stats, duration)
 
     return merged_stats
 
 
-def deflatten_dir(flattened_dir, dest_dir, file_types=None, exclude_files=None, include_files=None,
-                  clear_dest_dir=False, silent=False):
-    """
-    Deflatten a directory for specified file types
-    """
-    if file_types is None:
-        file_types = ["py", "js", "md", "yaml"]
-
-    # Combine default exclusions for files
-    if exclude_files is None:
-        exclude_files = list(set(DEFAULT_PYTHON_EXCLUDE_FILENAMES + DEFAULT_JS_EXCLUDE_FILENAMES + DEFAULT_MD_EXCLUDE_FILENAMES + DEFAULT_YAML_EXCLUDE_FILENAMES))
+def deflatten_dir(flattened_dir, dest_dir, file_types=None, exclude_files=None, include_files=None, clear_dest_dir=False,
+                  silent=False):
+    file_types = file_types or ["py", "js", "md", "yaml"]
+    exclude_files = exclude_files or ALL_EXCLUDE_FILENAMES
 
     all_stats = []
     start_time = time.time()
 
-    # Process Python files
-    if "py" in file_types:
-        py_source_dir = os.path.join(flattened_dir, "py")
-        if os.path.exists(py_source_dir) and os.listdir(py_source_dir):
-            if not silent:
-                print("\n================ PYTHON FILES ================\n")
-            py_stats = deflatten_python_dir(py_source_dir, dest_dir, exclude_files, include_files, clear_dest_dir, silent)
-            all_stats.append(py_stats)
+    for file_type in file_types:
+        if file_type in HANDLERS:
+            handler = HANDLERS[file_type]
+            source_dir = os.path.join(flattened_dir, file_type)
 
-    # Process JavaScript/TypeScript files
-    if "js" in file_types:
-        js_source_dir = os.path.join(flattened_dir, "jsts")
-        if os.path.exists(js_source_dir) and os.listdir(js_source_dir):
-            if not silent:
-                print("\n============= JAVASCRIPT FILES ==============\n")
-            js_stats = deflatten_js_dir(js_source_dir, dest_dir, exclude_files, include_files, clear_dest_dir, silent)
-            all_stats.append(js_stats)
+            if os.path.exists(source_dir) and os.listdir(source_dir):
+                if not silent:
+                    print(f"\n================ {file_type.upper()} FILES ================\n")
 
-    # Process Markdown files
-    if "md" in file_types:
-        md_source_dir = os.path.join(flattened_dir, "md")
-        if os.path.exists(md_source_dir) and os.listdir(md_source_dir):
-            if not silent:
-                print("\n================ MARKDOWN FILES ================\n")
-            md_stats = deflatten_md_dir(md_source_dir, dest_dir, exclude_files, include_files, clear_dest_dir, silent)
-            all_stats.append(md_stats)
+                file_stats = handler.deflatten_dir(source_dir, dest_dir, exclude_files, include_files, clear_dest_dir, silent)
+                all_stats.append(file_stats)
 
-    # Process YAML files
-    if "yaml" in file_types:
-        yaml_source_dir = os.path.join(flattened_dir, "yaml")
-        if os.path.exists(yaml_source_dir) and os.listdir(yaml_source_dir):
-            if not silent:
-                print("\n================ YAML FILES ================\n")
-            yaml_stats = deflatten_yaml_dir(yaml_source_dir, dest_dir, exclude_files, include_files, clear_dest_dir, silent)
-            all_stats.append(yaml_stats)
-
-    # Merge stats and print overall summary
     merged_stats = merge_stats(all_stats)
-
     end_time = time.time()
     duration = end_time - start_time
 
-    # Print overall summary if we have files and not in silent mode
     if not silent and merged_stats["files_copied"] > 0:
         print("\n================ OVERALL SUMMARY ================\n")
         print_stats("deflatten", merged_stats, duration)
@@ -384,8 +257,7 @@ def deflatten_dir(flattened_dir, dest_dir, file_types=None, exclude_files=None, 
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Flatten, deflatten, or bundle a directory of Python, JavaScript, TypeScript, Markdown, and YAML files.")
+    parser = argparse.ArgumentParser(description="Flatten, deflatten, or bundle a directory of Python, JavaScript, TypeScript, Markdown, and YAML files.")
 
     # Support both positional and named arguments
     src_group = parser.add_argument_group('source')
@@ -396,14 +268,12 @@ def main():
     dest_group.add_argument("dest_pos", nargs="?", help="Destination directory or file path (positional)")
     dest_group.add_argument("--dest", dest="dest_named", help="Destination directory or file path (named)")
 
-    # File type options
     parser.add_argument("--file-types",
                         nargs="+",
                         choices=["py", "js", "md", "yaml"],
                         default=["py", "js", "md", "yaml"],
                         help="File types to process: 'py' for Python, 'js' for JavaScript/TypeScript, 'md' for Markdown, 'yaml' for YAML (default: all)")
 
-    # Exclusion options
     parser.add_argument("--exclude-dirs",
                         nargs="+",
                         help="Directory names to exclude")
@@ -414,7 +284,6 @@ def main():
                         nargs="+",
                         help="Specific filenames to exclude")
 
-    # Include options
     parser.add_argument("--include-files",
                         nargs="+",
                         help="Specific filenames to include (only these will be processed)")
@@ -423,7 +292,7 @@ def main():
     operation_group.add_argument("--deflatten",
                                  action="store_true",
                                  help="Deflatten the directory instead of flattening (default: False)")
-    operation_group.add_argument("--bundle",
+    operation_group.add_argument("--bundle", "-b",
                                  action="store_true",
                                  help="Bundle files into a single text file (default: False)")
 
@@ -436,7 +305,6 @@ def main():
 
     args = parser.parse_args()
 
-    # Get source and destination
     source_dir = args.src_named if args.src_named else args.src_pos
     dest_path = args.dest_named if args.dest_named else args.dest_pos
 
@@ -445,29 +313,13 @@ def main():
         print("\nError: Both source and destination are required.")
         return 1
 
-    # Set default exclude directories and extensions based on file types
-    exclude_dirs = args.exclude_dirs
-    exclude_exts = args.exclude_extensions
-    exclude_files = args.exclude_files
-    include_files = args.include_files
-
-    # If no custom exclusions provided, use defaults from all handlers
-    if exclude_dirs is None:
-        exclude_dirs = list(set(DEFAULT_PYTHON_EXCLUDE_DIRS + DEFAULT_JS_EXCLUDE_DIRS + DEFAULT_MD_EXCLUDE_DIRS + DEFAULT_YAML_EXCLUDE_DIRS))
-
-    if exclude_exts is None:
-        exclude_exts = list(set(DEFAULT_PYTHON_EXCLUDE_EXTENSIONS + DEFAULT_JS_EXCLUDE_EXTENSIONS + DEFAULT_MD_EXCLUDE_EXTENSIONS + DEFAULT_YAML_EXCLUDE_EXTENSIONS))
-
-    if exclude_files is None:
-        exclude_files = list(set(DEFAULT_PYTHON_EXCLUDE_FILENAMES + DEFAULT_JS_EXCLUDE_FILENAMES + DEFAULT_MD_EXCLUDE_FILENAMES + DEFAULT_YAML_EXCLUDE_FILENAMES))
-
     try:
         if args.deflatten:
-            stats = deflatten_dir(source_dir, dest_path, args.file_types, exclude_files, include_files, args.clear_dest_dir, args.no_log)
+            stats = deflatten_dir(source_dir, dest_path, args.file_types, args.exclude_files, args.include_files, args.clear_dest_dir, args.no_log)
         elif args.bundle:
-            stats = bundle_files(source_dir, dest_path, args.file_types, exclude_dirs, exclude_exts, exclude_files, include_files, args.no_log)
+            stats = bundle_files(source_dir, dest_path, args.file_types, args.exclude_dirs, args.exclude_extensions, args.exclude_files, args.include_files, args.no_log)
         else:
-            stats = flatten_dir(source_dir, dest_path, args.file_types, exclude_dirs, exclude_exts, exclude_files, include_files, args.clear_dest_dir, args.no_log)
+            stats = flatten_dir(source_dir, dest_path, args.file_types, args.exclude_dirs, args.exclude_extensions, args.exclude_files, args.include_files, args.clear_dest_dir, args.no_log)
 
         return 0
     except ValueError as e:

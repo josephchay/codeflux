@@ -1,0 +1,478 @@
+Metadata-Version: 2.4
+Name: codebundle
+Version: 0.5.0
+Summary: A lightweight CLI tool to flatten, deflatten, and bundle code files
+Home-page: https://github.com/josephchay/codebundle
+Author: Joseph Chay
+Author-email: josephemmanuelchay@gmail.com
+Classifier: Development Status :: 3 - Alpha
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.7
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Requires-Python: >=3.7
+Description-Content-Type: text/markdown
+License-File: LICENSE.txt
+Dynamic: author
+Dynamic: author-email
+Dynamic: classifier
+Dynamic: description
+Dynamic: description-content-type
+Dynamic: home-page
+Dynamic: license-file
+Dynamic: requires-python
+Dynamic: summary
+
+# Codebundle - Unravel Your Codebase
+
+_Effortlessly declutter and organize your project by flattening nested files into a single folder,
+reconstruct the original directory structure from flattened files, or bundle all files into a single text document._
+
+## Overview
+
+Do you often find yourself digging through multiple nested directories to find files?
+**Codebundle** is here to simplify your life! This lightweight CLI tool scans through your source directory (and all its subdirectories), 
+collects all designated files and copies them into a single destination directory - all while automatically renaming conflicting files. 
+
+It's perfect for organizing large codebases, consolidating scripts, or preparing for migration or backup.
+
+### Supported File Types
+
+| Language   | Extensions                                                                  |
+|------------|-----------------------------------------------------------------------------|
+| Python     | `.py`                                                                       |
+| JavaScript | `.js`, `.jsx`                                                               |
+| TypeScript | `.ts`, `.tsx`                                                               |
+| Markdown   | `.md`, `.markdown`, `.mdown`, `.mkdn`, `.mkd`, `.mdwn`, `.mdtxt`, `.mdtext` |
+| Plain Text | `.txt`                                                                      |
+
+_More extensions to be added in the future._
+
+---
+
+## Features
+
+- **Flattens Nested Directories**: Gathers all required files into a single folder, no matter how deeply nested they are.
+- **Exclude Options**: Allows excluding specific directories, file extensions, and specific filenames from the process.
+- **Include Options**: Allows specifying exactly which files to process, ignoring all others.
+- **Handles File Name Conflicts**: Renames files with duplicate names to ensure no overwriting.
+- **Clean Destination Directory**: Automatically clears the destination folder before copying.
+- **Command-Line Simplicity**: Provides an easy-to-use CLI interface.
+- **Directory Path Preservation**: Option to prefix files with their original directory structure.
+- **Exclude Specific Directories**: Allows excluding certain directories from the flattening process.
+- **Exclude Specific File Extensions**: Allows excluding files with certain extensions.
+- **Exclude Specific Files**: Allows excluding specific files by name.
+- **Include Specific Files**: Allows processing only specific files by name.
+- **Deflatten Functionality**: Provides the ability to revert the flattening process and restore the original directory structure.
+- **Bundle Functionality**: Bundles all files into a single text file while preserving path information.
+- **Multiple File Format Support**: 
+  - Python files (.py)
+  - JavaScript/TypeScript files (.js, .jsx, .ts, .tsx)
+  - Markdown files (.md, .markdown, etc.)
+  - YAML files (.yaml, .yml)
+
+---
+
+## Installation
+
+> [!WARNING]
+> Uninstall the Package (If you have already installed a previous version of the package):
+
+### Python Projects
+
+```bash
+pip install git+https://github.com/josephchay/codebundle.git
+```
+
+### NodeJS Projects
+
+```bash
+npm install --save-dev git+https://github.com/josephchay/codebundle.git
+```
+or
+```bash
+yarn add git+https://github.com/josephchay/codebundle.git --dev
+```
+or
+```bash
+pnpm add git+https://github.com/josephchay/codebundle.git --save-dev
+```
+
+Occasionally, check on the `staging` branch, as they may be some new features or bug fixes 
+that have not been merged into the `main` branch.
+
+## Command-Line Arguments
+
+| Argument               | Required | Default                     | Description                                                                                                |
+|------------------------|----------|-----------------------------|------------------------------------------------------------------------------------------------------------|
+| `[src]`                | Yes      | -                           | Source directory containing the files to flatten                                                           |
+| `[dest]`               | Yes      | -                           | Destination directory/file where files will be copied                                                      |
+| `--file-types`         | No       | `py`, `js`, `md`, `yaml`    | File types to process: 'py' for Python, 'js' for JavaScript/TypeScript, 'md' for Markdown, 'yaml' for YAML |
+| `--exclude-dirs`       | No       | Various default directories | Directory names to exclude                                                                                 |
+| `--exclude-extensions` | No       | Various default extensions  | File extensions to exclude                                                                                 |
+| `--exclude-files`      | No       | Various common files        | Specific filenames to exclude (e.g., setup.py, jest.config.js)                                             |
+| `--include-files`      | No       | None                        | Specific filenames to include (only these will be processed)                                               |
+| `--clear-dest-dir`     | No       | `False`                     | Clear the destination directory before copying files                                                       |
+| `--deflatten`          | No       | `False`                     | Deflatten the directory instead of flattening (reverses the flattening process)                            |
+| `--bundle`             | No       | `False`                     | Bundle all files into a single text file with path information                                             |
+| `--no-log`             | No       | `False`                     | Disable logging output                                                                                     |
+
+For detailed information on the default values on the arguments, refer to the [constants](src/constants.py) file.
+
+## Usage Examples
+
+Here are various scenarios and how to use the tool:
+
+| Scenario                    | Command                                                                                       | Description                                                                                               |
+|-----------------------------|-----------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------|
+| Basic Flattening            | `codebundle --src src --dest flat`                                                            | Flattens all supported files into the 'flat' directory                                                    |
+| Process Specific Types      | `codebundle --src src --dest flat --file-types py yaml`                                       | Process only Python and YAML files, ignoring other types                                                  |
+| Exclude Directories         | `codebundle --src src --dest flat --exclude-dirs .idea .venv`                                 | Excludes the `.idea` and `.venv` directories from the flattening process                                  |
+| Exclude File Extensions     | `codebundle --src src --dest flat --exclude-extensions .txt .csv`                             | Excludes files with `.txt` and `.csv` extensions from the flattening process                              |
+| Exclude Specific Files      | `codebundle --src src --dest flat --exclude-files setup.py package.json`                      | Excludes specific files like setup.py and package.json from the flattening process                        |
+| Include Only Specific Files | `codebundle --src src --dest flat --include-files main.py index.js config.yaml`               | Processes only the specified files, ignoring all others                                                   |
+| Deflatten Directory         | `codebundle --src flattened --dest original --deflatten`                                      | Reverts the flattening process and restores the original directory structure from the flattened directory |
+| Bundle Files                | `codebundle --src src --dest bundled.txt --bundle`                                            | Bundles all files into a single text file with clear file separators and path information                 |
+| Bundle Only Specific Files  | `codebundle --src src --dest bundle.txt --bundle --include-files config.yaml app.js`          | Bundles only the specified files into a single text file                                                  |
+| Combine Exclusions          | `codebundle --src src --dest flat --exclude-dirs node_modules --exclude-files .env config.js` | Uses multiple exclusion types together                                                                    |
+
+
+### Example Directory Transformations
+
+#### Example 1: Basic Flattening
+```
+Before:                             After:
+src/                               flat/
+â”œâ”€â”€ module1/                       â”œâ”€â”€ py/
+â”‚   â”œâ”€â”€ script1.py                 â”‚   â”œâ”€â”€ module1___script1.py
+â”‚   â”œâ”€â”€ __init__.py                â”‚   â””â”€â”€ module1___utils___helper.py
+â”‚   â””â”€â”€ utils/                     â”œâ”€â”€ jsts/
+â”‚       â””â”€â”€ helper.py              â”‚   â””â”€â”€ module2___script2.js
+â”œâ”€â”€ module2/                       â”œâ”€â”€ md/
+â”‚   â””â”€â”€ script2.js                 â”‚   â””â”€â”€ docs___README.md
+â””â”€â”€ docs/                          â””â”€â”€ yaml/
+    â”œâ”€â”€ README.md                      â”œâ”€â”€ config___app.yaml
+    â””â”€â”€ config/                        â””â”€â”€ config___env.yml
+        â”œâ”€â”€ app.yaml
+        â””â”€â”€ env.yml
+```
+
+Command: 
+```bash
+codepeek --src src --dest flat
+```
+or without explicitly specifying the first two arguments:
+```bash
+codepeek src flat
+```
+
+#### Example 2: Flattening with Directory Prefixes
+
+```
+Before:                             After:
+src/                               flat/
+â”œâ”€â”€ auth/                          â”œâ”€â”€ auth___login.py
+â”‚   â”œâ”€â”€ login.py                   â”œâ”€â”€ auth___utils___validator.py
+â”‚   â””â”€â”€ utils/                     â”œâ”€â”€ models___user.py
+â”‚       â””â”€â”€ validator.py           â””â”€â”€ models___data___schema.py
+â””â”€â”€ models/
+    â”œâ”€â”€ user.py
+    â””â”€â”€ data/
+        â””â”€â”€ schema.py
+```
+
+Command:
+```bash
+codepeek --src src --dest flat
+```
+
+#### Example 3: Excluding Directories and File Extensions
+
+```
+Before:                            After (Currently only supports python files):
+src/                               flat/
+â”œâ”€â”€ .idea/                         â”œâ”€â”€ module1___script1.py
+â”œâ”€â”€ .git/                          â””â”€â”€ module2___script2.py
+â”œâ”€â”€ __pycache__/                   
+â”œâ”€â”€ .venv/                         
+â”œâ”€â”€ docs/                          
+â”‚   â””â”€â”€ README.md                  
+â”œâ”€â”€ tests/                         
+â”‚   â”œâ”€â”€ test_script1.py            
+â”‚   â””â”€â”€ test_script2.py            
+â”œâ”€â”€ module1/                       
+â”‚   â”œâ”€â”€ script1.py                 
+â”‚   â”œâ”€â”€ __init__.py                
+â”‚   â””â”€â”€ utils/                     
+â”‚       â””â”€â”€ helper.pyc             
+â””â”€â”€ module2/                       
+    â”œâ”€â”€ script2.py                 
+    â””â”€â”€ data/                      
+        â”œâ”€â”€ input.csv              
+        â””â”€â”€ output.json            
+```
+
+Command:
+```bash
+codepeek --src src --dest flat --exclude-dirs .idea .git __pycache__ .venv docs tests --exclude-exts .md .pyc .csv .json
+```
+or
+```bash
+codepeek src flat --exclude-dirs .idea .git __pycache__ .venv docs tests --exclude-exts .md .pyc .csv .json
+```
+
+#### Example 4: Deflattening a Directory
+
+```
+Before:                             After:
+flat/                              original/
+â”œâ”€â”€ module1___script.py            â”œâ”€â”€ module/
+â”œâ”€â”€ module1___utils___helper.py    â”‚   â”œâ”€â”€ script.py
+â”œâ”€â”€ module2___script_2.py          â”‚   â””â”€â”€ utils/
+â””â”€â”€ module2___data___schema.py     â”‚       â””â”€â”€ helper.py
+                                   â””â”€â”€ module2/
+                                       â”œâ”€â”€ script_2.py
+                                       â””â”€â”€ data/
+                                           â””â”€â”€ schema.py
+```
+
+Command:
+```bash
+codepeek --src flat --dest original --deflatten
+```
+
+#### Example 5: Flattening with Duplicated Filenames
+
+```
+Before (Third Flattening with modified files):           After (Third Flatten):
+src/                                                     flat/
+â”œâ”€â”€ utils/                                               â”œâ”€â”€ utils___helper.py
+â”‚   â””â”€â”€ helper.py                                        â”œâ”€â”€ models___user.py
+â”œâ”€â”€ auth/                                                â”œâ”€â”€ data___schema.py
+â”‚   â””â”€â”€ utils/                                           â”œâ”€â”€ utils___helper_2.py
+â”‚       â””â”€â”€ helper.py                                    â”œâ”€â”€ models___user_2.py
+â”œâ”€â”€ models/                                              â”œâ”€â”€ data___schema_2.py
+â”‚   â””â”€â”€ user.py                                          â”œâ”€â”€ utils___helper_3.py
+â””â”€â”€ data/                                                â”œâ”€â”€ models___user_3.py
+    â””â”€â”€ schema.py                                        â””â”€â”€ data___schema_3.py
+```
+
+Command:
+```bash
+codepeek --src src --dest flat
+```
+
+You can also flatten
+```bash
+codepeek --src . --dest flat
+```
+or
+```bash
+codepeek --src flat --dest .
+```
+or
+```bash
+codepeek . flat
+```
+
+To deflatten the directory, run:
+```bash
+codepeek --src . --dest . --deflatten
+```
+
+All the samples above apply the same for files with other extensions.
+
+#### Example 6: Excluding Specific Files
+
+```
+Before:                            After:
+src/                               flat/
+â”œâ”€â”€ module1/                       â”œâ”€â”€ py/
+â”‚   â”œâ”€â”€ script1.py                 â”‚   â””â”€â”€ module1___utils___helper.py
+â”‚   â”œâ”€â”€ setup.py                   â”œâ”€â”€ jsts/
+â”‚   â””â”€â”€ utils/                     â”‚   â””â”€â”€ module2___utils.js
+â”‚       â””â”€â”€ helper.py              â””â”€â”€ md/
+â””â”€â”€ module2/                           â””â”€â”€ GUIDE.md
+    â”œâ”€â”€ utils.js
+    â”œâ”€â”€ config.js
+    â””â”€â”€ docs/
+        â”œâ”€â”€ README.md
+        â””â”€â”€ GUIDE.md
+```
+
+Command:
+```bash
+codebundle --src src --dest flat --exclude-files setup.py config.js README.md
+```
+
+#### Example 7: Including Only Specific Files
+
+```
+Before:                             After:
+src/                               flat/
+â”œâ”€â”€ module1/                       â”œâ”€â”€ py/
+â”‚   â”œâ”€â”€ script1.py                 â”‚   â””â”€â”€ module1___script1.py
+â”‚   â”œâ”€â”€ setup.py                   â””â”€â”€ yaml/
+â”‚   â””â”€â”€ utils/                         â””â”€â”€ config___settings.yaml
+â”‚       â””â”€â”€ helper.py              
+â”œâ”€â”€ module2/                       
+â”‚   â”œâ”€â”€ utils.js                   
+â”‚   â”œâ”€â”€ config.js                  
+â”‚   â””â”€â”€ docs/                      
+â”‚       â”œâ”€â”€ README.md              
+â”‚       â””â”€â”€ GUIDE.md               
+â””â”€â”€ config/
+    â”œâ”€â”€ settings.yaml
+    â””â”€â”€ env.yml
+```
+
+Command:
+```bash
+codebundle --src src --dest flat --include-files script1.py README.md
+```
+
+#### Example 8: Bundling Files into a Single Text File
+
+```
+Before:                            After (bundled.txt):
+src/                               =================================================================================
+â”œâ”€â”€ module1/                       BUNDLED FILES FROM: /path/to/src
+â”‚   â”œâ”€â”€ script1.py                 CREATED: 2025-03-31 10:15:30
+â”‚   â””â”€â”€ utils/                     =================================================================================
+â”‚       â””â”€â”€ helper.py
+â””â”€â”€ module2/                       =================================================================================
+    â””â”€â”€ script2.py                 FILE: module1___script1.py
+                                    =================================================================================
+
+                                    # Content of script1.py
+
+                                    =================================================================================
+                                    FILE: module1___utils___helper.py
+                                    =================================================================================
+
+                                    # Content of helper.py
+
+                                    =================================================================================
+                                    FILE: module2___script2.py
+                                    =================================================================================
+
+                                    # Content of script2.py
+
+                                    =================================================================================
+                                    END OF BUNDLED FILES (3 files)
+                                    =================================================================================
+```
+
+Command:
+```bash
+codebundle --src src --dest bundled.txt --bundle
+```
+or
+```bash
+codebundle src bundled.txt --bundle
+```
+
+#### Example 9: Bundling With Exclusions
+
+```
+Before:                            After (bundled.txt):
+src/                               =====================================
+â”œâ”€â”€ module1/                       BUNDLED FILES FROM: /path/to/src
+â”‚   â”œâ”€â”€ script1.py                 CREATED: 2025-03-31 12:15:30
+â”‚   â”œâ”€â”€ setup.py                   =====================================
+â”‚   â””â”€â”€ utils/
+â”‚       â””â”€â”€ helper.py              =====================================
+â””â”€â”€ module2/                       FILE: module1___script1.py
+    â”œâ”€â”€ utils.js                   =====================================
+    â””â”€â”€ config.js                  # Content of script1.py
+                                  
+                                   =====================================
+                                   FILE: module1___utils___helper.py
+                                   =====================================
+                                   # Content of helper.py
+                                   
+                                   =====================================
+                                   FILE: module2___utils.js
+                                   =====================================
+                                   // Content of utils.js
+                                   
+                                   =====================================
+                                   END OF BUNDLED FILES (3 files)
+                                   =====================================
+```
+
+Command:
+```bash
+codebundle --src src --dest bundled.txt --bundle --exclude-files setup.py config.js
+```
+
+#### Example 10: Bundling only Specific Files (Inclusion)
+
+```
+Before:                            After (bundled.txt):
+src/                               =====================================
+â”œâ”€â”€ module1/                       BUNDLED FILES FROM: /path/to/src
+â”‚   â”œâ”€â”€ script1.py                 CREATED: 2025-03-31 12:15:30
+â”‚   â”œâ”€â”€ setup.py                   =====================================
+â”‚   â””â”€â”€ utils/
+â”‚       â””â”€â”€ helper.py              =====================================
+â””â”€â”€ module2/                       FILE: module1___script1.py
+    â”œâ”€â”€ utils.js                   =====================================
+    â”œâ”€â”€ main.js                    # Content of script1.py
+    â””â”€â”€ config.js                  
+                                   =====================================
+                                   FILE: module2___main.js
+                                   =====================================
+                                   // Content of main.js
+                                   
+                                   =====================================
+                                   END OF BUNDLED FILES (2 files)
+                                   =====================================
+```
+
+Command:
+```bash
+codebundle --src src --dest bundled.txt --bundle --include-files script1.py main.js
+```
+or
+```bash
+codebundle src bundled.txt --b --include-files script1.py main.js
+```
+
+## Development
+
+Clone the Repository:
+
+```bash
+git clone https://github.com/josephchay/codebundle.git
+cd codebundle
+```
+
+Install Locally:
+
+```bash
+pip install -e .
+```
+
+### Testing
+
+To test functionality during development, you can run:
+
+```bash
+python -m src.main --src <source_dir> --dest <dest_dir>
+```
+
+## License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE.txt) file for details.
+
+## Support
+
+Need help? Have a question? Feel free to reach out:
+* **Email**: [josephemmanuelchay@gmail.com](mailto:josephemmanuelchay@gmail.com)
+* **GitHub Issues**: [Issues](https://github.com/josephchay/codebundle/issues)
+
+Make your projects cleaner - flatten, deflatten, or bundle your directories today!

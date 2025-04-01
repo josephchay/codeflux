@@ -18,6 +18,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - File handling for `yaml` files.
 - `utils`, `constants` to the `py_modules` attribute in `setup.py` file.
 
+### Changed
+
+- Refactored handler, flatten, and deflatten functions to segregate common functionalities to `src/utils.py`
+- Moved common usages of constant variables to `src/constants.py` file.
+
 ### Fixed
 
 - Proper renames from `pack` to `bundle` in `utils.py`.

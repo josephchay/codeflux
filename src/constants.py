@@ -1,21 +1,28 @@
-DEFAULT_PYTHON_EXCLUDE_DIRS = ["__pycache__", ".git", ".idea", ".vscode", ".venv", "venv"]
-DEFAULT_PYTHON_EXCLUDE_EXTENSIONS = [".pyc", ".pyo", "__init__.py"]
-DEFAULT_PYTHON_EXCLUDE_FILENAMES = ["setup.py", "conftest.py"]
+DEFAULT_EXCLUDE_DIRS = ["__pycache__",  ".git",  ".idea",  ".vscode",  ".venv",  "venv",  "node_modules", "dist",
+                        "build",  ".next", "codebundle.egg-info"]
 
-DEFAULT_JS_EXCLUDE_DIRS = [".git", "node_modules", "dist", "build", ".next", ".vscode", ".idea"]
-DEFAULT_JS_EXCLUDE_EXTENSIONS = ["d.ts", ".test.js", ".test.ts", ".spec.js", ".spec.ts", ".min.js"]
-DEFAULT_JS_EXCLUDE_FILENAMES = ["babel.config.js", "jest.config.js", "webpack.config.js"]
+# Python-specific settings
+PYTHON_EXTENSIONS = [".py"]
+PYTHON_EXCLUDE_EXTENSIONS = [".pyc", ".pyo", "__init__.py"]
+PYTHON_EXCLUDE_FILENAMES = ["setup.py", "conftest.py"]
 
-JS_EXTENSIONS = [".js", ".jsx", ".ts", ".tsx"]
+# JavaScript/TypeScript-specific settings
+JSTS_EXTENSIONS = [".js", ".jsx", ".ts", ".tsx"]
+JSTS_EXCLUDE_EXTENSIONS = ["d.ts", ".test.js", ".test.ts", ".spec.js", ".spec.ts", ".min.js"]
+JSTS_EXCLUDE_FILENAMES = ["babel.config.js", "jest.config.js", "webpack.config.js"]
 
-DEFAULT_MD_EXCLUDE_DIRS = ["__pycache__", ".git", ".idea", ".vscode", ".venv", "venv", "node_modules"]
-DEFAULT_MD_EXCLUDE_EXTENSIONS = []  # No specific exclusions for markdown
-DEFAULT_MD_EXCLUDE_FILENAMES = ["LICENSE.md", "CONTRIBUTING.md", "CODE_OF_CONDUCT.md"]
+# Markdown/Text-specific settings
+MDTXT_EXTENSIONS = [".md", ".markdown", ".mdown", ".mkdn", ".mkd", ".mdwn", ".mdtxt", ".mdtext", ".txt"]
+MDTXT_EXCLUDE_EXTENSIONS = []
+MDTXT_EXCLUDE_FILENAMES = ["LICENSE.md", "LICENSE.txt", "CONTRIBUTING.md", "CONTRIBUTING.txt", "CODE_OF_CONDUCT.md",
+                           "CODE_OF_CONDUCT.txt", "CHANGELOG.md", "CHANGELOG.txt"]
 
-MD_EXTENSIONS = [".md", ".markdown", ".mdown", ".mkdn", ".mkd", ".mdwn", ".mdtxt", ".mdtext", ".txt"]
+# YAML-specific settings
+YML_EXTENSIONS = [".yaml", ".yml"]
+YML_EXCLUDE_EXTENSIONS = []
+YML_EXCLUDE_FILENAMES = ["docker-compose.yaml", "docker-compose.yml", "circleci.yml"]
 
-DEFAULT_YAML_EXCLUDE_DIRS = ["__pycache__", ".git", ".idea", ".vscode", ".venv", "venv", "node_modules"]
-DEFAULT_YAML_EXCLUDE_EXTENSIONS = []  # No specific exclusions for YAML
-DEFAULT_YAML_EXCLUDE_FILENAMES = ["docker-compose.yaml", "docker-compose.yml", "circleci.yml"]
-
-YAML_EXTENSIONS = [".yaml", ".yml"]
+# Combined settings for quick access
+ALL_EXTENSIONS = PYTHON_EXTENSIONS + JSTS_EXTENSIONS + MDTXT_EXTENSIONS + YML_EXTENSIONS
+ALL_EXCLUDE_EXTENSIONS = PYTHON_EXCLUDE_EXTENSIONS + JSTS_EXCLUDE_EXTENSIONS + MDTXT_EXCLUDE_EXTENSIONS + YML_EXCLUDE_EXTENSIONS
+ALL_EXCLUDE_FILENAMES = PYTHON_EXCLUDE_FILENAMES + JSTS_EXCLUDE_FILENAMES + MDTXT_EXCLUDE_FILENAMES + YML_EXCLUDE_FILENAMES

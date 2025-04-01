@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 setup(
     name='codebundle',
     version='0.5.0',
-    description='A lightweight CLI tool to flatten nested Python, JavaScript, and TypeScript files',
+    description='A lightweight CLI tool to flatten, deflatten, and bundle code files',
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',
     author='Joseph Chay',
