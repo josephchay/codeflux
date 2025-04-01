@@ -5,3 +5,5 @@ __pycache__/
 .vscode/
 
 src/codebundle.egg-info/
+
+temp/

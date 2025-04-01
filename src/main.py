@@ -10,7 +10,7 @@ from utils import get_relative_path, print_stats
 
 def bundle_files(source_dir, output_file, file_types=None, exclude_dirs=None, exclude_exts=None,
                  exclude_files=None, include_files=None, silent=False):
-    file_types = file_types or ["py", "ipynb", "js", "md", "yaml"]
+    file_types = file_types or ["py", "ipynb", "jsts", "mdtxt", "yml"]
     exclude_dirs = exclude_dirs or DEFAULT_EXCLUDE_DIRS
     exclude_exts = exclude_exts or ALL_EXCLUDE_EXTENSIONS
     exclude_files = exclude_files or ALL_EXCLUDE_FILENAMES
@@ -67,8 +67,6 @@ def bundle_files(source_dir, output_file, file_types=None, exclude_dirs=None, ex
                 stats["skipped_files"] += 1
                 continue
 
-            file_ext = os.path.splitext(file)[1].lower()
-
             # Check if file should be included
             is_included_ext = any(file.lower().endswith(ext) for ext in included_extensions)
             is_excluded_ext = any(file.endswith(ext) for ext in exclude_exts)
@@ -87,10 +85,16 @@ def bundle_files(source_dir, output_file, file_types=None, exclude_dirs=None, ex
                 else:
                     formatted_path = file
 
+                # Get file extension for language hint
+                _, file_ext = os.path.splitext(file)
+                if file_ext:
+                    file_ext = file_ext[1:]  # Remove the dot
+
                 files_to_bundle.append({
                     'file_path': file_path,
                     'formatted_path': formatted_path,
-                    'rel_path': os.path.relpath(file_path, source_dir)
+                    'rel_path': os.path.relpath(file_path, source_dir),
+                    'extension': file_ext
                 })
             else:
                 stats["skipped_files"] += 1
@@ -105,51 +109,42 @@ def bundle_files(source_dir, output_file, file_types=None, exclude_dirs=None, ex
         return stats
 
     with open(output_file, 'w', encoding='utf-8') as outfile:
-        outfile.write("=" * 80 + "\n")
-        outfile.write(f"BUNDLED FILES FROM: {source_dir}\n")
-        outfile.write(f"CREATED: {time.strftime('%Y-%m-%d %H:%M:%S')}\n")
-        outfile.write("=" * 80 + "\n\n")
+        outfile.write(f"# Bundled Code from {os.path.basename(source_dir)}\n")
+        outfile.write(f"# Files: {len(files_to_bundle)} | Created: {time.strftime('%Y-%m-%d')}\n\n")
 
         for file_info in files_to_bundle:
             file_path = file_info['file_path']
             formatted_path = file_info['formatted_path']
-            rel_path = file_info['rel_path']
+            file_ext = file_info['extension']
 
             try:
-                # Read file content
                 with open(file_path, 'r', encoding='utf-8') as infile:
                     content = infile.read()
 
-                # Write file separator
-                outfile.write("\n" + "=" * 80 + "\n")
-                outfile.write(f"FILE: {formatted_path}\n")
-                outfile.write("=" * 80 + "\n\n")
-
-                # Write file content
+                outfile.write(f"### FILE: {formatted_path}\n")
+                if file_ext:
+                    outfile.write(f"```{file_ext}\n")
+                else:
+                    outfile.write("```\n")
                 outfile.write(content)
-                outfile.write("\n")
+                if not content.endswith('\n'):
+                    outfile.write('\n')
+                outfile.write("```\n\n")
 
-                # Update stats
                 stats["files_bundled"] += 1
                 stats["bytes_bundled"] += os.path.getsize(file_path)
 
                 if not silent:
-                    # Print the formatted path with directory structure in logs
                     print(f"Bundled: {formatted_path}")
 
             except UnicodeDecodeError:
                 if not silent:
-                    print(f"Skipped binary file: {rel_path}")
+                    print(f"Skipped binary file: {formatted_path}")
                 stats["skipped_files"] += 1
             except Exception as e:
                 if not silent:
-                    print(f"Error bundling {rel_path}: {str(e)}")
+                    print(f"Error bundling {formatted_path}: {str(e)}")
                 stats["skipped_files"] += 1
-
-        # Write footer
-        outfile.write("\n" + "=" * 80 + "\n")
-        outfile.write(f"END OF BUNDLED FILES ({stats['files_bundled']} files)\n")
-        outfile.write("=" * 80 + "\n")
 
     end_time = time.time()
     duration = end_time - start_time
@@ -187,7 +182,7 @@ def merge_stats(stats_list):
 
 def flatten_dir(source_dir, dest_dir, file_types=None, exclude_dirs=None, exclude_exts=None, exclude_files=None,
                 include_files=None, clear_dest_dir=False, silent=False):
-    file_types = file_types or ["py", "ipynb", "js", "md", "yaml"]
+    file_types = file_types or ["py", "ipynb", "jsts", "mdtxt", "yml"]
     exclude_dirs = exclude_dirs or DEFAULT_EXCLUDE_DIRS
     exclude_exts = exclude_exts or ALL_EXCLUDE_EXTENSIONS
     exclude_files = exclude_files or ALL_EXCLUDE_FILENAMES
@@ -203,7 +198,8 @@ def flatten_dir(source_dir, dest_dir, file_types=None, exclude_dirs=None, exclud
             if not silent:
                 print(f"\n================ {file_type.upper()} FILES ================\n")
 
-            file_stats = handler.flatten_dir(source_dir, file_dest_dir, exclude_dirs, exclude_exts, exclude_files, include_files, clear_dest_dir, silent)
+            file_stats = handler.flatten_dir(source_dir, file_dest_dir, exclude_dirs, exclude_exts, exclude_files,
+                                             include_files, clear_dest_dir, silent)
 
             if file_stats["files_copied"] > 0:
                 all_stats.append(file_stats)
@@ -228,7 +224,7 @@ def flatten_dir(source_dir, dest_dir, file_types=None, exclude_dirs=None, exclud
 
 def deflatten_dir(flattened_dir, dest_dir, file_types=None, exclude_files=None, include_files=None, clear_dest_dir=False,
                   silent=False):
-    file_types = file_types or ["py", "ipynb", "js", "md", "yaml"]
+    file_types = file_types or ["py", "ipynb", "jsts", "mdtxt", "yml"]
     exclude_files = exclude_files or ALL_EXCLUDE_FILENAMES
 
     all_stats = []
@@ -271,9 +267,9 @@ def main():
 
     parser.add_argument("--file-types",
                         nargs="+",
-                        choices=["py", "ipynb", "js", "md", "yaml"],
-                        default=["py", "ipynb", "js", "md", "yaml"],
-                        help="File types to process: 'py' for Python, 'ipynb' for Python Notebooks, 'js' for JavaScript/TypeScript, 'md' for Markdown, 'yaml' for YAML (default: all)")
+                        choices=["py", "ipynb", "jsts", "mdtxt", "yml"],
+                        default=["py", "ipynb", "jsts", "mdtxt", "yml"],
+                        help="File types to process: 'py' for Python, 'ipynb' for Python Notebooks, 'jsts' for JavaScript/TypeScript, 'mdtxt' for Markdown, 'yml' for YAML (default: all)")
 
     parser.add_argument("--exclude-dirs",
                         nargs="+",
@@ -316,11 +312,14 @@ def main():
 
     try:
         if args.deflatten:
-            stats = deflatten_dir(source_dir, dest_path, args.file_types, args.exclude_files, args.include_files, args.clear_dest_dir, args.no_log)
+            stats = deflatten_dir(source_dir, dest_path, args.file_types, args.exclude_files, args.include_files,
+                                  args.clear_dest_dir, args.no_log)
         elif args.bundle:
-            stats = bundle_files(source_dir, dest_path, args.file_types, args.exclude_dirs, args.exclude_extensions, args.exclude_files, args.include_files, args.no_log)
+            stats = bundle_files(source_dir, dest_path, args.file_types, args.exclude_dirs, args.exclude_extensions,
+                                 args.exclude_files, args.include_files, args.no_log)
         else:
-            stats = flatten_dir(source_dir, dest_path, args.file_types, args.exclude_dirs, args.exclude_extensions, args.exclude_files, args.include_files, args.clear_dest_dir, args.no_log)
+            stats = flatten_dir(source_dir, dest_path, args.file_types, args.exclude_dirs, args.exclude_extensions,
+                                args.exclude_files, args.include_files, args.clear_dest_dir, args.no_log)
 
         return 0
     except ValueError as e:
