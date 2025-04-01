@@ -134,7 +134,8 @@ def bundle_files(source_dir, output_file, file_types=None, exclude_dirs=None, ex
                 stats["bytes_bundled"] += os.path.getsize(file_path)
 
                 if not silent:
-                    print(f"Bundled: {rel_path}")
+                    # Print the formatted path with directory structure in logs
+                    print(f"Bundled: {formatted_path}")
 
             except UnicodeDecodeError:
                 if not silent:
