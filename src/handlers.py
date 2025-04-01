@@ -246,5 +246,5 @@ HANDLERS = {
     "ipynb": NotebookHandler(),
     "jsts": JavaScriptTypescriptHandler(),
     "mdtxt": MarkdownTextHandler(),
-    "yml": YamlHandler()
+    "yml": YamlHandler(),
 }
