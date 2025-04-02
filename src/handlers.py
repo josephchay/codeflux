@@ -241,10 +241,22 @@ class YamlHandler(FileExtHandler):
         )
 
 
+class ShellHandler(FileExtHandler):
+    """Handler for Shell script files"""
+    def __init__(self):
+        super().__init__(
+            extensions=SHELL_EXTENSIONS,
+            exclude_dirs=DEFAULT_EXCLUDE_DIRS,
+            exclude_extensions=SHELL_EXCLUDE_EXTENSIONS,
+            exclude_filenames=SHELL_EXCLUDE_FILENAMES
+        )
+
+
 HANDLERS = {
     "py": PythonHandler(),
     "ipynb": NotebookHandler(),
     "jsts": JavaScriptTypescriptHandler(),
     "mdtxt": MarkdownTextHandler(),
     "yml": YamlHandler(),
+    "sh": ShellHandler(),
 }

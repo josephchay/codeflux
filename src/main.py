@@ -8,9 +8,9 @@ from handlers import HANDLERS
 from utils import get_relative_path, print_stats
 
 
-def bundle_files(source_dir, output_file, file_types=None, exclude_dirs=None, exclude_exts=None,
-                 exclude_files=None, include_files=None, silent=False):
-    file_types = file_types or ["py", "ipynb", "jsts", "mdtxt", "yml"]
+def bundle_files(source_dir, output_file, file_types=None, exclude_dirs=None, exclude_exts=None, exclude_files=None,
+                 include_files=None, silent=False):
+    file_types = file_types or ["py", "ipynb", "jsts", "mdtxt", "yml", "sh"]
     exclude_dirs = exclude_dirs or DEFAULT_EXCLUDE_DIRS
     exclude_exts = exclude_exts or ALL_EXCLUDE_EXTENSIONS
     exclude_files = exclude_files or ALL_EXCLUDE_FILENAMES
@@ -47,7 +47,6 @@ def bundle_files(source_dir, output_file, file_types=None, exclude_dirs=None, ex
     if not silent:
         print(f"Source: {get_relative_path(source_dir, os.getcwd())}")
         print(f"Output file: {get_relative_path(output_file, os.getcwd())}\n")
-        print(f"Bundling files into a single text file...")
 
     files_to_bundle = []
     for root, dirs, files in os.walk(source_dir):
@@ -108,43 +107,67 @@ def bundle_files(source_dir, output_file, file_types=None, exclude_dirs=None, ex
             print_stats("bundling", stats, duration)
         return stats
 
+    # Sort files to group similar types together - aids in AI analysis
+    files_to_bundle.sort(key=lambda x: (x['extension'], x['formatted_path']))
+
+    # Calculate original size for stats
+    original_size = sum(os.path.getsize(f['file_path']) for f in files_to_bundle if os.path.exists(f['file_path']))
+
+    # Group files by extension for more efficient processing
+    extension_groups = {}
+    for file_info in files_to_bundle:
+        ext = file_info['extension']
+        if ext not in extension_groups:
+            extension_groups[ext] = []
+        extension_groups[ext].append(file_info)
+
     with open(output_file, 'w', encoding='utf-8') as outfile:
-        outfile.write(f"# Bundled Code from {os.path.basename(source_dir)}\n")
-        outfile.write(f"# Files: {len(files_to_bundle)} | Created: {time.strftime('%Y-%m-%d')}\n\n")
+        # Write a minimal header
+        outfile.write(f"# {os.path.basename(source_dir)} ({len(files_to_bundle)} files)\n\n")
 
-        for file_info in files_to_bundle:
-            file_path = file_info['file_path']
-            formatted_path = file_info['formatted_path']
-            file_ext = file_info['extension']
+        # Process files by extension group
+        for ext, group_files in extension_groups.items():
+            # Only write extension header if there are actual files
+            if group_files:
+                outfile.write(f"## {ext.upper() or 'UNKNOWN'} FILES ({len(group_files)})\n\n")
 
-            try:
-                with open(file_path, 'r', encoding='utf-8') as infile:
-                    content = infile.read()
+            for file_info in group_files:
+                file_path = file_info['file_path']
+                formatted_path = file_info['formatted_path']
 
-                outfile.write(f"### FILE: {formatted_path}\n")
-                if file_ext:
-                    outfile.write(f"```{file_ext}\n")
-                else:
-                    outfile.write("```\n")
-                outfile.write(content)
-                if not content.endswith('\n'):
-                    outfile.write('\n')
-                outfile.write("```\n\n")
+                try:
+                    # Read file content before writing anything
+                    with open(file_path, 'r', encoding='utf-8') as infile:
+                        content = infile.read()
 
-                stats["files_bundled"] += 1
-                stats["bytes_bundled"] += os.path.getsize(file_path)
+                    # Skip empty files
+                    if not content.strip():
+                        if not silent:
+                            print(f"Skipped empty file: {formatted_path}")
+                        stats["skipped_files"] += 1
+                        continue
 
-                if not silent:
-                    print(f"Bundled: {formatted_path}")
+                    # Write minimized file header
+                    outfile.write(f"`{formatted_path}`\n```\n")
 
-            except UnicodeDecodeError:
-                if not silent:
-                    print(f"Skipped binary file: {formatted_path}")
-                stats["skipped_files"] += 1
-            except Exception as e:
-                if not silent:
-                    print(f"Error bundling {formatted_path}: {str(e)}")
-                stats["skipped_files"] += 1
+                    # Add content - strip extra whitespace for further size reduction
+                    outfile.write(content.rstrip())
+                    outfile.write("\n```\n\n")
+
+                    stats["files_bundled"] += 1
+                    stats["bytes_bundled"] += len(content)
+
+                    if not silent:
+                        print(f"Bundled: {formatted_path}")
+
+                except UnicodeDecodeError:
+                    if not silent:
+                        print(f"Skipped binary file: {formatted_path}")
+                    stats["skipped_files"] += 1
+                except Exception as e:
+                    if not silent:
+                        print(f"Error bundling {formatted_path}: {str(e)}")
+                    stats["skipped_files"] += 1
 
     end_time = time.time()
     duration = end_time - start_time
@@ -182,7 +205,7 @@ def merge_stats(stats_list):
 
 def flatten_dir(source_dir, dest_dir, file_types=None, exclude_dirs=None, exclude_exts=None, exclude_files=None,
                 include_files=None, clear_dest_dir=False, silent=False):
-    file_types = file_types or ["py", "ipynb", "jsts", "mdtxt", "yml"]
+    file_types = file_types or ["py", "ipynb", "jsts", "mdtxt", "yml", "sh"]
     exclude_dirs = exclude_dirs or DEFAULT_EXCLUDE_DIRS
     exclude_exts = exclude_exts or ALL_EXCLUDE_EXTENSIONS
     exclude_files = exclude_files or ALL_EXCLUDE_FILENAMES
@@ -224,7 +247,7 @@ def flatten_dir(source_dir, dest_dir, file_types=None, exclude_dirs=None, exclud
 
 def deflatten_dir(flattened_dir, dest_dir, file_types=None, exclude_files=None, include_files=None, clear_dest_dir=False,
                   silent=False):
-    file_types = file_types or ["py", "ipynb", "jsts", "mdtxt", "yml"]
+    file_types = file_types or ["py", "ipynb", "jsts", "mdtxt", "yml", "sh"]
     exclude_files = exclude_files or ALL_EXCLUDE_FILENAMES
 
     all_stats = []
@@ -254,7 +277,7 @@ def deflatten_dir(flattened_dir, dest_dir, file_types=None, exclude_files=None, 
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Flatten, deflatten, or bundle a directory of Python, JavaScript, TypeScript, Markdown, and YAML files.")
+    parser = argparse.ArgumentParser(description="Flatten, deflatten, or bundle a directory of files.")
 
     # Support both positional and named arguments
     src_group = parser.add_argument_group('source')
@@ -267,9 +290,9 @@ def main():
 
     parser.add_argument("--file-types",
                         nargs="+",
-                        choices=["py", "ipynb", "jsts", "mdtxt", "yml"],
-                        default=["py", "ipynb", "jsts", "mdtxt", "yml"],
-                        help="File types to process: 'py' for Python, 'ipynb' for Python Notebooks, 'jsts' for JavaScript/TypeScript, 'mdtxt' for Markdown, 'yml' for YAML (default: all)")
+                        choices=["py", "ipynb", "jsts", "mdtxt", "yml", "sh"],
+                        default=["py", "ipynb", "jsts", "mdtxt", "yml", "sh"],
+                        help="File types to process: 'py' for Python, 'ipynb' for Python Notebooks, 'jsts' for JavaScript/TypeScript, 'mdtxt' for Markdown, 'yml' for YAML, 'sh' for Shell Scripts (default: all)")
 
     parser.add_argument("--exclude-dirs",
                         nargs="+",

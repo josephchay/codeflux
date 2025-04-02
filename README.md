@@ -19,35 +19,12 @@ It's perfect for organizing large codebases, consolidating scripts, or preparing
 | Python Notebooks | `.ipynb`                                                                    |
 | JavaScript       | `.js`, `.jsx`                                                               |
 | TypeScript       | `.ts`, `.tsx`                                                               |
+| Shell Scripts    | `.sh`, `.bash`, `.zsh`                                                      |
 | Markdown         | `.md`, `.markdown`, `.mdown`, `.mkdn`, `.mkd`, `.mdwn`, `.mdtxt`, `.mdtext` |
 | Plain Text       | `.txt`                                                                      |
 | YAML             | `.yaml`, `.yml`                                                             |
 
 _More extensions to be added in the future._
-
----
-
-## Features
-
-- **Flattens Nested Directories**: Gathers all required files into a single folder, no matter how deeply nested they are.
-- **Exclude Options**: Allows excluding specific directories, file extensions, and specific filenames from the process.
-- **Include Options**: Allows specifying exactly which files to process, ignoring all others.
-- **Handles File Name Conflicts**: Renames files with duplicate names to ensure no overwriting.
-- **Clean Destination Directory**: Automatically clears the destination folder before copying.
-- **Command-Line Simplicity**: Provides an easy-to-use CLI interface.
-- **Directory Path Preservation**: Option to prefix files with their original directory structure.
-- **Exclude Specific Directories**: Allows excluding certain directories from the flattening process.
-- **Exclude Specific File Extensions**: Allows excluding files with certain extensions.
-- **Exclude Specific Files**: Allows excluding specific files by name.
-- **Include Specific Files**: Allows processing only specific files by name.
-- **Deflatten Functionality**: Provides the ability to revert the flattening process and restore the original directory structure.
-- **Bundle Functionality**: Bundles all files into a single text file while preserving path information.
-- **Multiple File Format Support**: 
-  - Python files (.py)
-  - Python Notebook files (.ipynb)
-  - JavaScript/TypeScript files (.js, .jsx, .ts, .tsx)
-  - Markdown files (.md, .markdown, etc.)
-  - YAML files (.yaml, .yml)
 
 ---
 
@@ -81,19 +58,19 @@ that have not been merged into the `main` branch.
 
 ## Command-Line Arguments
 
-| Argument               | Required | Default                           | Description                                                                                                                              |
-|------------------------|----------|-----------------------------------|------------------------------------------------------------------------------------------------------------------------------------------|
-| `[src]`                | Yes      | -                                 | Source directory containing the files to flatten                                                                                         |
-| `[dest]`               | Yes      | -                                 | Destination directory/file where files will be copied                                                                                    |
-| `--file-types`         | No       | `py`, `ipynb`, `js`, `md`, `yaml` | File types to process: 'py' for Python, 'ipynb' for Python Notebooks, 'js' for JavaScript/TypeScript, 'md' for Markdown, 'yaml' for YAML |
-| `--exclude-dirs`       | No       | Various default directories       | Directory names to exclude                                                                                                               |
-| `--exclude-extensions` | No       | Various default extensions        | File extensions to exclude                                                                                                               |
-| `--exclude-files`      | No       | Various common files              | Specific filenames to exclude (e.g., setup.py, jest.config.js)                                                                           |
-| `--include-files`      | No       | None                              | Specific filenames to include (only these will be processed)                                                                             |
-| `--clear-dest-dir`     | No       | `False`                           | Clear the destination directory before copying files                                                                                     |
-| `--deflatten`          | No       | `False`                           | Deflatten the directory instead of flattening (reverses the flattening process)                                                          |
-| `--bundle`             | No       | `False`                           | Bundle all files into a single text file with path information                                                                           |
-| `--no-log`             | No       | `False`                           | Disable logging output                                                                                                                   |
+| Argument               | Required | Default                                    | Description                                                                                                                                                           |
+|------------------------|----------|--------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `[src]`                | Yes      | -                                          | Source directory containing the files to flatten                                                                                                                      |
+| `[dest]`               | Yes      | -                                          | Destination directory/file where files will be copied                                                                                                                 |
+| `--file-types`         | No       | `py`, `ipynb`, `js`, `md`, `yaml`, `shell` | File types to process: 'py' for Python, 'ipynb' for Python Notebooks, 'jsts' for JavaScript/TypeScript, 'md' for Markdown, 'yaml' for YAML, 'shell' for Shell Scripts |
+| `--exclude-dirs`       | No       | Various default directories                | Directory names to exclude                                                                                                                                            |
+| `--exclude-extensions` | No       | Various default extensions                 | File extensions to exclude                                                                                                                                            |
+| `--exclude-files`      | No       | Various common files                       | Specific filenames to exclude (e.g., setup.py, jest.config.js)                                                                                                        |
+| `--include-files`      | No       | None                                       | Specific filenames to include (only these will be processed)                                                                                                          |
+| `--clear-dest-dir`     | No       | `False`                                    | Clear the destination directory before copying files                                                                                                                  |
+| `--deflatten`          | No       | `False`                                    | Deflatten the directory instead of flattening (reverses the flattening process)                                                                                       |
+| `--bundle`             | No       | `False`                                    | Bundle all files into a single text file with path information                                                                                                        |
+| `--no-log`             | No       | `False`                                    | Disable logging output                                                                                                                                                |
 
 For detailed information on the default values on the arguments, refer to the [constants](src/constants.py) file.
 
@@ -104,16 +81,15 @@ Here are various scenarios and how to use the tool:
 | Scenario                    | Command                                                                                       | Description                                                                                               |
 |-----------------------------|-----------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------|
 | Basic Flattening            | `codebundle --src src --dest flat`                                                            | Flattens all supported files into the 'flat' directory                                                    |
-| Process Specific Types      | `codebundle --src src --dest flat --file-types py ipynb yaml`                                 | Process only Python, Python Notebooks, and YAML files, ignoring other types                               |
+| Process Specific Types      | `codebundle --src src --dest flat --file-types py ipynb shell`                                | Process only Python, Python Notebooks, and Shell Script files, ignoring other types                       |
 | Exclude Directories         | `codebundle --src src --dest flat --exclude-dirs .idea .venv`                                 | Excludes the `.idea` and `.venv` directories from the flattening process                                  |
 | Exclude File Extensions     | `codebundle --src src --dest flat --exclude-extensions .txt .csv`                             | Excludes files with `.txt` and `.csv` extensions from the flattening process                              |
-| Exclude Specific Files      | `codebundle --src src --dest flat --exclude-files setup.py package.json`                      | Excludes specific files like setup.py and package.json from the flattening process                        |
-| Include Only Specific Files | `codebundle --src src --dest flat --include-files main.py analysis.ipynb config.yaml`         | Processes only the specified files, ignoring all others                                                   |
+| Exclude Specific Files      | `codebundle --src src --dest flat --exclude-files setup.py package.json setup.sh`             | Excludes specific files like setup.py, package.json, and setup.sh from the flattening process             |
+| Include Only Specific Files | `codebundle --src src --dest flat --include-files main.py analysis.ipynb deploy.sh`           | Processes only the specified files, ignoring all others                                                   |
 | Deflatten Directory         | `codebundle --src flattened --dest original --deflatten`                                      | Reverts the flattening process and restores the original directory structure from the flattened directory |
 | Bundle Files                | `codebundle --src src --dest bundled.txt --bundle`                                            | Bundles all files into a single text file with clear file separators and path information                 |
 | Bundle Only Specific Files  | `codebundle --src src --dest bundle.txt --bundle --include-files config.yaml notebook.ipynb`  | Bundles only the specified files into a single text file                                                  |
 | Combine Exclusions          | `codebundle --src src --dest flat --exclude-dirs node_modules --exclude-files .env config.js` | Uses multiple exclusion types together                                                                    |
-
 
 ### Example Directory Transformations
 
