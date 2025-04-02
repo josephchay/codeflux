@@ -62,3 +62,61 @@ def print_stats(operation_type, stats, duration):
         if "files_copied" in stats:
             print(f"Processing rate: {stats['files_copied'] / max(duration, 0.1):.2f} files/second")
     print("=" * 50)
+
+
+def merge_with_defaults(user_values, defaults, ignore_defaults=False):
+    if user_values is None:
+        return [] if ignore_defaults else defaults
+
+    if ignore_defaults:
+        return user_values
+    else:
+        return list(set(user_values + defaults))
+
+
+def merge_stats(stats_list):
+    merged_stats = {
+        "total_files_processed": 0,
+        "dirs_traversed": 0,
+        "files_copied": 0,
+        "bytes_copied": 0,
+        "skipped_files": 0,
+        "max_nesting_level": 0,
+        "dirs_created": 0,
+        "files_bundled": 0,
+        "bytes_bundled": 0
+    }
+
+    for stats in stats_list:
+        for key, value in stats.items():
+            if key in merged_stats:
+                merged_stats[key] += value
+                # For max_nesting_level, keep the maximum value
+                if key == "max_nesting_level":
+                    merged_stats[key] = max(merged_stats[key], value)
+
+    return merged_stats
+
+
+def should_process_file(filename, handler_extensions, exclude_exts=None, exclude_files=None,
+                        include_exts=None, include_files=None):
+    # If include_files is specified, only include those files
+    if include_files:
+        return filename in include_files
+
+    # Check extension inclusion if specified
+    if include_exts:
+        is_included_ext = any(filename.lower().endswith(ext) for ext in include_exts)
+        if not is_included_ext:
+            return False
+    else:
+        # Otherwise check if it's one of the handler's extensions
+        is_target_ext = any(filename.lower().endswith(ext) for ext in handler_extensions)
+        if not is_target_ext:
+            return False
+
+    # Check exclusions
+    is_excluded_ext = exclude_exts and any(filename.endswith(ext) for ext in exclude_exts)
+    is_excluded_file = exclude_files and filename in exclude_files
+
+    return not (is_excluded_ext or is_excluded_file)

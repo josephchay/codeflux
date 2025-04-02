@@ -5,19 +5,18 @@ import time
 
 from constants import DEFAULT_EXCLUDE_DIRS, ALL_EXCLUDE_EXTENSIONS, ALL_EXCLUDE_FILENAMES, ALL_EXTENSIONS
 from handlers import HANDLERS
-from utils import get_relative_path, print_stats
+from utils import get_relative_path, print_stats, merge_with_defaults, merge_stats, should_process_file
 
 
 def bundle_files(source_dir, output_file, file_types=None, exclude_dirs=None, exclude_exts=None, exclude_files=None,
-                 include_files=None, silent=False):
-    file_types = file_types or ["py", "ipynb", "jsts", "mdtxt", "yml", "sh"]
-    exclude_dirs = exclude_dirs or DEFAULT_EXCLUDE_DIRS
-    exclude_exts = exclude_exts or ALL_EXCLUDE_EXTENSIONS
-    exclude_files = exclude_files or ALL_EXCLUDE_FILENAMES
+                 include_dirs=None, include_exts=None, include_files=None, silent=False, ignore_defaults=False):
+    """Bundle files into a single text file with path information."""
+    file_types = file_types or ["py", "ipynb", "jsts", "mdtxt", "yml", "shell"]
 
-    if isinstance(exclude_files, list):
-        exclude_files = list(exclude_files)
-    else:
+    exclude_dirs = merge_with_defaults(exclude_dirs, DEFAULT_EXCLUDE_DIRS, ignore_defaults)
+    exclude_exts = merge_with_defaults(exclude_exts, ALL_EXCLUDE_EXTENSIONS, ignore_defaults)
+    exclude_files = merge_with_defaults(exclude_files, ALL_EXCLUDE_FILENAMES, ignore_defaults)
+    if exclude_files is None:
         exclude_files = []
 
     source_dir = os.path.abspath(source_dir)
@@ -36,11 +35,13 @@ def bundle_files(source_dir, output_file, file_types=None, exclude_dirs=None, ex
         "max_nesting_level": 0
     }
 
-    # Get all file extensions based on selected file types
     included_extensions = []
     for file_type in file_types:
         if file_type in HANDLERS:
             included_extensions.extend(HANDLERS[file_type].extensions)
+
+    if include_exts:
+        included_extensions = include_exts
 
     start_time = time.time()
 
@@ -56,6 +57,15 @@ def bundle_files(source_dir, output_file, file_types=None, exclude_dirs=None, ex
         current_nesting = len(os.path.relpath(root, source_dir).split(os.sep))
         stats["max_nesting_level"] = max(stats["max_nesting_level"], current_nesting)
 
+        if include_dirs:
+            # Only process specified directories
+            rel_dir = os.path.relpath(root, source_dir)
+            rel_dir_parts = rel_dir.split(os.sep)
+            # Check if any part of the path is in include_dirs
+            if not any(part in include_dirs for part in rel_dir_parts) and rel_dir != '.':
+                dirs[:] = []  # Clear dirs to skip this branch
+                continue
+
         # Exclude directories
         dirs[:] = [d for d in dirs if d not in exclude_dirs]
 
@@ -66,16 +76,8 @@ def bundle_files(source_dir, output_file, file_types=None, exclude_dirs=None, ex
                 stats["skipped_files"] += 1
                 continue
 
-            # Check if file should be included
-            is_included_ext = any(file.lower().endswith(ext) for ext in included_extensions)
-            is_excluded_ext = any(file.endswith(ext) for ext in exclude_exts)
-            is_excluded_file = file in exclude_files
-
-            # If include_files is specified, only include those files
-            if include_files:
-                should_include = file in include_files
-            else:
-                should_include = is_included_ext and not is_excluded_ext and not is_excluded_file
+            # Use centralized file filtering logic
+            should_include = should_process_file(file, included_extensions, exclude_exts, exclude_files, include_exts, include_files)
 
             if should_include:
                 path_parts = os.path.normpath(root).split(os.sep)[source_dir_parts:]
@@ -110,9 +112,6 @@ def bundle_files(source_dir, output_file, file_types=None, exclude_dirs=None, ex
     # Sort files to group similar types together - aids in AI analysis
     files_to_bundle.sort(key=lambda x: (x['extension'], x['formatted_path']))
 
-    # Calculate original size for stats
-    original_size = sum(os.path.getsize(f['file_path']) for f in files_to_bundle if os.path.exists(f['file_path']))
-
     # Group files by extension for more efficient processing
     extension_groups = {}
     for file_info in files_to_bundle:
@@ -122,12 +121,8 @@ def bundle_files(source_dir, output_file, file_types=None, exclude_dirs=None, ex
         extension_groups[ext].append(file_info)
 
     with open(output_file, 'w', encoding='utf-8') as outfile:
-        # Write a minimal header
         outfile.write(f"# {os.path.basename(source_dir)} ({len(files_to_bundle)} files)\n\n")
-
-        # Process files by extension group
         for ext, group_files in extension_groups.items():
-            # Only write extension header if there are actual files
             if group_files:
                 outfile.write(f"## {ext.upper() or 'UNKNOWN'} FILES ({len(group_files)})\n\n")
 
@@ -136,21 +131,16 @@ def bundle_files(source_dir, output_file, file_types=None, exclude_dirs=None, ex
                 formatted_path = file_info['formatted_path']
 
                 try:
-                    # Read file content before writing anything
                     with open(file_path, 'r', encoding='utf-8') as infile:
                         content = infile.read()
 
-                    # Skip empty files
                     if not content.strip():
                         if not silent:
                             print(f"Skipped empty file: {formatted_path}")
                         stats["skipped_files"] += 1
                         continue
 
-                    # Write minimized file header
                     outfile.write(f"`{formatted_path}`\n```\n")
-
-                    # Add content - strip extra whitespace for further size reduction
                     outfile.write(content.rstrip())
                     outfile.write("\n```\n\n")
 
@@ -178,37 +168,15 @@ def bundle_files(source_dir, output_file, file_types=None, exclude_dirs=None, ex
     return stats
 
 
-def merge_stats(stats_list):
-    """Merge multiple statistics dictionaries into one"""
-    merged_stats = {
-        "total_files_processed": 0,
-        "dirs_traversed": 0,
-        "files_copied": 0,
-        "bytes_copied": 0,
-        "skipped_files": 0,
-        "max_nesting_level": 0,
-        "dirs_created": 0,
-        "files_bundled": 0,
-        "bytes_bundled": 0
-    }
-
-    for stats in stats_list:
-        for key, value in stats.items():
-            if key in merged_stats:
-                merged_stats[key] += value
-                # For max_nesting_level, keep the maximum value
-                if key == "max_nesting_level":
-                    merged_stats[key] = max(merged_stats[key], value)
-
-    return merged_stats
-
-
 def flatten_dir(source_dir, dest_dir, file_types=None, exclude_dirs=None, exclude_exts=None, exclude_files=None,
-                include_files=None, clear_dest_dir=False, silent=False):
-    file_types = file_types or ["py", "ipynb", "jsts", "mdtxt", "yml", "sh"]
-    exclude_dirs = exclude_dirs or DEFAULT_EXCLUDE_DIRS
-    exclude_exts = exclude_exts or ALL_EXCLUDE_EXTENSIONS
-    exclude_files = exclude_files or ALL_EXCLUDE_FILENAMES
+                include_dirs=None, include_exts=None, include_files=None, clear_dest_dir=False, silent=False,
+                ignore_defaults=False):
+    """Flatten a directory structure by copying files to a destination directory."""
+    file_types = file_types or ["py", "ipynb", "jsts", "mdtxt", "yml", "shell"]
+
+    exclude_dirs = merge_with_defaults(exclude_dirs, DEFAULT_EXCLUDE_DIRS, ignore_defaults)
+    exclude_exts = merge_with_defaults(exclude_exts, ALL_EXCLUDE_EXTENSIONS, ignore_defaults)
+    exclude_files = merge_with_defaults(exclude_files, ALL_EXCLUDE_FILENAMES, ignore_defaults)
 
     all_stats = []
     start_time = time.time()
@@ -218,11 +186,15 @@ def flatten_dir(source_dir, dest_dir, file_types=None, exclude_dirs=None, exclud
             handler = HANDLERS[file_type]
             file_dest_dir = os.path.join(dest_dir, file_type)
 
+            if include_exts:
+                if not any(ext in include_exts for ext in handler.extensions):
+                    continue
+
             if not silent:
                 print(f"\n================ {file_type.upper()} FILES ================\n")
 
             file_stats = handler.flatten_dir(source_dir, file_dest_dir, exclude_dirs, exclude_exts, exclude_files,
-                                             include_files, clear_dest_dir, silent)
+                                             include_dirs, include_exts, include_files, clear_dest_dir, silent)
 
             if file_stats["files_copied"] > 0:
                 all_stats.append(file_stats)
@@ -245,10 +217,12 @@ def flatten_dir(source_dir, dest_dir, file_types=None, exclude_dirs=None, exclud
     return merged_stats
 
 
-def deflatten_dir(flattened_dir, dest_dir, file_types=None, exclude_files=None, include_files=None, clear_dest_dir=False,
-                  silent=False):
-    file_types = file_types or ["py", "ipynb", "jsts", "mdtxt", "yml", "sh"]
-    exclude_files = exclude_files or ALL_EXCLUDE_FILENAMES
+def deflatten_dir(flattened_dir, dest_dir, file_types=None, exclude_files=None, include_dirs=None,
+                  include_exts=None, include_files=None, clear_dest_dir=False, silent=False, ignore_defaults=False):
+    """Deflatten a directory by reconstructing the original directory structure."""
+    file_types = file_types or ["py", "ipynb", "jsts", "mdtxt", "yml", "shell"]
+
+    exclude_files = merge_with_defaults(exclude_files, ALL_EXCLUDE_FILENAMES, ignore_defaults)
 
     all_stats = []
     start_time = time.time()
@@ -258,11 +232,16 @@ def deflatten_dir(flattened_dir, dest_dir, file_types=None, exclude_files=None, 
             handler = HANDLERS[file_type]
             source_dir = os.path.join(flattened_dir, file_type)
 
+            if include_exts:
+                if not any(ext in include_exts for ext in handler.extensions):
+                    continue
+
             if os.path.exists(source_dir) and os.listdir(source_dir):
                 if not silent:
                     print(f"\n================ {file_type.upper()} FILES ================\n")
 
-                file_stats = handler.deflatten_dir(source_dir, dest_dir, exclude_files, include_files, clear_dest_dir, silent)
+                file_stats = handler.deflatten_dir(source_dir, dest_dir, exclude_files, include_dirs,
+                                                   include_exts, include_files, clear_dest_dir, silent)
                 all_stats.append(file_stats)
 
     merged_stats = merge_stats(all_stats)
@@ -277,49 +256,63 @@ def deflatten_dir(flattened_dir, dest_dir, file_types=None, exclude_files=None, 
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Flatten, deflatten, or bundle a directory of files.")
+    parser = argparse.ArgumentParser(
+        description="Flatten, deflatten, or bundle a directory of Python, JavaScript, TypeScript, Markdown, YAML, and Shell Script files.")
 
     # Support both positional and named arguments
     src_group = parser.add_argument_group('source')
     src_group.add_argument("src_pos", nargs="?", help="Source directory path (positional)")
-    src_group.add_argument("--src", dest="src_named", help="Source directory path (named)")
+    src_group.add_argument("--src", "-s", dest="src_named", help="Source directory path (named)")
 
     dest_group = parser.add_argument_group('destination')
     dest_group.add_argument("dest_pos", nargs="?", help="Destination directory or file path (positional)")
-    dest_group.add_argument("--dest", dest="dest_named", help="Destination directory or file path (named)")
+    dest_group.add_argument("--dest", "-d", dest="dest_named", help="Destination directory or file path (named)")
 
-    parser.add_argument("--file-types",
+    parser.add_argument("--file-types", "-t",
                         nargs="+",
-                        choices=["py", "ipynb", "jsts", "mdtxt", "yml", "sh"],
-                        default=["py", "ipynb", "jsts", "mdtxt", "yml", "sh"],
-                        help="File types to process: 'py' for Python, 'ipynb' for Python Notebooks, 'jsts' for JavaScript/TypeScript, 'mdtxt' for Markdown, 'yml' for YAML, 'sh' for Shell Scripts (default: all)")
+                        choices=["py", "ipynb", "jsts", "mdtxt", "yml", "shell"],
+                        default=["py", "ipynb", "jsts", "mdtxt", "yml", "shell"],
+                        help="File types to process: 'py' for Python, 'ipynb' for Python Notebooks, 'jsts' for JavaScript/TypeScript, 'mdtxt' for Markdown, 'yml' for YAML, 'shell' for Shell Scripts (default: all)")
 
-    parser.add_argument("--exclude-dirs",
-                        nargs="+",
-                        help="Directory names to exclude")
-    parser.add_argument("--exclude-extensions",
-                        nargs="+",
-                        help="File extensions to exclude")
-    parser.add_argument("--exclude-files",
-                        nargs="+",
-                        help="Specific filenames to exclude")
+    exclusion_group = parser.add_argument_group('exclusion options')
+    exclusion_group.add_argument("--exclude-dirs", "-xd",
+                                 nargs="+",
+                                 help="Directory names to exclude")
+    exclusion_group.add_argument("--exclude-extensions", "-xe",
+                                 nargs="+",
+                                 help="File extensions to exclude")
+    exclusion_group.add_argument("--exclude-files", "-xf",
+                                 nargs="+",
+                                 help="Specific filenames to exclude")
 
-    parser.add_argument("--include-files",
-                        nargs="+",
-                        help="Specific filenames to include (only these will be processed)")
+    inclusion_group = parser.add_argument_group('inclusion options')
+    inclusion_group.add_argument("--include-dirs", "-id",
+                                 nargs="+",
+                                 help="Directory names to include (only these will be processed)")
+    inclusion_group.add_argument("--include-extensions", "-ie",
+                                 nargs="+",
+                                 help="File extensions to include (only these will be processed)")
+    inclusion_group.add_argument("--include-files", "-if",
+                                 nargs="+",
+                                 help="Specific filenames to include (only these will be processed)")
+
+    defaults_group = parser.add_argument_group('defaults handling')
+    defaults_group.add_argument("--ignore-defaults", "-i",
+                                action="store_true",
+                                help="Ignore all default exclusion lists and only use the provided options")
 
     operation_group = parser.add_mutually_exclusive_group()
-    operation_group.add_argument("--deflatten",
+    operation_group.add_argument("--deflatten", "-df",
                                  action="store_true",
                                  help="Deflatten the directory instead of flattening (default: False)")
     operation_group.add_argument("--bundle", "-b",
                                  action="store_true",
                                  help="Bundle files into a single text file (default: False)")
 
-    parser.add_argument("--clear-dest-dir",
+    parser.add_argument("--clear-dest-dir", "-c",
                         action="store_true",
                         help="Clear the destination directory before copying (default: False)")
-    parser.add_argument('--no-log',
+    parser.add_argument('--no-log', "-nl",
                         action='store_true',
                         help="Suppress all output logs.")
 
@@ -335,14 +328,19 @@ def main():
 
     try:
         if args.deflatten:
-            stats = deflatten_dir(source_dir, dest_path, args.file_types, args.exclude_files, args.include_files,
-                                  args.clear_dest_dir, args.no_log)
+            stats = deflatten_dir(source_dir, dest_path, args.file_types, args.exclude_files,
+                                  args.include_dirs, args.include_extensions, args.include_files,
+                                  args.clear_dest_dir, args.no_log, args.ignore_defaults)
         elif args.bundle:
-            stats = bundle_files(source_dir, dest_path, args.file_types, args.exclude_dirs, args.exclude_extensions,
-                                 args.exclude_files, args.include_files, args.no_log)
+            stats = bundle_files(source_dir, dest_path, args.file_types,
+                                 args.exclude_dirs, args.exclude_extensions, args.exclude_files,
+                                 args.include_dirs, args.include_extensions, args.include_files,
+                                 args.no_log, args.ignore_defaults)
         else:
-            stats = flatten_dir(source_dir, dest_path, args.file_types, args.exclude_dirs, args.exclude_extensions,
-                                args.exclude_files, args.include_files, args.clear_dest_dir, args.no_log)
+            stats = flatten_dir(source_dir, dest_path, args.file_types,
+                                args.exclude_dirs, args.exclude_extensions, args.exclude_files,
+                                args.include_dirs, args.include_extensions, args.include_files,
+                                args.clear_dest_dir, args.no_log, args.ignore_defaults)
 
         return 0
     except ValueError as e:

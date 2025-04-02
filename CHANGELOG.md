@@ -5,7 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2025-04-02
+
+### Added
+
+- `--ignore-defaults` flag to ignore default file extensions and directories that will apply for exclusion/inclusion.
+- `--include-dirs` argument for directory inclusion.
+- `--include-extensions` argument for file extension inclusion.
+- New shorthand flags for all `arg_parse` arguments.
+
+### Changed
+
+- New `arg_parse` grouping for exclusion and inclusion flags.
+
 ## [0.5.1] - 2025-04-01
+
+### Added
+
+- File handling for Shell scripts.
 
 ### Fixed
 
