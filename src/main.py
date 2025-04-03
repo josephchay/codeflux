@@ -284,12 +284,20 @@ def main():
 
     # Support both positional and named arguments
     src_group = parser.add_argument_group('source')
-    src_group.add_argument("src_pos", nargs="?", help="Source directory path (positional)")
-    src_group.add_argument("--src", "-s", dest="src_named", help="Source directory path (named)")
+    src_group.add_argument("src_pos",
+                           nargs="?",
+                           help="Source directory path (positional, default: current directory)")
+    src_group.add_argument("--src", "-s",
+                           dest="src_named",
+                           help="Source directory path (named)")
 
     dest_group = parser.add_argument_group('destination')
-    dest_group.add_argument("dest_pos", nargs="?", help="Destination directory or file path (positional)")
-    dest_group.add_argument("--dest", "-d", dest="dest_named", help="Destination directory or file path (named)")
+    dest_group.add_argument("dest_pos",
+                            nargs="?",
+                            help="Destination directory or file path (positional, defaults based on operation)")
+    dest_group.add_argument("--dest", "-d",
+                            dest="dest_named",
+                            help="Destination directory or file path (named)")
 
     parser.add_argument("--file-types", "-t",
                         nargs="+",
@@ -347,12 +355,17 @@ def main():
     args = parser.parse_args()
 
     source_dir = args.src_named if args.src_named else args.src_pos
-    dest_path = args.dest_named if args.dest_named else args.dest_pos
+    if not source_dir:
+        source_dir = os.getcwd()
 
-    if not source_dir or not dest_path:
-        parser.print_help()
-        print("\nError: Both source and destination are required.")
-        return 1
+    dest_path = args.dest_named if args.dest_named else args.dest_pos
+    if not dest_path:
+        if args.bundle:
+            dest_path = os.path.join(os.getcwd(), "bundled.txt")
+        elif args.deflatten:
+            dest_path = os.path.join(os.getcwd(), "deflattened")
+        else:
+            dest_path = os.path.join(os.getcwd(), "flattened")
 
     if args.minify and not args.bundle:
         print("Warning: Minification options are only applicable when bundling files.")

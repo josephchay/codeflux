@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Support for minification features. Default minification `-m` and aggressive minification `-am`.
+- Support for default values for source directory and destination paths, if not provided for flattening, deflattening, and bundling operations.
 
 ### Changed
 
