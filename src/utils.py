@@ -1,7 +1,6 @@
 import os
-import re
-import tokenize
-import io
+
+import python_minifier
 
 
 def get_unique_filename(destination_file):
@@ -54,7 +53,7 @@ def print_stats(operation_type, stats, duration):
         if "files_bundled" in stats:
             print(f"Files bundled: {stats['files_bundled']}")
             print(f"Data bundled: {stats['bytes_bundled'] / 1024:.2f} KB")
-        if "original_size" in stats and "minified_size" in stats:
+        if "original_size" in stats and "minified_size" in stats and stats["minified_size"] > 0:
             print(f"Original size: {stats['original_size'] / 1024:.2f} KB")
             print(f"Minified size: {stats['minified_size'] / 1024:.2f} KB")
             print(f"Size reduction: {(1 - stats['minified_size'] / max(stats['original_size'], 1)) * 100:.2f}%")
@@ -133,97 +132,15 @@ def should_process_file(filename, handler_extensions, exclude_exts=None, exclude
     return not (is_excluded_ext or is_excluded_file)
 
 
-def remove_docstrings(source):
-    io_obj = io.StringIO(source)
-    out = ""
-
-    prev_toktype = tokenize.INDENT
-    last_lineno = -1
-    last_col = 0
-
-    try:
-        tok_iter = tokenize.generate_tokens(io_obj.readline)
-
-        for toktype, ttext, (slineno, scol), (elineno, ecol), ltext in tok_iter:
-            if toktype == tokenize.STRING and prev_toktype in (tokenize.INDENT, tokenize.NEWLINE):
-                # This is likely a docstring
-                continue
-
-            # Add whitespace if needed
-            if slineno > last_lineno:
-                last_col = 0
-            if scol > last_col:
-                out += " " * (scol - last_col)
-
-            # Add the token
-            out += ttext
-
-            # Update position
-            last_col = ecol
-            last_lineno = elineno
-            prev_toktype = toktype
-
-    except tokenize.TokenError:
-        return source
-
-    return out
-
-
-def remove_comments(source):
-    io_obj = io.StringIO(source)
-    out = ""
-
-    try:
-        tok_iter = tokenize.generate_tokens(io_obj.readline)
-
-        for toktype, ttext, (slineno, scol), (elineno, ecol), ltext in tok_iter:
-            if toktype == tokenize.COMMENT:
-                # Skip comments
-                continue
-
-            out += ttext
-
-    except tokenize.TokenError:
-        return source
-
-    return out
-
-
-def remove_blank_lines(source):
-    return re.sub(r'\n\s*\n\s*\n+', '\n\n', source)
-
-
-def remove_trailing_whitespace(source):
-    return re.sub(r'[ \t]+$', '', source, flags=re.MULTILINE)
-
-
-def minify_python(source, aggressive=False):
-    if not source or not source.strip():
-        return source
-
-    try:
-        result = remove_comments(source)
-        result = remove_docstrings(result)
-        result = remove_blank_lines(result)
-        result = remove_trailing_whitespace(result)
-
-        if aggressive:
-            result = re.sub(r'\s*([+\-*/=<>!&|^])\s*', r'\1', result)
-            result = re.sub(r',\s+', ',', result)
-            result = re.sub(r';\s*', '', result)
-
-        return result
-
-    except Exception:
-        return source
-
-
-def minify_code(source, file_ext, aggressive=False):
+def minify_code(source, file_ext):
     if not source:
         return source
 
-    # Python minification
     if file_ext.lower() in ['.py']:
-        return minify_python(source, aggressive)
+        try:
+            return python_minifier.minify(source)
+        except Exception as e:
+            print(f"Minification error: {str(e)}")
+            return source
 
     return source

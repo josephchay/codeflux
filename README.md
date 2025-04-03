@@ -73,7 +73,6 @@ that have not been merged into the `main` branch.
 | `--include-files`        | `-if`     | None                                       | Specific filenames to include (only these will be processed)                                                                                                          |
 | **Minification Options** |           |                                            |                                                                                                                                                                       |
 | `--minify`               | `-m`      | `False`                                    | Minify code when bundling (removes comments, docstrings, and excess whitespace)                                                                                       |
-| `--aggressive-minify`    | `-am`     | `False`                                    | Apply aggressive minification (may affect readability)                                                                                                                |
 | **Defaults Handling**    |           |                                            |                                                                                                                                                                       |
 | `--ignore-defaults`      | `-i`      | `False`                                    | Ignore all default exclusions and only use provided exclusions                                                                                                        |
 | **Other Options**        |           |                                            |                                                                                                                                                                       |
@@ -97,7 +96,6 @@ Here are various scenarios and how to use the tool:
 | Include Only Specific Directories | `codebundle src flat -id utils models`                                                   | Only process files from the 'utils' and 'models' directories                                              |
 | Include Only Specific Extensions  | `codebundle src flat -ie .py .sh`                                                        | Only process files with '.py' and '.sh' extensions                                                        |
 | Bundle with Minification          | `codebundle src bundle.txt -b -m`                                                        | Bundle files into a single text file with minification of Python code                                     |
-| Aggressive Minification           | `codebundle src bundle.txt -b -m -am`                                                    | Bundle files with aggressive minification (smaller file size but may affect readability)                  |
 | Bundle for AI Context             | `codebundle src ai-context.txt -b -m -ie .py`                                            | Create a minified bundle of Python files suitable for AI context windows                                  |
 | Ignore Default Exclusions         | `codebundle src flat -xd .idea -i`                                                       | Excludes only the .idea directory, ignoring all default exclusions                                        |
 | Exclude File Extensions           | `codebundle src flat -xe .txt .csv`                                                      | Excludes files with `.txt` and `.csv` extensions in addition to default exclusions                        |
@@ -110,24 +108,6 @@ Here are various scenarios and how to use the tool:
 | Combine Inclusions and Exclusions | `codebundle src flat -id src -xf .env config.js`                                         | Process only the 'src' directory but exclude specific files                                               |
 | Complex Command with Shorthands   | `codebundle -s src -d flat -t py shell -id utils -xf setup.py -i -c`                     | Using multiple shorthands for a complex operation                                                         |
 | Minify for AI Project Knowledge   | `codebundle -s src -d ai_context.txt -b -m -t py -id core utils models -xf test_*.py -c` | Create a minified bundle of core Python files suitable for AI project knowledge context                   |
-
-### Minification Features
-
-The minification functionality is specially designed to help prepare your code for AI processing:
-
-#### Standard Minification (`--minify` / `-m`)
-- Removes all comments
-- Removes docstrings from Python functions, classes, and modules 
-- Eliminates excessive blank lines
-- Removes trailing whitespace
-- Reports size reduction statistics for each file
-
-#### Aggressive Minification (`--minify --aggressive-minify` / `-m -am`)
-- Includes all standard minification features
-- Removes spaces around operators (e.g., `x=y+z` instead of `x = y + z`)
-- Minimizes spaces after commas
-- Removes unnecessary semicolons
-- May reduce readability but produces smaller files
 
 ### Example Directory Transformations
 

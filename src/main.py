@@ -3,14 +3,14 @@ import argparse
 import sys
 import time
 
-from constants import DEFAULT_EXCLUDE_DIRS, ALL_EXCLUDE_EXTENSIONS, ALL_EXCLUDE_FILENAMES, ALL_EXTENSIONS
+from constants import DEFAULT_EXCLUDE_DIRS, ALL_EXCLUDE_EXTENSIONS, ALL_EXCLUDE_FILENAMES
 from handlers import HANDLERS
 from utils import get_relative_path, print_stats, merge_with_defaults, merge_stats, should_process_file, minify_code
 
 
 def bundle_files(source_dir, output_file, file_types=None, exclude_dirs=None, exclude_exts=None, exclude_files=None,
                  include_dirs=None, include_exts=None, include_files=None, silent=False, ignore_defaults=False,
-                 minify=False, aggressive_minify=False):
+                 minify=False):
     """Bundle files into a single text file with path information."""
     file_types = file_types or ["py", "ipynb", "jsts", "mdtxt", "yml", "shell"]
 
@@ -52,7 +52,7 @@ def bundle_files(source_dir, output_file, file_types=None, exclude_dirs=None, ex
         print(f"Source: {get_relative_path(source_dir, os.getcwd())}")
         print(f"Output file: {get_relative_path(output_file, os.getcwd())}\n")
         if minify:
-            print(f"Minification: {'Aggressive' if aggressive_minify else 'Standard'}")
+            print(f"Minification: Using python-minifier for Python files")
 
     files_to_bundle = []
     for root, dirs, files in os.walk(source_dir):
@@ -83,7 +83,6 @@ def bundle_files(source_dir, output_file, file_types=None, exclude_dirs=None, ex
 
             # Use centralized file filtering logic
             should_include = should_process_file(file, included_extensions, exclude_exts, exclude_files, include_exts, include_files)
-
             if should_include:
                 path_parts = os.path.normpath(root).split(os.sep)[source_dir_parts:]
                 if path_parts:
@@ -131,7 +130,7 @@ def bundle_files(source_dir, output_file, file_types=None, exclude_dirs=None, ex
     with open(output_file, 'w', encoding='utf-8') as outfile:
         outfile.write(f"# {os.path.basename(source_dir)} ({len(files_to_bundle)} files)\n")
         if minify:
-            outfile.write(f"# Minification: {'Aggressive' if aggressive_minify else 'Standard'}\n")
+            outfile.write(f"# Minification: Enabled (using python-minifier for Python files)\n")
         outfile.write("\n")
 
         for ext, group_files in extension_groups.items():
@@ -155,10 +154,11 @@ def bundle_files(source_dir, output_file, file_types=None, exclude_dirs=None, ex
                         continue
 
                     if minify:
-                        minified_content = minify_code(content, file_extension, aggressive_minify)
-                        stats["original_size"] += original_content_size
+                        minified_content = minify_code(content, file_extension)
                         stats["minified_size"] += len(minified_content)
                         content = minified_content
+                    else:
+                        stats["minified_size"] = 0  # Not using minification
 
                     outfile.write(f"`{formatted_path}`\n```\n")
                     outfile.write(content.rstrip())
@@ -168,7 +168,7 @@ def bundle_files(source_dir, output_file, file_types=None, exclude_dirs=None, ex
                     stats["bytes_bundled"] += len(content)
 
                     if not silent:
-                        if minify and file_extension.lower() in ['.py', '.js', '.jsx', '.ts', '.tsx']:
+                        if minify and file_extension.lower() == '.py':
                             reduction = (1 - len(content) / max(original_content_size, 1)) * 100
                             print(f"Bundled: {formatted_path} (Size reduction: {reduction:.2f}%)")
                         else:
@@ -295,7 +295,7 @@ def main():
                         nargs="+",
                         choices=["py", "ipynb", "jsts", "mdtxt", "yml", "shell"],
                         default=["py", "ipynb", "jsts", "mdtxt", "yml", "shell"],
-                        help="File types to process: 'py' for Python, 'ipynb' for Python Notebooks, 'jsts' for JavaScript/TypeScript, 'mdtxt' for Markdown, 'yml' for YAML, 'shell' for Shell Scripts (default: all)")
+                        help="File types to process: 'py' for Python, 'ipynb' for Python Notebooks, 'jsts' for JavaScript/TypeScript, 'md' for Markdown, 'yml' for YAML, 'shell' for Shell Scripts (default: all)")
 
     exclusion_group = parser.add_argument_group('exclusion options')
     exclusion_group.add_argument("--exclude-dirs", "-xd",
@@ -334,11 +334,8 @@ def main():
 
     minify_group = parser.add_argument_group('minification options (only for bundle)')
     minify_group.add_argument("--minify", "-m",
-                        action="store_true",
-                        help="Minify code when bundling (removes comments, docstrings, and excess whitespace)")
-    minify_group.add_argument("--aggressive-minify", "-am",
-                        action="store_true",
-                        help="Apply aggressive minification (may affect readability)")
+                              action="store_true",
+                              help="Minify Python code when bundling (using python-minifier)")
 
     parser.add_argument("--clear-dest-dir", "-c",
                         action="store_true",
@@ -357,12 +354,7 @@ def main():
         print("\nError: Both source and destination are required.")
         return 1
 
-    if args.aggressive_minify:
-        args.minify = True
-        if not args.bundle:
-            print("Warning: Minification options are only applicable when bundling files.")
-
-    elif args.minify and not args.bundle:
+    if args.minify and not args.bundle:
         print("Warning: Minification options are only applicable when bundling files.")
 
     try:
@@ -374,7 +366,7 @@ def main():
             stats = bundle_files(source_dir, dest_path, args.file_types,
                                  args.exclude_dirs, args.exclude_extensions, args.exclude_files,
                                  args.include_dirs, args.include_extensions, args.include_files,
-                                 args.no_log, args.ignore_defaults, args.minify, args.aggressive_minify)
+                                 args.no_log, args.ignore_defaults, args.minify)
         else:
             stats = flatten_dir(source_dir, dest_path, args.file_types,
                                 args.exclude_dirs, args.exclude_extensions, args.exclude_files,

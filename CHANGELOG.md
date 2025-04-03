@@ -11,6 +11,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Support for minification features. Default minification `-m` and aggressive minification `-am`.
 
+### Changed
+
+- `--minify` to use the `python-minifier` package library.
+
+### Removed
+
+- `--aggressive-minify` flag.
+
 ## [0.6.0] - 2025-04-02
 
 ### Added
