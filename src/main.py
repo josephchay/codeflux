@@ -3,11 +3,11 @@ import argparse
 import sys
 import time
 
-from constants import DEFAULT_EXCLUDE_DIRS, ALL_EXCLUDE_EXTENSIONS, ALL_EXCLUDE_FILENAMES, ALL_EXTENSIONS, \
-    DEFAULT_FLATTEN_OUTPUT_PATH, DEFAULT_DEFLATTEN_OUTPUT_PATH, DEFAULT_BUNDLE_OUTPUT_PATH
+from constants import DEFAULT_EXCLUDE_DIRS, ALL_EXCLUDE_EXTENSIONS, ALL_EXCLUDE_FILENAMES, DEFAULT_FLATTEN_OUTPUT_PATH, \
+    DEFAULT_DEFLATTEN_OUTPUT_PATH, DEFAULT_BUNDLE_OUTPUT_PATH
 from handlers import HANDLERS
 from utils import get_relative_path, print_stats, merge_with_defaults, merge_stats, should_process_file, minify_code, \
-    get_incremented_path
+    create_timestamped_dir
 
 
 def bundle_files(source_dir, output_file, file_types=None, exclude_dirs=None, exclude_exts=None, exclude_files=None,

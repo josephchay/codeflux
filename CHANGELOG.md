@@ -14,6 +14,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `requirements.txt` file for package dependencies.
 - Long description and project URLs to `setup.py` for PyPI.
 
+### Fixed
+
+- Imported `create_timestamped_dir` function in `main.py` to create a timestamped directory for output files.
+
 ### Changed
 
 - `--minify` to use the `python-minifier` package library.
@@ -24,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 - `--aggressive-minify` flag.
+- Unnecessary `get_incremented_path` function in `utils.py`.
 
 ## [0.6.0] - 2025-04-02
 

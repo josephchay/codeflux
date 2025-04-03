@@ -139,20 +139,6 @@ def create_timestamped_dir():
     return output_dir
 
 
-def get_incremented_path(base_dir, base_name, extension):
-    counter = 1
-    while True:
-        if counter == 1:
-            test_path = os.path.join(base_dir, f"{base_name}{extension}")
-            if not os.path.exists(test_path):
-                return test_path
-
-        test_path = os.path.join(base_dir, f"{base_name}_{counter}{extension}")
-        if not os.path.exists(test_path):
-            return test_path
-        counter += 1
-
-
 def minify_code(source, file_ext):
     if not source:
         return source
