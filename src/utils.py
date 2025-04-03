@@ -1,5 +1,5 @@
 import os
-
+import datetime
 import python_minifier
 
 
@@ -130,6 +130,27 @@ def should_process_file(filename, handler_extensions, exclude_exts=None, exclude
     is_excluded_file = exclude_files and filename in exclude_files
 
     return not (is_excluded_ext or is_excluded_file)
+
+
+def create_timestamped_dir():
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    output_dir = os.path.join(os.getcwd(), f"codebundle_{timestamp}")
+    os.makedirs(output_dir, exist_ok=True)
+    return output_dir
+
+
+def get_incremented_path(base_dir, base_name, extension):
+    counter = 1
+    while True:
+        if counter == 1:
+            test_path = os.path.join(base_dir, f"{base_name}{extension}")
+            if not os.path.exists(test_path):
+                return test_path
+
+        test_path = os.path.join(base_dir, f"{base_name}_{counter}{extension}")
+        if not os.path.exists(test_path):
+            return test_path
+        counter += 1
 
 
 def minify_code(source, file_ext):

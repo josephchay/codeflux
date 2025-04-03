@@ -6,10 +6,11 @@ reconstruct the original directory structure from flattened files (deflattening)
 ## Overview
 
 Do you often find yourself digging through multiple nested directories to find files?
-**Codebundle** is a lightweight CLI tool scans through your source directory (and all its subdirectories), 
-collects all designated files and copies them into a single destination directory - all while automatically renaming conflicting files. 
+**Codebundle** is a CLI tool that scans through your source directory (and all its subdirectories), 
+processes files in multiple ways (flattening, restructuring, bundling), and organizes everything into timestamped outputs for easy reference. 
+It automatically handles file conflicts and supports powerful filtering options to process exactly what you need.
 
-It's perfect for organizing large codebases, consolidating scripts, or preparing for migration or backup.
+It's perfect for organizing large codebases, consolidating scripts, optimizations, or preparing for migration or backup.
 
 ### Supported File Types
 
@@ -64,6 +65,10 @@ pnpm add git+https://github.com/josephchay/codebundle.git --save-dev
 | `[src]`                  | `-s`      | Current directory                          | Source directory containing the files to flatten                                                                                                                      |
 | `[dest]`                 | `-d`      | Based on operation (see below)             | Destination directory/file where files will be copied                                                                                                                 |
 | `--file-types`           | `-t`      | `py`, `ipynb`, `js`, `md`, `yaml`, `shell` | File types to process: 'py' for Python, 'ipynb' for Python Notebooks, 'jsts' for JavaScript/TypeScript, 'md' for Markdown, 'yaml' for YAML, 'shell' for Shell Scripts |
+| **Operations**           |           |                                            |                                                                                                                                                                       |
+| `--flatten`              | `-f`      | True (if no other operation specified)     | Flatten the directory structure                                                                                                                                       |
+| `--deflatten`            | `-df`     | False                                      | Deflatten the directory (restore original structure)                                                                                                                  |
+| `--bundle`               | `-b`      | False                                      | Bundle files into a single text file                                                                                                                                  |
 | **Exclusion Options**    |           |                                            |                                                                                                                                                                       |
 | `--exclude-dirs`         | `-xd`     | Various default directories                | Directory names to exclude                                                                                                                                            |
 | `--exclude-extensions`   | `-xe`     | Various default extensions                 | File extensions to exclude                                                                                                                                            |
@@ -73,50 +78,55 @@ pnpm add git+https://github.com/josephchay/codebundle.git --save-dev
 | `--include-extensions`   | `-ie`     | None                                       | File extensions to include (only these will be processed)                                                                                                             |
 | `--include-files`        | `-if`     | None                                       | Specific filenames to include (only these will be processed)                                                                                                          |
 | **Minification Options** |           |                                            |                                                                                                                                                                       |
-| `--minify`               | `-m`      | `False`                                    | Minify code when bundling (using `python-minifier` for python files)                                                                                                  |
+| `--minify`               | `-m`      | `False`                                    | Minify Python code when bundling (using python-minifier)                                                                                                              |
 | **Defaults Handling**    |           |                                            |                                                                                                                                                                       |
 | `--ignore-defaults`      | `-i`      | `False`                                    | Ignore all default exclusions and only use provided exclusions                                                                                                        |
 | **Other Options**        |           |                                            |                                                                                                                                                                       |
 | `--clear-dest-dir`       | `-c`      | `False`                                    | Clear the destination directory before copying files                                                                                                                  |
-| `--deflatten`            | `-df`     | `False`                                    | Deflatten the directory instead of flattening (reverses the flattening process)                                                                                       |
-| `--bundle`               | `-b`      | `False`                                    | Bundle files into a single text file with path information                                                                                                            |
 | `--no-log`               | `-nl`     | `False`                                    | Disable logging output                                                                                                                                                |
 
-### Default Paths
-
-When arguments are omitted, the following defaults are used:
+### Default Paths and Output Organization
 
 * **Source directory**: If not specified, defaults to the current working directory
-* **Destination path**: Depends on the operation:
-  * For `flatten`: `./flattened/` directory
-  * For `deflatten`: `./deflattened/` directory
-  * For `bundle`: `./bundled.txt` file
+* **Destination paths**:
+  * For `flatten`: `./codebundle_YYYYMMDD_HHMMSS/flattened/`
+  * For `deflatten`: `./codebundle_YYYYMMDD_HHMMSS/deflattened/`
+  * For `bundle`: `./codebundle_YYYYMMDD_HHMMSS/bundled.txt`
+  * If custom destination paths are provided, they're used as specified
 
-For detailed information on the default exclusion values, refer to the [constants](src/constants.py) file.
+For detailed information on default values, refer to the [constants](src/constants.py) file.
 
 ## Usage Examples
 
 Here are various scenarios and how to use the tool:
+## Usage Examples
 
-| Scenario                          | Command                                                  | Description                                                                          |
-|-----------------------------------|----------------------------------------------------------|--------------------------------------------------------------------------------------|
-| Basic Flattening                  | `codebundle`                                             | Flattens the current directory into a 'flattened' directory                          |
-| Basic Flattening (Explicit)       | `codebundle src flat`                                    | Flattens all supported files from 'src' into the 'flat' directory                    |
-| Quick Bundle                      | `codebundle -b`                                          | Bundles the current directory into 'bundled.txt'                                     |
-| Quick Deflatten                   | `codebundle -df`                                         | Deflattens the current directory into a 'deflattened' directory                      |
-| Using Shorthands                  | `codebundle -s src -d flat -t py ipynb -xd node_modules` | Using shorthand flags to specify options                                             |
-| Process Specific Types            | `codebundle -t py ipynb shell`                           | Process only Python, Python Notebooks, and Shell Script files from current directory |
-| Bundle with Minification          | `codebundle -b -m`                                       | Bundle the current directory into 'bundled.txt' with minified Python code            |
-| Minify Python for AI Context      | `codebundle -b -m -t py -s src -d ai_context.txt`        | Create a minified bundle of Python files from 'src' suitable for AI context windows  |
-| Exclude Directories               | `codebundle -xd .idea .venv`                             | Flattens the current directory excluding the specified directories                   |
-| Include Only Specific Directories | `codebundle -id utils models`                            | Only process files from the 'utils' and 'models' directories in the current folder   |
-| Include Only Specific Extensions  | `codebundle -ie .py .sh`                                 | Only process files with '.py' and '.sh' extensions from the current directory        |
-| Ignore Default Exclusions         | `codebundle -i`                                          | Flattens the current directory without applying default exclusions                   |
-| Exclude File Extensions           | `codebundle -xe .txt .csv`                               | Flattens the current directory excluding files with the specified extensions         |
-| Exclude Specific Files            | `codebundle -xf setup.py package.json setup.sh`          | Flattens the current directory excluding the specified files                         |
-| Include Only Specific Files       | `codebundle -if main.py analysis.ipynb deploy.sh`        | Processes only the specified files from the current directory                        |
-| Bundle for AI Context             | `codebundle -b -m -ie .py`                               | Create a minified bundle of Python files from the current directory                  |
-| Complex Command with Shorthands   | `codebundle -t py shell -id utils -xf setup.py -i -c`    | Using multiple shorthands for a complex operation                                    |
+Here are various scenarios and how to use the tool:
+
+| Scenario                            | Command                                                       | Description                                                                                        |
+|-------------------------------------|---------------------------------------------------------------|----------------------------------------------------------------------------------------------------|
+| Basic Flattening                    | `codebundle`                                                  | Flattens the current directory into a timestamped output directory                                 |
+| Multiple Operations                 | `codebundle -f -df -b`                                        | Performs flatten, deflatten and bundle operations in sequence                                      |
+| Process Specific Types              | `codebundle -t py ipynb shell`                                | Process only Python, Python Notebooks, and Shell Script files from current directory               |
+| Bundle with Minification            | `codebundle -b -m`                                            | Bundle the current directory with minified Python code                                             |
+| Minify Python for Optimized Context | `codebundle -b -m -t py -s src`                               | Create a minified bundle of Python files from 'src' suitable for optimized context usages          |
+| Exclude Directories                 | `codebundle -xd .idea .venv`                                  | Flattens the current directory excluding the specified directories                                 |
+| Include Only Specific Directories   | `codebundle -id utils models`                                 | Only process files from the 'utils' and 'models' directories in the current folder                 |
+| Include Only Specific Extensions    | `codebundle -ie .py .sh`                                      | Only process files with '.py' and '.sh' extensions from the current directory                      |
+| Ignore Default Exclusions           | `codebundle -i`                                               | Flattens the current directory without applying default exclusions                                 |
+| Exclude File Extensions             | `codebundle -xe .txt .csv`                                    | Flattens the current directory excluding files with the specified extensions                       |
+| Exclude Specific Files              | `codebundle -xf setup.py package.json setup.sh`               | Flattens the current directory excluding the specified files                                       |
+| Include Only Specific Files         | `codebundle -if main.py analysis.ipynb deploy.sh`             | Processes only the specified files from the current directory                                      |
+| Bundle for Optimized Context        | `codebundle -b -m -ie .py`                                    | Create a minified bundle of Python files from the current directory                                |
+| Complex Command with Shorthands     | `codebundle -t py shell -id utils -xf setup.py -i -c`         | Using multiple shorthands for a complex operation                                                  |
+| All Operations Together             | `codebundle -f -df -b -m -s src -t py -ie .py -xd tests`      | Flatten, deflatten, and bundle Python files from src directory, excluding tests, with minification |
+| Custom Output Paths                 | `codebundle -f -df -b -s src -d myoutput`                     | Custom destination path for all operations (creates timestamped subdirectories)                    |
+| Bundle for Team Review              | `codebundle -b -s project -ie .py .js -xd node_modules tests` | Create a bundle with only Python and JavaScript files, excluding tests and modules                 |
+| Project Migration                   | `codebundle -f -b -s legacy_project -d migration`             | Flatten and bundle a legacy project for migration, preserving both formats                         |
+| Optimized Context + Human Reference | `codebundle -b -m -b`                                         | Create two bundles - one minified (for optimization) and one readable (for humans)                 |
+| Timestamped Outputs                 | `codebundle`                                                  | Creates a timestamped directory (e.g., codebundle_20250403_123045) for all outputs                 |
+| Flatten for Different Project       | `codebundle -f -s project1 -f -s project2`                    | Process multiple source directories in separate timestamped outputs                                |
+| Quick Environment Setup             | `codebundle -f -s modules -id core utils -df -s config`       | Flatten core modules and deflatten configuration files in one command                              |
 
 ### Example Directory Transformations
 

@@ -3,9 +3,11 @@ import argparse
 import sys
 import time
 
-from constants import DEFAULT_EXCLUDE_DIRS, ALL_EXCLUDE_EXTENSIONS, ALL_EXCLUDE_FILENAMES
+from constants import DEFAULT_EXCLUDE_DIRS, ALL_EXCLUDE_EXTENSIONS, ALL_EXCLUDE_FILENAMES, ALL_EXTENSIONS, \
+    DEFAULT_FLATTEN_OUTPUT_PATH, DEFAULT_DEFLATTEN_OUTPUT_PATH, DEFAULT_BUNDLE_OUTPUT_PATH
 from handlers import HANDLERS
-from utils import get_relative_path, print_stats, merge_with_defaults, merge_stats, should_process_file, minify_code
+from utils import get_relative_path, print_stats, merge_with_defaults, merge_stats, should_process_file, minify_code, \
+    get_incremented_path
 
 
 def bundle_files(source_dir, output_file, file_types=None, exclude_dirs=None, exclude_exts=None, exclude_files=None,
@@ -126,6 +128,8 @@ def bundle_files(source_dir, output_file, file_types=None, exclude_dirs=None, ex
         if ext not in extension_groups:
             extension_groups[ext] = []
         extension_groups[ext].append(file_info)
+
+    os.makedirs(os.path.dirname(output_file), exist_ok=True)
 
     with open(output_file, 'w', encoding='utf-8') as outfile:
         outfile.write(f"# {os.path.basename(source_dir)} ({len(files_to_bundle)} files)\n")
@@ -282,22 +286,14 @@ def deflatten_dir(flattened_dir, dest_dir, file_types=None, exclude_files=None, 
 def main():
     parser = argparse.ArgumentParser(description="Flatten, deflatten, or bundle a directory of files.")
 
-    # Support both positional and named arguments
     src_group = parser.add_argument_group('source')
-    src_group.add_argument("src_pos",
-                           nargs="?",
-                           help="Source directory path (positional, default: current directory)")
-    src_group.add_argument("--src", "-s",
-                           dest="src_named",
-                           help="Source directory path (named)")
+    src_group.add_argument("src_pos", nargs="?", help="Source directory path (positional, default: current directory)")
+    src_group.add_argument("--src", "-s", dest="src_named", help="Source directory path (named)")
 
     dest_group = parser.add_argument_group('destination')
-    dest_group.add_argument("dest_pos",
-                            nargs="?",
+    dest_group.add_argument("dest_pos", nargs="?",
                             help="Destination directory or file path (positional, defaults based on operation)")
-    dest_group.add_argument("--dest", "-d",
-                            dest="dest_named",
-                            help="Destination directory or file path (named)")
+    dest_group.add_argument("--dest", "-d", dest="dest_named", help="Destination directory or file path (named)")
 
     parser.add_argument("--file-types", "-t",
                         nargs="+",
@@ -332,15 +328,18 @@ def main():
                                 action="store_true",
                                 help="Ignore all default exclusion lists and only use the provided options")
 
-    operation_group = parser.add_mutually_exclusive_group()
+    operation_group = parser.add_argument_group('operations')
+    operation_group.add_argument("--flatten", "-f",
+                                 action="store_true",
+                                 help="Flatten the directory structure (default: True if no other operation specified)")
     operation_group.add_argument("--deflatten", "-df",
                                  action="store_true",
-                                 help="Deflatten the directory instead of flattening (default: False)")
+                                 help="Deflatten the directory (restore original structure)")
     operation_group.add_argument("--bundle", "-b",
                                  action="store_true",
-                                 help="Bundle files into a single text file (default: False)")
+                                 help="Bundle files into a single text file")
 
-    minify_group = parser.add_argument_group('minification options (only for bundle)')
+    minify_group = parser.add_argument_group('minification options')
     minify_group.add_argument("--minify", "-m",
                               action="store_true",
                               help="Minify Python code when bundling (using python-minifier)")
@@ -358,33 +357,52 @@ def main():
     if not source_dir:
         source_dir = os.getcwd()
 
-    dest_path = args.dest_named if args.dest_named else args.dest_pos
-    if not dest_path:
-        if args.bundle:
-            dest_path = os.path.join(os.getcwd(), "bundled.txt")
-        elif args.deflatten:
-            dest_path = os.path.join(os.getcwd(), "deflattened")
-        else:
-            dest_path = os.path.join(os.getcwd(), "flattened")
+    output_base_dir = create_timestamped_dir()
+    print(f"Output directory: {output_base_dir}")
 
-    if args.minify and not args.bundle:
-        print("Warning: Minification options are only applicable when bundling files.")
+    operations = []
+    if args.flatten:
+        operations.append("flatten")
+    if args.deflatten:
+        operations.append("deflatten")
+    if args.bundle:
+        operations.append("bundle")
+    if not operations:
+        operations.append("flatten")
 
     try:
-        if args.deflatten:
-            stats = deflatten_dir(source_dir, dest_path, args.file_types, args.exclude_files,
-                                  args.include_dirs, args.include_extensions, args.include_files,
-                                  args.clear_dest_dir, args.no_log, args.ignore_defaults)
-        elif args.bundle:
-            stats = bundle_files(source_dir, dest_path, args.file_types,
-                                 args.exclude_dirs, args.exclude_extensions, args.exclude_files,
-                                 args.include_dirs, args.include_extensions, args.include_files,
-                                 args.no_log, args.ignore_defaults, args.minify)
-        else:
-            stats = flatten_dir(source_dir, dest_path, args.file_types,
-                                args.exclude_dirs, args.exclude_extensions, args.exclude_files,
-                                args.include_dirs, args.include_extensions, args.include_files,
-                                args.clear_dest_dir, args.no_log, args.ignore_defaults)
+        for operation in operations:
+            if operation == "flatten":
+                flatten_dest = args.dest_named if args.dest_named else args.dest_pos
+                if not flatten_dest:
+                    flatten_dest = os.path.join(output_base_dir, DEFAULT_FLATTEN_OUTPUT_PATH)
+
+                print(f"\n===== EXECUTING FLATTEN: {source_dir} -> {flatten_dest} =====\n")
+                stats = flatten_dir(source_dir, flatten_dest, args.file_types,
+                                    args.exclude_dirs, args.exclude_extensions, args.exclude_files,
+                                    args.include_dirs, args.include_extensions, args.include_files,
+                                    args.clear_dest_dir, args.no_log, args.ignore_defaults)
+
+            elif operation == "deflatten":
+                deflatten_dest = args.dest_named if args.dest_named else args.dest_pos
+                if not deflatten_dest:
+                    deflatten_dest = os.path.join(output_base_dir, DEFAULT_DEFLATTEN_OUTPUT_PATH)
+
+                print(f"\n===== EXECUTING DEFLATTEN: {source_dir} -> {deflatten_dest} =====\n")
+                stats = deflatten_dir(source_dir, deflatten_dest, args.file_types, args.exclude_files,
+                                      args.include_dirs, args.include_extensions, args.include_files,
+                                      args.clear_dest_dir, args.no_log, args.ignore_defaults)
+
+            elif operation == "bundle":
+                bundle_dest = args.dest_named if args.dest_named else args.dest_pos
+                if not bundle_dest:
+                    bundle_dest = os.path.join(output_base_dir, DEFAULT_BUNDLE_OUTPUT_PATH)
+
+                print(f"\n===== EXECUTING BUNDLE: {source_dir} -> {bundle_dest} =====\n")
+                stats = bundle_files(source_dir, bundle_dest, args.file_types,
+                                     args.exclude_dirs, args.exclude_extensions, args.exclude_files,
+                                     args.include_dirs, args.include_extensions, args.include_files,
+                                     args.no_log, args.ignore_defaults, args.minify)
 
         return 0
     except ValueError as e:

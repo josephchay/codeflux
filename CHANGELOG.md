@@ -11,10 +11,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Support for minification features. Default minification `-m` and aggressive minification `-am`.
 - Support for default values for source directory and destination paths, if not provided for flattening, deflattening, and bundling operations.
+- `requirements.txt` file for package dependencies.
+- Long description and project URLs to `setup.py` for PyPI.
 
 ### Changed
 
 - `--minify` to use the `python-minifier` package library.
+- Default outputs will be saved into `codebundle` prefix directory.
+- Each output will not overwrite the previous one. Instead, it will create a new directory with a timestamp.
+- Enable multiple operations (flattening, deflattening, and bundling) in a single command (no longer mutually exclusive).
 
 ### Removed
 
