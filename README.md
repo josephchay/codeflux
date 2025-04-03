@@ -58,26 +58,29 @@ that have not been merged into the `main` branch.
 
 ## Command-Line Arguments
 
-| Argument               | Shorthand | Default                                    | Description                                                                                                                                                           |
-|------------------------|-----------|--------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `[src]`                | -s        | -                                          | Source directory containing the files to flatten                                                                                                                      |
-| `[dest]`               | -d        | -                                          | Destination directory/file where files will be copied                                                                                                                 |
-| `--file-types`         | -t        | `py`, `ipynb`, `js`, `md`, `yaml`, `shell` | File types to process: 'py' for Python, 'ipynb' for Python Notebooks, 'jsts' for JavaScript/TypeScript, 'md' for Markdown, 'yaml' for YAML, 'shell' for Shell Scripts |
-| **Exclusion Options**  |           |                                            |                                                                                                                                                                       |
-| `--exclude-dirs`       | -xd       | Various default directories                | Directory names to exclude                                                                                                                                            |
-| `--exclude-extensions` | -xe       | Various default extensions                 | File extensions to exclude                                                                                                                                            |
-| `--exclude-files`      | -xf       | Various common files                       | Specific filenames to exclude (e.g., setup.py, jest.config.js)                                                                                                        |
-| **Inclusion Options**  |           |                                            |                                                                                                                                                                       |
-| `--include-dirs`       | -id       | None                                       | Directory names to include (only these will be processed)                                                                                                             |
-| `--include-extensions` | -ie       | None                                       | File extensions to include (only these will be processed)                                                                                                             |
-| `--include-files`      | -if       | None                                       | Specific filenames to include (only these will be processed)                                                                                                          |
-| **Defaults Handling**  |           |                                            |                                                                                                                                                                       |
-| `--ignore-defaults`    | -i        | `False`                                    | Ignore all default exclusions and only use provided exclusions                                                                                                        |
-| **Other Options**      |           |                                            |                                                                                                                                                                       |
-| `--clear-dest-dir`     | -c        | `False`                                    | Clear the destination directory before copying files                                                                                                                  |
-| `--deflatten`          | -df       | `False`                                    | Deflatten the directory instead of flattening (reverses the flattening process)                                                                                       |
-| `--bundle`             | -b        | `False`                                    | Bundle all files into a single text file with path information                                                                                                        |
-| `--no-log`             | -nl       | `False`                                    | Disable logging output                                                                                                                                                |
+| Argument                 | Shorthand | Default                                    | Description                                                                                                                                                           |
+|--------------------------|-----------|--------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `[src]`                  | `-s`      | -                                          | Source directory containing the files to flatten                                                                                                                      |
+| `[dest]`                 | `-d`      | -                                          | Destination directory/file where files will be copied                                                                                                                 |
+| `--file-types`           | `-t`      | `py`, `ipynb`, `js`, `md`, `yaml`, `shell` | File types to process: 'py' for Python, 'ipynb' for Python Notebooks, 'jsts' for JavaScript/TypeScript, 'md' for Markdown, 'yaml' for YAML, 'shell' for Shell Scripts |
+| **Exclusion Options**    |           |                                            |                                                                                                                                                                       |
+| `--exclude-dirs`         | `-xd`     | Various default directories                | Directory names to exclude                                                                                                                                            |
+| `--exclude-extensions`   | `-xe`     | Various default extensions                 | File extensions to exclude                                                                                                                                            |
+| `--exclude-files`        | `-xf`     | Various common files                       | Specific filenames to exclude (e.g., setup.py, jest.config.js)                                                                                                        |
+| **Inclusion Options**    |           |                                            |                                                                                                                                                                       |
+| `--include-dirs`         | `-id`     | None                                       | Directory names to include (only these will be processed)                                                                                                             |
+| `--include-extensions`   | `-ie`     | None                                       | File extensions to include (only these will be processed)                                                                                                             |
+| `--include-files`        | `-if`     | None                                       | Specific filenames to include (only these will be processed)                                                                                                          |
+| **Minification Options** |           |                                            |                                                                                                                                                                       |
+| `--minify`               | `-m`      | `False`                                    | Minify code when bundling (removes comments, docstrings, and excess whitespace)                                                                                       |
+| `--aggressive-minify`    | `-am`     | `False`                                    | Apply aggressive minification (may affect readability)                                                                                                                |
+| **Defaults Handling**    |           |                                            |                                                                                                                                                                       |
+| `--ignore-defaults`      | `-i`      | `False`                                    | Ignore all default exclusions and only use provided exclusions                                                                                                        |
+| **Other Options**        |           |                                            |                                                                                                                                                                       |
+| `--clear-dest-dir`       | `-c`      | `False`                                    | Clear the destination directory before copying files                                                                                                                  |
+| `--deflatten`            | `-df`     | `False`                                    | Deflatten the directory instead of flattening (reverses the flattening process)                                                                                       |
+| `--bundle`               | `-b`      | `False`                                    | Bundle files into a single text file with path information                                                                                                            |
+| `--no-log`               | `-nl`     | `False`                                    | Disable logging output                                                                                                                                                |
 
 For detailed information on the default values on the arguments, refer to the [constants](src/constants.py) file.
 
@@ -85,24 +88,46 @@ For detailed information on the default values on the arguments, refer to the [c
 
 Here are various scenarios and how to use the tool:
 
-| Scenario                          | Command                                                              | Description                                                                                                                                                                                 |
-|-----------------------------------|----------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Basic Flattening                  | `codebundle src flat`                                                | Flattens all supported files into the 'flat' directory                                                                                                                                      |
-| Using Shorthands                  | `codebundle -s src -d flat -t py ipynb -xd node_modules`             | Using shorthand flags to specify options                                                                                                                                                    |
-| Process Specific Types            | `codebundle -s src -d flat -t py ipynb shell`                        | Process only Python, Python Notebooks, and Shell Script files, ignoring other types                                                                                                         |
-| Exclude Directories               | `codebundle src flat -xd .idea .venv`                                | Excludes the specified directories in addition to default exclusions                                                                                                                        |
-| Include Only Specific Directories | `codebundle src flat -id utils models`                               | Only process files from the 'utils' and 'models' directories                                                                                                                                |
-| Include Only Specific Extensions  | `codebundle src flat -ie .py .sh`                                    | Only process files with '.py' and '.sh' extensions                                                                                                                                          |
-| Ignore Default Exclusions         | `codebundle src flat -xd .idea -i`                                   | Excludes only the .idea directory, ignoring all default exclusions                                                                                                                          |
-| Exclude File Extensions           | `codebundle src flat -xe .txt .csv`                                  | Excludes files with `.txt` and `.csv` extensions in addition to default exclusions                                                                                                          |
-| Exclude Specific Files            | `codebundle src flat -xf setup.py package.json setup.sh`             | Excludes the specified files in addition to default exclusions                                                                                                                              |
-| Include Only Specific Files       | `codebundle src flat -if main.py analysis.ipynb deploy.sh`           | Processes only the specified files, ignoring all others                                                                                                                                     |
-| Deflatten Directory               | `codebundle src original -df`                                        | Reverts the flattening process and restores the original directory structure from the flattened directory                                                                                   |
-| Bundle Files                      | `codebundle src bundled.txt -b`                                      | Bundles all files into a single text file with clear file separators and path information                                                                                                   |
-| Bundle Only Specific Files        | `codebundle src bundle.txt -b -if config.yaml notebook.ipynb`        | Bundles only the specified files into a single text file                                                                                                                                    |
-| Bundle Only Specific Directories  | `codebundle src bundle.txt -b -id config scripts -i`                 | Bundles only files from 'config' and 'scripts' directories, ignoring default exclusions                                                                                                     |
-| Combine Inclusions and Exclusions | `codebundle src flat -id src -xf .env config.js`                     | Process only the 'src' directory but exclude specific files                                                                                                                                 |
-| Complex Command with Shorthands   | `codebundle -s src -d flat -t py shell -id utils -xf setup.py -i -c` | Using multiple shorthands for a complex operation: only process Python and Shell files from utils directory, excluding setup.py, ignore default exclusions, and clear destination directory |
+| Scenario                          | Command                                                                                  | Description                                                                                               |
+|-----------------------------------|------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------|
+| Basic Flattening                  | `codebundle src flat`                                                                    | Flattens all supported files into the 'flat' directory                                                    |
+| Using Shorthands                  | `codebundle -s src -d flat -t py ipynb -xd node_modules`                                 | Using shorthand flags to specify options                                                                  |
+| Process Specific Types            | `codebundle -s src -d flat -t py ipynb shell`                                            | Process only Python, Python Notebooks, and Shell Script files, ignoring other types                       |
+| Exclude Directories               | `codebundle src flat -xd .idea .venv`                                                    | Excludes the specified directories in addition to default exclusions                                      |
+| Include Only Specific Directories | `codebundle src flat -id utils models`                                                   | Only process files from the 'utils' and 'models' directories                                              |
+| Include Only Specific Extensions  | `codebundle src flat -ie .py .sh`                                                        | Only process files with '.py' and '.sh' extensions                                                        |
+| Bundle with Minification          | `codebundle src bundle.txt -b -m`                                                        | Bundle files into a single text file with minification of Python code                                     |
+| Aggressive Minification           | `codebundle src bundle.txt -b -m -am`                                                    | Bundle files with aggressive minification (smaller file size but may affect readability)                  |
+| Bundle for AI Context             | `codebundle src ai-context.txt -b -m -ie .py`                                            | Create a minified bundle of Python files suitable for AI context windows                                  |
+| Ignore Default Exclusions         | `codebundle src flat -xd .idea -i`                                                       | Excludes only the .idea directory, ignoring all default exclusions                                        |
+| Exclude File Extensions           | `codebundle src flat -xe .txt .csv`                                                      | Excludes files with `.txt` and `.csv` extensions in addition to default exclusions                        |
+| Exclude Specific Files            | `codebundle src flat -xf setup.py package.json setup.sh`                                 | Excludes the specified files in addition to default exclusions                                            |
+| Include Only Specific Files       | `codebundle src flat -if main.py analysis.ipynb deploy.sh`                               | Processes only the specified files, ignoring all others                                                   |
+| Deflatten Directory               | `codebundle src original -df`                                                            | Reverts the flattening process and restores the original directory structure from the flattened directory |
+| Bundle Files                      | `codebundle src bundled.txt -b`                                                          | Bundles all files into a single text file with clear file separators and path information                 |
+| Bundle Only Specific Files        | `codebundle src bundle.txt -b -if config.yaml notebook.ipynb`                            | Bundles only the specified files into a single text file                                                  |
+| Bundle Only Specific Directories  | `codebundle src bundle.txt -b -id config scripts -i`                                     | Bundles only files from 'config' and 'scripts' directories, ignoring default exclusions                   |
+| Combine Inclusions and Exclusions | `codebundle src flat -id src -xf .env config.js`                                         | Process only the 'src' directory but exclude specific files                                               |
+| Complex Command with Shorthands   | `codebundle -s src -d flat -t py shell -id utils -xf setup.py -i -c`                     | Using multiple shorthands for a complex operation                                                         |
+| Minify for AI Project Knowledge   | `codebundle -s src -d ai_context.txt -b -m -t py -id core utils models -xf test_*.py -c` | Create a minified bundle of core Python files suitable for AI project knowledge context                   |
+
+### Minification Features
+
+The minification functionality is specially designed to help prepare your code for AI processing:
+
+#### Standard Minification (`--minify` / `-m`)
+- Removes all comments
+- Removes docstrings from Python functions, classes, and modules 
+- Eliminates excessive blank lines
+- Removes trailing whitespace
+- Reports size reduction statistics for each file
+
+#### Aggressive Minification (`--minify --aggressive-minify` / `-m -am`)
+- Includes all standard minification features
+- Removes spaces around operators (e.g., `x=y+z` instead of `x = y + z`)
+- Minimizes spaces after commas
+- Removes unnecessary semicolons
+- May reduce readability but produces smaller files
 
 ### Example Directory Transformations
 

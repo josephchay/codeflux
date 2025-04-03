@@ -5,11 +5,12 @@ import time
 
 from constants import DEFAULT_EXCLUDE_DIRS, ALL_EXCLUDE_EXTENSIONS, ALL_EXCLUDE_FILENAMES, ALL_EXTENSIONS
 from handlers import HANDLERS
-from utils import get_relative_path, print_stats, merge_with_defaults, merge_stats, should_process_file
+from utils import get_relative_path, print_stats, merge_with_defaults, merge_stats, should_process_file, minify_code
 
 
 def bundle_files(source_dir, output_file, file_types=None, exclude_dirs=None, exclude_exts=None, exclude_files=None,
-                 include_dirs=None, include_exts=None, include_files=None, silent=False, ignore_defaults=False):
+                 include_dirs=None, include_exts=None, include_files=None, silent=False, ignore_defaults=False,
+                 minify=False, aggressive_minify=False):
     """Bundle files into a single text file with path information."""
     file_types = file_types or ["py", "ipynb", "jsts", "mdtxt", "yml", "shell"]
 
@@ -32,7 +33,9 @@ def bundle_files(source_dir, output_file, file_types=None, exclude_dirs=None, ex
         "files_bundled": 0,
         "bytes_bundled": 0,
         "skipped_files": 0,
-        "max_nesting_level": 0
+        "max_nesting_level": 0,
+        "original_size": 0,
+        "minified_size": 0
     }
 
     included_extensions = []
@@ -48,6 +51,8 @@ def bundle_files(source_dir, output_file, file_types=None, exclude_dirs=None, ex
     if not silent:
         print(f"Source: {get_relative_path(source_dir, os.getcwd())}")
         print(f"Output file: {get_relative_path(output_file, os.getcwd())}\n")
+        if minify:
+            print(f"Minification: {'Aggressive' if aggressive_minify else 'Standard'}")
 
     files_to_bundle = []
     for root, dirs, files in os.walk(source_dir):
@@ -95,7 +100,8 @@ def bundle_files(source_dir, output_file, file_types=None, exclude_dirs=None, ex
                     'file_path': file_path,
                     'formatted_path': formatted_path,
                     'rel_path': os.path.relpath(file_path, source_dir),
-                    'extension': file_ext
+                    'extension': file_ext,
+                    'full_extension': file_ext
                 })
             else:
                 stats["skipped_files"] += 1
@@ -112,6 +118,8 @@ def bundle_files(source_dir, output_file, file_types=None, exclude_dirs=None, ex
     # Sort files to group similar types together - aids in AI analysis
     files_to_bundle.sort(key=lambda x: (x['extension'], x['formatted_path']))
 
+    stats["original_size"] = sum(os.path.getsize(f['file_path']) for f in files_to_bundle if os.path.exists(f['file_path']))
+
     # Group files by extension for more efficient processing
     extension_groups = {}
     for file_info in files_to_bundle:
@@ -121,7 +129,11 @@ def bundle_files(source_dir, output_file, file_types=None, exclude_dirs=None, ex
         extension_groups[ext].append(file_info)
 
     with open(output_file, 'w', encoding='utf-8') as outfile:
-        outfile.write(f"# {os.path.basename(source_dir)} ({len(files_to_bundle)} files)\n\n")
+        outfile.write(f"# {os.path.basename(source_dir)} ({len(files_to_bundle)} files)\n")
+        if minify:
+            outfile.write(f"# Minification: {'Aggressive' if aggressive_minify else 'Standard'}\n")
+        outfile.write("\n")
+
         for ext, group_files in extension_groups.items():
             if group_files:
                 outfile.write(f"## {ext.upper() or 'UNKNOWN'} FILES ({len(group_files)})\n\n")
@@ -129,16 +141,24 @@ def bundle_files(source_dir, output_file, file_types=None, exclude_dirs=None, ex
             for file_info in group_files:
                 file_path = file_info['file_path']
                 formatted_path = file_info['formatted_path']
+                file_extension = '.' + file_info['full_extension'] if file_info['full_extension'] else ''
 
                 try:
                     with open(file_path, 'r', encoding='utf-8') as infile:
                         content = infile.read()
+                        original_content_size = len(content)
 
                     if not content.strip():
                         if not silent:
                             print(f"Skipped empty file: {formatted_path}")
                         stats["skipped_files"] += 1
                         continue
+
+                    if minify:
+                        minified_content = minify_code(content, file_extension, aggressive_minify)
+                        stats["original_size"] += original_content_size
+                        stats["minified_size"] += len(minified_content)
+                        content = minified_content
 
                     outfile.write(f"`{formatted_path}`\n```\n")
                     outfile.write(content.rstrip())
@@ -148,7 +168,11 @@ def bundle_files(source_dir, output_file, file_types=None, exclude_dirs=None, ex
                     stats["bytes_bundled"] += len(content)
 
                     if not silent:
-                        print(f"Bundled: {formatted_path}")
+                        if minify and file_extension.lower() in ['.py', '.js', '.jsx', '.ts', '.tsx']:
+                            reduction = (1 - len(content) / max(original_content_size, 1)) * 100
+                            print(f"Bundled: {formatted_path} (Size reduction: {reduction:.2f}%)")
+                        else:
+                            print(f"Bundled: {formatted_path}")
 
                 except UnicodeDecodeError:
                     if not silent:
@@ -256,8 +280,7 @@ def deflatten_dir(flattened_dir, dest_dir, file_types=None, exclude_files=None, 
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Flatten, deflatten, or bundle a directory of Python, JavaScript, TypeScript, Markdown, YAML, and Shell Script files.")
+    parser = argparse.ArgumentParser(description="Flatten, deflatten, or bundle a directory of files.")
 
     # Support both positional and named arguments
     src_group = parser.add_argument_group('source')
@@ -309,6 +332,14 @@ def main():
                                  action="store_true",
                                  help="Bundle files into a single text file (default: False)")
 
+    minify_group = parser.add_argument_group('minification options (only for bundle)')
+    minify_group.add_argument("--minify", "-m",
+                        action="store_true",
+                        help="Minify code when bundling (removes comments, docstrings, and excess whitespace)")
+    minify_group.add_argument("--aggressive-minify", "-am",
+                        action="store_true",
+                        help="Apply aggressive minification (may affect readability)")
+
     parser.add_argument("--clear-dest-dir", "-c",
                         action="store_true",
                         help="Clear the destination directory before copying (default: False)")
@@ -326,6 +357,14 @@ def main():
         print("\nError: Both source and destination are required.")
         return 1
 
+    if args.aggressive_minify:
+        args.minify = True
+        if not args.bundle:
+            print("Warning: Minification options are only applicable when bundling files.")
+
+    elif args.minify and not args.bundle:
+        print("Warning: Minification options are only applicable when bundling files.")
+
     try:
         if args.deflatten:
             stats = deflatten_dir(source_dir, dest_path, args.file_types, args.exclude_files,
@@ -335,7 +374,7 @@ def main():
             stats = bundle_files(source_dir, dest_path, args.file_types,
                                  args.exclude_dirs, args.exclude_extensions, args.exclude_files,
                                  args.include_dirs, args.include_extensions, args.include_files,
-                                 args.no_log, args.ignore_defaults)
+                                 args.no_log, args.ignore_defaults, args.minify, args.aggressive_minify)
         else:
             stats = flatten_dir(source_dir, dest_path, args.file_types,
                                 args.exclude_dirs, args.exclude_extensions, args.exclude_files,

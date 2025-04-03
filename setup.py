@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='codebundle',
-    version='0.6.0',
+    version='0.7.0',
     description='A lightweight CLI tool to flatten, deflatten, and bundle code files',
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',
@@ -18,14 +18,9 @@ setup(
         ],
     },
     classifiers=[
-        'Development Status :: 3 - Alpha',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
-        'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.7',
-        'Programming Language :: Python :: 3.8',
-        'Programming Language :: Python :: 3.9',
-        'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.12.7',
     ],
-    python_requires='>=3.7',
+    python_requires='>=3.12.7',
 )
