@@ -24,6 +24,7 @@ It's perfect for organizing large codebases, consolidating scripts, optimization
 | Markdown         | `.md`, `.markdown`, `.mdown`, `.mkdn`, `.mkd`, `.mdwn`, `.mdtxt`, `.mdtext` |
 | Plain Text       | `.txt`                                                                      |
 | YAML             | `.yaml`, `.yml`                                                             |
+| JSON             | `.json`, `.jsonl`, `.geojson`, `.json5`, `.ndjson`                          |
 
 _More extensions to be added in the future._
 
@@ -60,40 +61,42 @@ pnpm add git+https://github.com/josephchay/codebundle.git --save-dev
 
 ## Command-Line Arguments
 
-| Argument                 | Shorthand | Default                                    | Description                                                                                                                                                           |
-|--------------------------|-----------|--------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `[src]`                  | `-s`      | Current directory                          | Source directory containing the files to flatten                                                                                                                      |
-| `[dest]`                 | `-d`      | Based on operation (see below)             | Destination directory/file where files will be copied                                                                                                                 |
-| `--file-types`           | `-t`      | `py`, `ipynb`, `js`, `md`, `yaml`, `shell` | File types to process: 'py' for Python, 'ipynb' for Python Notebooks, 'jsts' for JavaScript/TypeScript, 'md' for Markdown, 'yaml' for YAML, 'shell' for Shell Scripts |
-| **Operations**           |           |                                            |                                                                                                                                                                       |
-| `--flatten`              | `-f`      | True (if no other operation specified)     | Flatten the directory structure                                                                                                                                       |
-| `--deflatten`            | `-df`     | False                                      | Deflatten the directory (restore original structure)                                                                                                                  |
-| `--bundle`               | `-b`      | False                                      | Bundle files into a single text file                                                                                                                                  |
-| `--minify`               | `-m`      | False                                      | Create a minified copy of the directory while preserving structure                                                                                                    |
-| `--minify-bundle`        | `-mb`     | False                                      | Minify files and bundle them into a single text file                                                                                                                  |
-| **Exclusion Options**    |           |                                            |                                                                                                                                                                       |
-| `--exclude-dirs`         | `-xd`     | Various default directories                | Directory names to exclude                                                                                                                                            |
-| `--exclude-extensions`   | `-xe`     | Various default extensions                 | File extensions to exclude                                                                                                                                            |
-| `--exclude-files`        | `-xf`     | Various common files                       | Specific filenames to exclude (e.g., setup.py, jest.config.js)                                                                                                        |
-| **Inclusion Options**    |           |                                            |                                                                                                                                                                       |
-| `--include-dirs`         | `-id`     | None                                       | Directory names to include (only these will be processed)                                                                                                             |
-| `--include-extensions`   | `-ie`     | None                                       | File extensions to include (only these will be processed)                                                                                                             |
-| `--include-files`        | `-if`     | None                                       | Specific filenames to include (only these will be processed)                                                                                                          |
-| **Defaults Handling**    |           |                                            |                                                                                                                                                                       |
-| `--ignore-defaults`      | `-i`      | `False`                                    | Ignore all default exclusions and only use provided exclusions                                                                                                        |
-| **Other Options**        |           |                                            |                                                                                                                                                                       |
-| `--clear-dest-dir`       | `-c`      | `False`                                    | Clear the destination directory before copying files                                                                                                                  |
-| `--no-log`               | `-nl`     | `False`                                    | Disable logging output                                                                                                                                                |
+| Argument               | Shorthand | Default                                              | Description                                                                                                                                                                                  |
+|------------------------|-----------|------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `[src]`                | `-s`      | Current directory                                    | Source directory containing the files to flatten                                                                                                                                             |
+| `[dest]`               | `-d`      | Based on operation (see below)                       | Destination directory/file where files will be copied                                                                                                                                        |
+| `--file-types`         | `-t`      | `py`, `ipynb`, `jsts`, `md`, `yaml`, `shell`, `json` | File types to process: 'py' for Python, 'ipynb' for Python Notebooks, 'jsts' for JavaScript/TypeScript, 'md' for Markdown, 'yaml' for YAML, 'shell' for Shell Scripts, 'json' for JSON files |
+| **Operations**         |           |                                                      |                                                                                                                                                                                              |
+| `--flatten`            | `-f`      | True (if no other operation specified)               | Flatten the directory structure                                                                                                                                                              |
+| `--deflatten`          | `-df`     | False                                                | Deflatten the directory (restore original structure)                                                                                                                                         |
+| `--bundle`             | `-b`      | False                                                | Bundle files into a single text file                                                                                                                                                         |
+| `--minify`             | `-m`      | False                                                | Create a minified copy of the directory while preserving structure                                                                                                                           |
+| `--minify-bundle`      | `-mb`     | False                                                | Minify files and bundle them into a single text file                                                                                                                                         |
+| **Exclusion Options**  |           |                                                      |                                                                                                                                                                                              |
+| `--exclude-dirs`       | `-xd`     | Various default directories                          | Directory names to exclude                                                                                                                                                                   |
+| `--exclude-extensions` | `-xe`     | Various default extensions                           | File extensions to exclude                                                                                                                                                                   |
+| `--exclude-files`      | `-xf`     | Various common files                                 | Specific filenames to exclude (e.g., setup.py, jest.config.js)                                                                                                                               |
+| **Inclusion Options**  |           |                                                      |                                                                                                                                                                                              |
+| `--include-dirs`       | `-id`     | None                                                 | Directory names to include (only these will be processed)                                                                                                                                    |
+| `--include-extensions` | `-ie`     | None                                                 | File extensions to include (only these will be processed)                                                                                                                                    |
+| `--include-files`      | `-if`     | None                                                 | Specific filenames to include (only these will be processed)                                                                                                                                 |
+| **Defaults Handling**  |           |                                                      |                                                                                                                                                                                              |
+| `--ignore-defaults`    | `-i`      | `False`                                              | Ignore all default exclusions and only use provided exclusions                                                                                                                               |
+| **Other Options**      |           |                                                      |                                                                                                                                                                                              |
+| `--clear-dest-dir`     | `-c`      | `False`                                              | Clear the destination directory before copying files                                                                                                                                         |
+| `--no-log`             | `-nl`     | `False`                                              | Disable logging output                                                                                                                                                                       |
 
 ### Default Paths and Output Organization
 
 * **Source directory**: If not specified, defaults to the current working directory
+* **Base output directory**: A `codebundle` directory in the current working directory
+* **Operation directories**: Timestamped directories for each operation inside the base directory
 * **Destination paths**:
-  * For `flatten`: `./codebundle_YYYYMMDD_HHMMSS/flattened/`
-  * For `deflatten`: `./codebundle_YYYYMMDD_HHMMSS/deflattened/`
-  * For `bundle`: `./codebundle_YYYYMMDD_HHMMSS/bundled.txt`
-  * For `minify-bundle`: `./codebundle_YYYYMMDD_HHMMSS/minified_bundle.txt`
-  * For `minify`: `./codebundle_YYYYMMDD_HHMMSS/minified/`
+  * For `flatten`: `./codebundle/flatten_YYYYMMDD_HHMMSS/flattened/`
+  * For `deflatten`: `./codebundle/deflatten_YYYYMMDD_HHMMSS/deflattened/`
+  * For `bundle`: `./codebundle/bundle_YYYYMMDD_HHMMSS/bundled.txt`
+  * For `minify`: `./codebundle/minify_YYYYMMDD_HHMMSS/minified/`
+  * For `minify-bundle`: `./codebundle/minify_bundle_YYYYMMDD_HHMMSS/minified_bundle.txt`
   * If custom destination paths are provided, they're used as specified
 
 For detailed information on default values, refer to the [constants](src/constants.py) file.

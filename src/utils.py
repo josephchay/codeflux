@@ -1,3 +1,4 @@
+import json
 import os
 import datetime
 import python_minifier
@@ -144,11 +145,19 @@ def should_process_file(filename, handler_extensions, exclude_exts=None, exclude
     return not (is_excluded_ext or is_excluded_file)
 
 
-def create_timestamped_dir():
-    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    output_dir = os.path.join(os.getcwd(), f"codebundle_{timestamp}")
-    os.makedirs(output_dir, exist_ok=True)
-    return output_dir
+def create_output_dir(operation=None):
+    # Create base codebundle directory if it doesn't exist
+    base_dir = os.path.join(os.getcwd(), "codebundle")
+    os.makedirs(base_dir, exist_ok=True)
+
+    if operation:
+        # Create a timestamped directory for the specific operation
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        operation_dir = os.path.join(base_dir, f"{operation}_{timestamp}")
+        os.makedirs(operation_dir, exist_ok=True)
+        return operation_dir
+
+    return base_dir
 
 
 def minify_code(source, file_ext):
@@ -160,6 +169,15 @@ def minify_code(source, file_ext):
             return python_minifier.minify(source)
         except Exception as e:
             error_msg = f"Error minifying Python code: {str(e)}"
+            print(error_msg)
+            raise RuntimeError(error_msg)
+
+    elif file_ext.lower() in ['.json', '.jsonl', '.geojson', '.json5', '.ndjson']:
+        try:
+            parsed_json = json.loads(source)
+            return json.dumps(parsed_json, separators=(',', ':'))
+        except Exception as e:
+            error_msg = f"Error minifying JSON: {str(e)}"
             print(error_msg)
             raise RuntimeError(error_msg)
 

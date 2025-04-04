@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Support for default values for source directory and destination paths, if not provided for flattening, deflattening, and bundling operations.
 - `requirements.txt` file for package dependencies.
 - Long description and project URLs to `setup.py` for PyPI.
+- File handling for JSON files.
 
 ### Fixed
 
@@ -26,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Enable multiple operations (flattening, deflattening, and bundling) in a single command (no longer mutually exclusive).
 - `--minify` flag to create a minified copy of the directory while preserving structure (without bundling).
 - Functionality of the `--minify` flag passed to the `--minify-bundle` flag for a minified bundle.
+- Default output dir will be `codebundle` with timestamped subdirectories for each operation.
 
 ### Removed
 

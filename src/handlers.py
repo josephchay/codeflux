@@ -293,6 +293,17 @@ class ShellHandler(FileExtHandler):
         )
 
 
+class JsonHandler(FileExtHandler):
+    """Handler for JSON files"""
+    def __init__(self):
+        super().__init__(
+            extensions=JSON_EXTENSIONS,
+            exclude_dirs=DEFAULT_EXCLUDE_DIRS,
+            exclude_extensions=JSON_EXCLUDE_EXTENSIONS,
+            exclude_filenames=JSON_EXCLUDE_FILENAMES
+        )
+
+
 HANDLERS = {
     "py": PythonHandler(),
     "ipynb": NotebookHandler(),
@@ -300,4 +311,5 @@ HANDLERS = {
     "mdtxt": MarkdownTextHandler(),
     "yml": YamlHandler(),
     "shell": ShellHandler(),
+    "json": JsonHandler(),
 }

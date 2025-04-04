@@ -9,7 +9,7 @@ from constants import DEFAULT_EXCLUDE_DIRS, ALL_EXCLUDE_EXTENSIONS, ALL_EXCLUDE_
     DEFAULT_MINIFY_BUNDLE_OUTPUT_PATH
 from handlers import HANDLERS
 from utils import get_relative_path, print_stats, merge_with_defaults, merge_stats, should_process_file, minify_code, \
-    create_timestamped_dir
+    create_output_dir
 
 
 def minify(source_dir, dest_dir, file_types=None, exclude_dirs=None, exclude_exts=None, exclude_files=None,
@@ -486,9 +486,10 @@ def main():
 
     parser.add_argument("--file-types", "-t",
                         nargs="+",
-                        choices=["py", "ipynb", "jsts", "mdtxt", "yml", "shell"],
-                        default=["py", "ipynb", "jsts", "mdtxt", "yml", "shell"],
-                        help="File types to process: 'py' for Python, 'ipynb' for Python Notebooks, 'jsts' for JavaScript/TypeScript, 'md' for Markdown, 'yml' for YAML, 'shell' for Shell Scripts (default: all)")
+                        choices=["py", "ipynb", "jsts", "mdtxt", "yml", "shell", "json"],
+                        default=["py", "ipynb", "jsts", "mdtxt", "yml", "shell", "json"],
+                        help="File types to process: 'py' for Python, 'ipynb' for Python Notebooks, 'jsts' for JavaScript/TypeScript, 'md' for Markdown, "
+                             "'yml' for YAML, 'shell' for Shell Scripts, 'json' for JSON files (default: all)")
 
     exclusion_group = parser.add_argument_group('exclusion options')
     exclusion_group.add_argument("--exclude-dirs", "-xd",
@@ -547,8 +548,8 @@ def main():
     if not source_dir:
         source_dir = os.getcwd()
 
-    output_base_dir = create_timestamped_dir()
-    print(f"Output directory: {output_base_dir}")
+    base_dir = create_output_dir()
+    print(f"Base output directory: {base_dir}")
 
     operations = []
     if args.flatten:
@@ -557,19 +558,20 @@ def main():
         operations.append("deflatten")
     if args.bundle:
         operations.append("bundle")
-    if args.minify_bundle:
-        operations.append("minify_bundle")
     if args.minify:
         operations.append("minify")
+    if args.minify_bundle:
+        operations.append("minify_bundle")
     if not operations:
         operations.append("flatten")
 
     try:
         for operation in operations:
+            operation_dir = create_output_dir(operation)
             if operation == "flatten":
                 flatten_dest = args.dest_named if args.dest_named else args.dest_pos
                 if not flatten_dest:
-                    flatten_dest = os.path.join(output_base_dir, DEFAULT_FLATTEN_OUTPUT_PATH)
+                    flatten_dest = os.path.join(operation_dir, DEFAULT_FLATTEN_OUTPUT_PATH)
 
                 print(f"\n===== EXECUTING FLATTEN: {source_dir} -> {flatten_dest} =====\n")
                 stats = flatten_dir(source_dir, flatten_dest, args.file_types,
@@ -580,7 +582,7 @@ def main():
             elif operation == "deflatten":
                 deflatten_dest = args.dest_named if args.dest_named else args.dest_pos
                 if not deflatten_dest:
-                    deflatten_dest = os.path.join(output_base_dir, DEFAULT_DEFLATTEN_OUTPUT_PATH)
+                    deflatten_dest = os.path.join(operation_dir, DEFAULT_DEFLATTEN_OUTPUT_PATH)
 
                 print(f"\n===== EXECUTING DEFLATTEN: {source_dir} -> {deflatten_dest} =====\n")
                 stats = deflatten_dir(source_dir, deflatten_dest, args.file_types, args.exclude_files,
@@ -590,7 +592,7 @@ def main():
             elif operation == "bundle":
                 bundle_dest = args.dest_named if args.dest_named else args.dest_pos
                 if not bundle_dest:
-                    bundle_dest = os.path.join(output_base_dir, DEFAULT_BUNDLE_OUTPUT_PATH)
+                    bundle_dest = os.path.join(operation_dir, DEFAULT_BUNDLE_OUTPUT_PATH)
 
                 print(f"\n===== EXECUTING BUNDLE: {source_dir} -> {bundle_dest} =====\n")
                 stats = bundle_files(source_dir, bundle_dest, args.file_types,
@@ -601,7 +603,7 @@ def main():
             elif operation == "minify_bundle":
                 bundle_dest = args.dest_named if args.dest_named else args.dest_pos
                 if not bundle_dest:
-                    bundle_dest = os.path.join(output_base_dir, DEFAULT_MINIFY_BUNDLE_OUTPUT_PATH)
+                    bundle_dest = os.path.join(operation_dir, DEFAULT_MINIFY_BUNDLE_OUTPUT_PATH)
 
                 print(f"\n===== EXECUTING MINIFY-BUNDLE: {source_dir} -> {bundle_dest} =====\n")
                 stats = bundle_files(source_dir, bundle_dest, args.file_types,
@@ -612,7 +614,7 @@ def main():
             elif operation == "minify":
                 minify_dest = args.dest_named if args.dest_named else args.dest_pos
                 if not minify_dest:
-                    minify_dest = os.path.join(output_base_dir, DEFAULT_MINIFY_OUTPUT_PATH)
+                    minify_dest = os.path.join(operation_dir, DEFAULT_MINIFY_OUTPUT_PATH)
 
                 print(f"\n===== EXECUTING MINIFY: {source_dir} -> {minify_dest} =====\n")
                 stats = minify(source_dir, minify_dest, args.file_types,
