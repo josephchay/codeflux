@@ -87,16 +87,21 @@ class FileExtHandler:
                     destination_file = os.path.join(dest_dir, new_filename)
                     unique_destination_file = get_unique_filename(destination_file)
 
-                    # Copy file
-                    shutil.copy2(source_file, unique_destination_file)
-                    stats["files_copied"] += 1
-                    stats["bytes_copied"] += os.path.getsize(source_file)
+                    try:
+                        # Copy file
+                        shutil.copy2(source_file, unique_destination_file)
+                        stats["files_copied"] += 1
+                        stats["bytes_copied"] += os.path.getsize(source_file)
 
-                    # Print relative paths with arrow
-                    rel_source = get_relative_path(source_file, os.getcwd())
-                    rel_dest = get_relative_path(unique_destination_file, os.getcwd())
-                    if not silent:
-                        print(f"{rel_source} → {rel_dest}")
+                        # Print relative paths with arrow
+                        rel_source = get_relative_path(source_file, os.getcwd())
+                        rel_dest = get_relative_path(unique_destination_file, os.getcwd())
+                        if not silent:
+                            print(f"{rel_source} → {rel_dest}")
+                    except Exception as e:
+                        error_msg = f"Error copying {file}: {str(e)}"
+                        print(error_msg)
+                        raise RuntimeError(error_msg)
                 else:
                     stats["skipped_files"] += 1
 
@@ -188,20 +193,30 @@ class FileExtHandler:
                 continue
 
             if not os.path.exists(original_dir):
-                os.makedirs(original_dir, exist_ok=True)
-                stats["dirs_created"] += 1
+                try:
+                    os.makedirs(original_dir, exist_ok=True)
+                    stats["dirs_created"] += 1
+                except Exception as e:
+                    error_msg = f"Error creating directory {original_dir}: {str(e)}"
+                    print(error_msg)
+                    raise RuntimeError(error_msg)
 
             destination_file = os.path.join(original_dir, original_file)
             unique_destination_file = get_unique_filename(destination_file)
 
-            shutil.copy2(flattened_file, unique_destination_file)
-            stats["files_copied"] += 1
-            stats["bytes_copied"] += os.path.getsize(flattened_file)
+            try:
+                shutil.copy2(flattened_file, unique_destination_file)
+                stats["files_copied"] += 1
+                stats["bytes_copied"] += os.path.getsize(flattened_file)
 
-            rel_source = get_relative_path(flattened_file, os.getcwd())
-            rel_dest = get_relative_path(unique_destination_file, os.getcwd())
-            if not silent:
-                print(f"{rel_source} → {rel_dest}")
+                rel_source = get_relative_path(flattened_file, os.getcwd())
+                rel_dest = get_relative_path(unique_destination_file, os.getcwd())
+                if not silent:
+                    print(f"{rel_source} → {rel_dest}")
+            except Exception as e:
+                error_msg = f"Error copying {file}: {str(e)}"
+                print(error_msg)
+                raise RuntimeError(error_msg)
 
         end_time = time.time()
         duration = end_time - start_time

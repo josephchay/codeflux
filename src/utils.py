@@ -33,7 +33,7 @@ def print_stats(operation_type, stats, duration):
 
     # Processing stats section
     print("\n[INPUT PROCESSING]")
-    if operation_type in ["flatten", "bundle"]:
+    if operation_type in ["flatten", "bundle", "minify"]:
         if "dirs_traversed" in stats:
             print(f"Directories scanned: {stats['dirs_traversed']}")
         if "max_nesting_level" in stats:
@@ -57,6 +57,15 @@ def print_stats(operation_type, stats, duration):
             print(f"Original size: {stats['original_size'] / 1024:.2f} KB")
             print(f"Minified size: {stats['minified_size'] / 1024:.2f} KB")
             print(f"Size reduction: {(1 - stats['minified_size'] / max(stats['original_size'], 1)) * 100:.2f}%")
+    elif operation_type == "minify":
+        if "files_copied" in stats:
+            print(f"Files copied: {stats['files_copied']}")
+        if "files_minified" in stats:
+            print(f"Files minified: {stats['files_minified']}")
+        if "bytes_original" in stats and "bytes_minified" in stats:
+            print(f"Original size: {stats['bytes_original'] / 1024:.2f} KB")
+            print(f"Minified size: {stats['bytes_minified'] / 1024:.2f} KB")
+            print(f"Size reduction: {(1 - stats['bytes_minified'] / max(stats['bytes_original'], 1)) * 100:.2f}%")
     else:  # flatten
         if "files_copied" in stats:
             print(f"Files in {operation_type} output: {stats['files_copied']}")
@@ -94,7 +103,10 @@ def merge_stats(stats_list):
         "files_bundled": 0,
         "bytes_bundled": 0,
         "original_size": 0,
-        "minified_size": 0
+        "minified_size": 0,
+        "files_minified": 0,
+        "bytes_original": 0,
+        "bytes_minified": 0
     }
 
     for stats in stats_list:
@@ -147,7 +159,8 @@ def minify_code(source, file_ext):
         try:
             return python_minifier.minify(source)
         except Exception as e:
-            print(f"Minification error: {str(e)}")
-            return source
+            error_msg = f"Error minifying Python code: {str(e)}"
+            print(error_msg)
+            raise RuntimeError(error_msg)
 
     return source

@@ -24,6 +24,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Default outputs will be saved into `codebundle` prefix directory.
 - Each output will not overwrite the previous one. Instead, it will create a new directory with a timestamp.
 - Enable multiple operations (flattening, deflattening, and bundling) in a single command (no longer mutually exclusive).
+- `--minify` flag to create a minified copy of the directory while preserving structure (without bundling).
+- Functionality of the `--minify` flag passed to the `--minify-bundle` flag for a minified bundle.
 
 ### Removed
 
