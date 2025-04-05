@@ -1,5 +1,5 @@
-DEFAULT_EXCLUDE_DIRS = ["__pycache__",  ".git",  ".idea",  ".vscode",  ".venv",  "venv",  "node_modules",  "dist",
-                        "build",  ".next",  "codebundle.egg-info"]
+DEFAULT_EXCLUDE_DIRS = ["__pycache__", ".git", ".idea", ".vscode", ".venv", "venv",
+                        "node_modules", "dist", "build", ".next", "codebundle.egg-info"]
 
 PYTHON_EXTENSIONS = [".py"]
 PYTHON_EXCLUDE_EXTENSIONS = [".pyc", ".pyo", "__init__.py"]
@@ -49,6 +49,12 @@ ALL_EXCLUDE_FILENAMES = (
 
 DEFAULT_FLATTEN_OUTPUT_PATH = "flattened"
 DEFAULT_DEFLATTEN_OUTPUT_PATH = "deflattened"
+DEFAULT_MINIFY_OUTPUT_PATH = "minified"
 DEFAULT_BUNDLE_OUTPUT_PATH = "bundled.txt"
 DEFAULT_MINIFY_BUNDLE_OUTPUT_PATH = "minified_bundle.txt"
-DEFAULT_MINIFY_OUTPUT_PATH = "minified"
+
+OPERATION_FLATTEN = "flatten"
+OPERATION_DEFLATTEN = "deflatten"
+OPERATION_MINIFY = "minify"
+OPERATION_BUNDLE = "bundle"
+OPERATION_MINIFY_BUNDLE = "minify_bundle"

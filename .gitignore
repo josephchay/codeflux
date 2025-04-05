@@ -7,3 +7,4 @@ __pycache__/
 src/codebundle.egg-info/
 
 temp/
+codebundle/

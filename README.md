@@ -1,16 +1,15 @@
 # Codebundle - Unravel Your Codebase
 
-_Effortlessly declutter and organize your project by flattening nested files into a single folder,
-reconstruct the original directory structure from flattened files (deflattening), or bundle all files into a single document._
+**Codebundle** can be used for organizing large codebases, consolidating scripts, optimizations, or 
+preparing for migration or backup.
 
 ## Overview
 
 Do you often find yourself digging through multiple nested directories to find files?
 **Codebundle** is a CLI tool that scans through your source directory (and all its subdirectories), 
-processes files in multiple ways (flattening, restructuring, bundling), and organizes everything into timestamped outputs for easy reference. 
-It automatically handles file conflicts and supports powerful filtering options to process exactly what you need.
-
-It's perfect for organizing large codebases, consolidating scripts, optimizations, or preparing for migration or backup.
+processes files in multiple ways (flattening, restructuring, bundling, minifying), and organizes everything into 
+timestamped outputs for easy reference. It automatically handles file conflicts and supports powerful filtering options 
+to process exactly what you need.
 
 ### Supported File Types
 
@@ -90,14 +89,14 @@ pnpm add git+https://github.com/josephchay/codebundle.git --save-dev
 
 * **Source directory**: If not specified, defaults to the current working directory
 * **Base output directory**: A `codebundle` directory in the current working directory
-* **Operation directories**: Timestamped directories for each operation inside the base directory
-* **Destination paths**:
-  * For `flatten`: `./codebundle/flatten_YYYYMMDD_HHMMSS/flattened/`
-  * For `deflatten`: `./codebundle/deflatten_YYYYMMDD_HHMMSS/deflattened/`
-  * For `bundle`: `./codebundle/bundle_YYYYMMDD_HHMMSS/bundled.txt`
-  * For `minify`: `./codebundle/minify_YYYYMMDD_HHMMSS/minified/`
-  * For `minify-bundle`: `./codebundle/minify_bundle_YYYYMMDD_HHMMSS/minified_bundle.txt`
-  * If custom destination paths are provided, they're used as specified
+* **Operation directories**: A single timestamped directory containing all operations executed in one run
+* **Destination paths** (when running multiple operations in a single command):
+  * `./codebundle/20250404_131051/flattened/` (for flatten operation)
+  * `./codebundle/20250404_131051/deflattened/` (for deflatten operation)
+  * `./codebundle/20250404_131051/bundled.txt` (for bundle operation)
+  * `./codebundle/20250404_131051/minified/` (for minify operation)
+  * `./codebundle/20250404_131051/minified_bundle.txt` (for minify-bundle operation)
+  * `./codebundle/20250404_131051/operations_summary.txt` (summary of all operations performed)
 
 For detailed information on default values, refer to the [constants](src/constants.py) file.
 
@@ -573,5 +572,3 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE.txt) f
 Need help? Have a question? Feel free to reach out:
 * **Email**: [josephemmanuelchay@gmail.com](mailto:josephemmanuelchay@gmail.com)
 * **GitHub Issues**: [Issues](https://github.com/josephchay/codebundle/issues)
-
-Make your projects cleaner - flatten, deflatten, or bundle your directories today!

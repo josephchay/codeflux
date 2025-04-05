@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Imported `create_timestamped_dir` function in `main.py` to create a timestamped directory for output files.
+- Minor console output printing inconsistencies.
 
 ### Changed
 
@@ -28,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `--minify` flag to create a minified copy of the directory while preserving structure (without bundling).
 - Functionality of the `--minify` flag passed to the `--minify-bundle` flag for a minified bundle.
 - Default output dir will be `codebundle` with timestamped subdirectories for each operation.
+- Refactored code to have all operations handling codes to be in the `handlers.py` file.
 
 ### Removed
 
