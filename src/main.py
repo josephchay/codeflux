@@ -141,14 +141,20 @@ def main():
         operations.append(OPERATION_FLATTEN)
     if args.deflatten:
         operations.append(OPERATION_DEFLATTEN)
-    if args.bundle:
-        operations.append(OPERATION_BUNDLE)
     if args.minify:
         operations.append(OPERATION_MINIFY)
+    if args.bundle:
+        operations.append(OPERATION_BUNDLE)
     if args.minify_bundle:
         operations.append(OPERATION_MINIFY_BUNDLE)
     if not operations:
-        operations.append(OPERATION_FLATTEN)
+        operations = [
+            OPERATION_FLATTEN,
+            OPERATION_DEFLATTEN,
+            OPERATION_MINIFY,
+            OPERATION_BUNDLE,
+            OPERATION_MINIFY_BUNDLE,
+        ]
 
     timestamp_dir, _ = create_output_dir("multiple")
     print(f"Source directory (absolute): {os.path.abspath(source_dir)}")

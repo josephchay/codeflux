@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- If no operations are specified, then it will perform all operations (flattening, deflattening, minifying, bundling, and minifying-bundling) by default.
+
+## [0.7.0] - 2025-04-06
+
 ### Added
 
 - Support for minification features. Default minification `-m` and aggressive minification `-am`.
