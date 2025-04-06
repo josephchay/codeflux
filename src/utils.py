@@ -1,7 +1,8 @@
 import json
 import os
-import re
 import datetime
+import subprocess
+import tempfile
 import python_minifier
 
 from constants import OPERATION_DEFLATTEN, OPERATION_BUNDLE, OPERATION_MINIFY_BUNDLE, OPERATION_MINIFY, \
@@ -37,75 +38,88 @@ def format_path(path):
     return f"{rel_path} ({abs_path})"
 
 
-def print_stats(stats, operation_type=None, duration=None):
-    """Print formatted statistics about an operation."""
-    result = []
+def print_stats(stats, operation_type, duration, show_full=True):
+    """Print statistics about an operation"""
+    files_processed = stats.get("files_processed", 0) or stats.get("total_files_processed", 0)
+    files_per_second = files_processed / max(duration, 0.001)
 
-    if duration is not None:
-        result.append(f"Time taken: {duration:.6f} seconds")
+    print(f"\nTime taken: {duration:.6f} seconds")
+    if show_full:
+        print("\n[INPUT PROCESSING]")
+        dirs_traversed = stats.get("dirs_traversed", 0)
+        max_nesting = stats.get("max_nesting_level", 0)
+        total_files = stats.get("total_files_processed", 0)
+        skipped_files = stats.get("skipped_files", 0)
 
-    # Input processing stats
-    result.append("\n[INPUT PROCESSING]")
-    if "dirs_traversed" in stats:
-        result.append(f"Directories scanned: {stats['dirs_traversed']}")
-    if "max_nesting_level" in stats:
-        result.append(f"Maximum nesting level: {stats['max_nesting_level']}")
-    result.append(f"Total files scanned: {stats['total_files_processed']}")
-    result.append(f"Files skipped: {stats['skipped_files']} (non-target or excluded)")
+        print(f"Directories scanned: {dirs_traversed}")
+        print(f"Maximum nesting level: {max_nesting}")
+        print(f"Total files scanned: {total_files}")
+        print(f"Files skipped: {skipped_files} (non-target or excluded)")
 
-    # Output result stats
-    result.append("\n[OUTPUT RESULT]")
-    if operation_type == OPERATION_DEFLATTEN:
-        if "dirs_created" in stats:
-            result.append(f"Directories created: {stats['dirs_created']}")
-        if "files_copied" in stats:
-            result.append(f"Files in {operation_type} output: {stats['files_copied']}")
-            result.append(f"Data in {operation_type} output: {stats['bytes_copied'] / 1024:.2f} KB")
+        print("\n[OUTPUT RESULT]")
 
-    elif operation_type == OPERATION_BUNDLE or operation_type == OPERATION_MINIFY_BUNDLE:
-        if "files_bundled" in stats:
-            result.append(f"Files bundled: {stats['files_bundled']}")
-            result.append(f"Data bundled: {stats['bytes_bundled'] / 1024:.2f} KB")
-        if "original_size" in stats and "minified_size" in stats and stats["minified_size"] > 0:
-            result.append(f"Original size: {stats['original_size'] / 1024:.2f} KB")
-            result.append(f"Minified size: {stats['minified_size'] / 1024:.2f} KB")
-            reduction = (1 - stats['minified_size'] / max(stats['original_size'], 1)) * 100
-            result.append(f"Size reduction: {reduction:.2f}%")
+        if operation_type in [OPERATION_FLATTEN, OPERATION_DEFLATTEN]:
+            files_copied = stats.get("files_copied", 0)
+            bytes_copied = stats.get("bytes_copied", 0) / 1024  # Convert to KB
 
-    elif operation_type == OPERATION_MINIFY:
-        if "files_copied" in stats:
-            result.append(f"Files copied: {stats['files_copied']}")
-        if "files_minified" in stats:
-            result.append(f"Files minified: {stats['files_minified']}")
-        if "bytes_original" in stats and "bytes_minified" in stats:
-            result.append(f"Original size: {stats['bytes_original'] / 1024:.2f} KB")
-            result.append(f"Minified size: {stats['bytes_minified'] / 1024:.2f} KB")
-            reduction = (1 - stats['bytes_minified'] / max(stats['bytes_original'], 1)) * 100
-            result.append(f"Size reduction: {reduction:.2f}%")
+            if operation_type == OPERATION_FLATTEN:
+                print(f"Files in flatten output: {files_copied}")
+                print(f"Data in flatten output: {bytes_copied:.2f} KB")
+            else:
+                print(f"Files in deflatten output: {files_copied}")
+                print(f"Data in deflatten output: {bytes_copied:.2f} KB")
+                print(f"Directories created: {stats.get('dirs_created', 0)}")
 
-    elif operation_type == OPERATION_FLATTEN:
-        if "files_copied" in stats:
-            result.append(f"Files in {operation_type} output: {stats['files_copied']}")
-            result.append(f"Data in {operation_type} output: {stats['bytes_copied'] / 1024:.2f} KB")
+            if files_processed > 0:
+                print(f"Processing rate: {files_per_second:.2f} files/second")
 
-    if len(result) == 5:  # Only has headers but no actual output results
-        if "files_bundled" in stats and stats["files_bundled"] > 0:
-            result.append(f"Files bundled: {stats['files_bundled']}")
-        if "files_copied" in stats and stats["files_copied"] > 0:
-            result.append(f"Files processed: {stats['files_copied']}")
-        if "bytes_bundled" in stats and stats["bytes_bundled"] > 0:
-            result.append(f"Data processed: {stats['bytes_bundled'] / 1024:.2f} KB")
+        elif operation_type == OPERATION_BUNDLE:
+            files_bundled = stats.get("files_bundled", 0)
+            bytes_bundled = stats.get("bytes_bundled", 0) / 1024  # Convert to KB
 
-    # Processing rate
-    if duration is not None:
-        if (operation_type == OPERATION_BUNDLE or operation_type == OPERATION_MINIFY_BUNDLE) and "files_bundled" in stats:
-            result.append(f"Processing rate: {stats['files_bundled'] / max(duration, 0.1):.2f} files/second")
-        elif "files_copied" in stats and stats["files_copied"] > 0:
-            result.append(f"Processing rate: {stats['files_copied'] / max(duration, 0.1):.2f} files/second")
+            print(f"Files bundled: {files_bundled}")
+            print(f"Data bundled: {bytes_bundled:.2f} KB")
 
-    output = "\n".join(result)
-    print(output)
-    return output
+            if files_processed > 0:
+                print(f"Processing rate: {files_per_second:.2f} files/second")
+
+        elif operation_type == OPERATION_MINIFY:
+            files_copied = stats.get("files_copied", 0)
+            files_minified = stats.get("files_minified", 0)
+
+            print(f"Files copied: {files_copied}")
+            print(f"Files minified: {files_minified}")
+
+            bytes_original = stats.get("bytes_original", 0) / 1024  # Convert to KB
+            bytes_minified = stats.get("bytes_minified", 0) / 1024  # Convert to KB
+
+            if bytes_original > 0:
+                reduction = (1 - stats.get("bytes_minified", 0) / max(stats.get("bytes_original", 1), 1)) * 100
+                print(f"Original size: {bytes_original:.2f} KB")
+                print(f"Minified size: {bytes_minified:.2f} KB")
+                print(f"Size reduction: {reduction:.2f}%")
+
+            if files_processed > 0:
+                print(f"Processing rate: {files_per_second:.2f} files/second")
+
+        elif operation_type == OPERATION_MINIFY_BUNDLE:
+            files_bundled = stats.get("files_bundled", 0)
+            bytes_bundled = stats.get("bytes_bundled", 0) / 1024  # Convert to KB
+
+            print(f"Files bundled: {files_bundled}")
+            print(f"Data bundled: {bytes_bundled:.2f} KB")
+
+            bytes_original = stats.get("original_size", 0) / 1024  # Convert to KB
+            bytes_minified = stats.get("minified_size", 0) / 1024  # Convert to KB
+
+            if bytes_original > 0:
+                reduction = (1 - stats.get("minified_size", 0) / max(stats.get("original_size", 1), 1)) * 100
+                print(f"Original size: {bytes_original:.2f} KB")
+                print(f"Minified size: {bytes_minified:.2f} KB")
+                print(f"Size reduction: {reduction:.2f}%")
+
+            if files_processed > 0:
+                print(f"Processing rate: {files_per_second:.2f} files/second")
 
 
 def merge_with_defaults(user_values, defaults, ignore_defaults=False):
@@ -182,18 +196,58 @@ def create_output_dir(operation=None):
     return base_dir, None
 
 
-def is_timestamp_dir(dir_name):
-    return bool(re.match(r'\d{8}_\d{6}', os.path.basename(dir_name)))
-
-
-def minify_code(source, file_ext):
+def minify_code(source, file_extension):
     if not source:
         return source
 
-    if file_ext.lower() in ['.py']:
+    if file_extension.lower() in ['.py']:
         return python_minifier.minify(source)
-    elif file_ext.lower() in ['.json', '.jsonl', '.geojson', '.json5', '.ndjson']:
-        parsed_json = json.loads(source)
-        return json.dumps(parsed_json, separators=(',', ':'))
+    elif file_extension.lower() in ['.js', '.jsx', '.ts', '.tsx']:
+        node_result = subprocess.run(['node', '--version'], capture_output=True)
+        if node_result.returncode != 0:
+            print("WARNING: Node.js is required for JavaScript/TypeScript minification.")
+            print("JavaScript/TypeScript files will not be minified.")
+            return source
+
+        with tempfile.NamedTemporaryFile(suffix=file_extension, mode='w', delete=False) as temp_in:
+            temp_in.write(source)
+            temp_in_path = temp_in.name
+        temp_out_path = temp_in_path + '.min'
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        minify_script = os.path.join(script_dir, 'scripts', 'minify.js')
+
+        if not os.path.exists(minify_script):
+            print(f"WARNING: minify.js script not found at {minify_script}")
+            print("JavaScript/TypeScript files will not be minified.")
+            os.unlink(temp_in_path)
+            return source
+
+        result = subprocess.run(
+            ['node', minify_script, temp_in_path, temp_out_path],
+            capture_output=True,
+            text=True
+        )
+
+        os.unlink(temp_in_path)
+        if result.returncode == 0 and os.path.exists(temp_out_path):
+            with open(temp_out_path, 'r', encoding='utf-8') as out_file:
+                minified = out_file.read()
+            os.unlink(temp_out_path)
+            return minified
+        else:
+            if os.path.exists(temp_out_path):
+                os.unlink(temp_out_path)
+
+            print("WARNING: JavaScript/TypeScript minification failed.")
+            if result.stderr:
+                print(f"Details: {result.stderr}")
+            return source
+    elif file_extension.lower() in ['.json', '.jsonl', '.geojson', '.json5', '.ndjson']:
+        try:
+            parsed_json = json.loads(source)
+            return json.dumps(parsed_json, separators=(',', ':'))
+        except json.JSONDecodeError:
+            print("WARNING: Invalid JSON content. File will not be minified.")
+            return source
 
     return source

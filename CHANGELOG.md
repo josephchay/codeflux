@@ -14,11 +14,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `requirements.txt` file for package dependencies.
 - Long description and project URLs to `setup.py` for PyPI.
 - File handling for JSON files.
+- File handling for GO related file extensions.
+- `MANIFEST.in` file to include all files in the package.
+- Minification support for JSTS files using `terser` package library, with `src/minify.js` script.
+- `package.json`, and `package-lock.json` files for `terser` package library.
+- `codebundle` to default excluded directories.
 
 ### Fixed
 
 - Imported `create_timestamped_dir` function in `main.py` to create a timestamped directory for output files.
 - Minor console output printing inconsistencies.
+- Minor printing inconsistencies in `main.py`.
 
 ### Changed
 

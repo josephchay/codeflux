@@ -1,0 +1,28 @@
+{
+  "name": "codebundle",
+  "version": "0.7.0",
+  "description": "A lightweight CLI tool to flatten, deflatten, bundle, and minify codebase files.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/josephchay/codebundle.git"
+  },
+  "keywords": [
+    "bundler",
+    "code-management",
+    "code-archive",
+    "code-organizer"
+  ],
+  "author": "Joseph Chay",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/josephchay/codebundle/issues"
+  },
+  "homepage": "https://github.com/josephchay/codebundle#readme",
+  "dependencies": {
+    "terser": "^5.39.0"
+  }
+}

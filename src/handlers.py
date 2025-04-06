@@ -6,7 +6,7 @@ import datetime
 from constants import *
 from utils import (
     get_unique_filename, print_stats, should_process_file,
-    get_relative_path, is_timestamp_dir, minify_code, format_path
+    get_relative_path, minify_code
 )
 
 
@@ -40,8 +40,7 @@ class FileExtHandler:
         start_time = time.time()
 
         if not silent:
-            print(f"Source: {format_path(source_dir)}")
-            print(f"Destination: {format_path(dest_dir)}\n")
+            print(f"Destination: {get_relative_path(dest_dir)}")
             print(f"Processing files: {', '.join(self.extensions)}...")
             if include_exts:
                 print(f"Including only extensions: {', '.join(include_exts)}")
@@ -94,9 +93,7 @@ class FileExtHandler:
                         stats["bytes_copied"] += os.path.getsize(source_file)
 
                         if not silent:
-                            rel_source = get_relative_path(source_file)
-                            rel_dest = get_relative_path(unique_destination_file)
-                            print(f"{rel_source} → {rel_dest}")
+                            print(f"{get_relative_path(source_file)} → {get_relative_path(unique_destination_file)}")
                     except Exception as e:
                         error_msg = f"Error copying {file}: {str(e)}"
                         print(error_msg)
@@ -105,8 +102,8 @@ class FileExtHandler:
                     stats["skipped_files"] += 1
 
         if stats["files_copied"] == 0 and not silent:
-            print(f"No files found to process in {source_dir}.")
-            print(f"No files were copied to {dest_dir}.")
+            print(f"No files found to process.")
+            print(f"No files were copied.")
             print("\nNothing to do for this file type.")
 
         end_time = time.time()
@@ -132,15 +129,12 @@ class FileExtHandler:
 
         if clear_dest_dir and os.path.exists(dest_dir):
             shutil.rmtree(dest_dir)
-
         os.makedirs(dest_dir, exist_ok=True)
         stats["dirs_created"] += 1
-
         start_time = time.time()
 
         if not silent:
-            print(f"Source: {format_path(flattened_dir)}")
-            print(f"Destination: {format_path(dest_dir)}\n")
+            print(f"Destination: {get_relative_path(dest_dir)}\n")
             print(f"Processing files: {', '.join(self.extensions)}...")
             if include_exts:
                 print(f"Including only extensions: {', '.join(include_exts)}")
@@ -152,7 +146,7 @@ class FileExtHandler:
         if not os.path.exists(flattened_dir) or not os.listdir(flattened_dir):
             if not silent:
                 print(f"Source directory {flattened_dir} does not exist or is empty.")
-                print(f"No files to deflatten to {dest_dir}.")
+                print(f"No files to deflatten.")
                 print("\nNothing to do for this file type.")
 
             end_time = time.time()
@@ -218,18 +212,15 @@ class FileExtHandler:
                 stats["bytes_copied"] += os.path.getsize(flattened_file)
 
                 if not silent:
-                    rel_source = get_relative_path(flattened_file)
-                    rel_dest = get_relative_path(unique_destination_file)
-                    print(f"{rel_source} → {rel_dest}")
+                    print(f"{get_relative_path(flattened_file)} → {get_relative_path(unique_destination_file)}")
             except Exception as e:
                 error_msg = f"Error copying {file}: {str(e)}"
                 print(error_msg)
                 raise RuntimeError(error_msg)
 
         if stats["files_copied"] == 0 and not silent:
-            print(f"No files found to process in {flattened_dir}.")
-            print(f"No files were copied to {dest_dir}.")
-            print("\nNothing to do for this file type.")
+            print(f"No files found to process.")
+            print(f"No files were copied.")
 
         end_time = time.time()
         duration = end_time - start_time
@@ -239,155 +230,137 @@ class FileExtHandler:
 
         return stats
 
-    def minify_dir(self, source_dir, dest_dir, exclude_dirs=None, exclude_exts=None,
-                   exclude_files=None, include_dirs=None, include_exts=None, include_files=None,
-                   clear_dest_dir=False, silent=False):
+    def minify_dir(self, source_dir, output_dir, exclude_dirs=None, exclude_exts=None, exclude_files=None,
+                   include_dirs=None, include_exts=None, include_files=None, clear_dest_dir=False, silent=False):
         source_dir = os.path.abspath(source_dir)
-        dest_dir = os.path.abspath(dest_dir)
+        output_dir = os.path.abspath(output_dir)
+        source_dir_parts = len(os.path.normpath(source_dir).split(os.sep))
 
-        # Make sure base output directory isn't included in directory exclusion
-        base_dir = os.path.abspath(os.path.join(os.getcwd(), "codebundle"))
-        if base_dir not in exclude_dirs and exclude_dirs is not None:
-            exclude_dirs.append(base_dir)
+        if output_dir == source_dir:
+            raise ValueError("Source and output directories cannot be the same for minify operations")
 
-        # Stats tracking
+        if clear_dest_dir and os.path.exists(output_dir):
+            shutil.rmtree(output_dir)
+
+        os.makedirs(output_dir, exist_ok=True)
+
         stats = {
             "total_files_processed": 0,
             "dirs_traversed": 0,
             "files_copied": 0,
             "files_minified": 0,
+            "bytes_copied": 0,
             "bytes_original": 0,
             "bytes_minified": 0,
             "skipped_files": 0,
             "max_nesting_level": 0
         }
 
-        if clear_dest_dir and os.path.exists(dest_dir):
-            shutil.rmtree(dest_dir)
-
         start_time = time.time()
 
         if not silent:
-            print(f"Source: {format_path(source_dir)}")
-            print(f"Destination: {format_path(dest_dir)}\n")
-            print(f"Processing files: {', '.join(self.extensions)}...")
-            print(f"Minification: Using python-minifier for Python files and JSON compression for JSON files")
+            print(f"Destination: {get_relative_path(output_dir)}")
+            print(f"Minification: Using python-minifier for Python files and terser for JSTS files\n")
 
-            if include_exts:
-                print(f"Including only extensions: {', '.join(include_exts)}")
-            if include_dirs:
-                print(f"Including only directories: {', '.join(include_dirs)}")
-            if include_files:
-                print(f"Including only files: {', '.join(include_files)}")
-
-        # Flag to track if any files were found
         files_found = False
-
         for root, dirs, files in os.walk(source_dir):
             stats["dirs_traversed"] += 1
 
-            # Calculate nesting level for stats
-            current_nesting = len(os.path.relpath(root, source_dir).split(os.sep))
+            # Calculate nesting level
+            rel_path = os.path.relpath(root, source_dir)
+            current_nesting = len(rel_path.split(os.sep)) if rel_path != '.' else 0
             stats["max_nesting_level"] = max(stats["max_nesting_level"], current_nesting)
 
-            # Process directory inclusion/exclusion
             if include_dirs:
-                rel_dir = os.path.relpath(root, source_dir)
-                rel_dir_parts = rel_dir.split(os.sep)
-                if not any(part in include_dirs for part in rel_dir_parts) and rel_dir != '.':
-                    dirs[:] = []  # Skip this branch
+                # Only process specified directories
+                rel_dir_parts = rel_path.split(os.sep)
+                # Check if any part of the path is in include_dirs
+                if not any(part in include_dirs for part in rel_dir_parts) and rel_path != '.':
+                    dirs[:] = []  # Clear dirs to skip this branch
                     continue
 
-            # Skip the codebundle directory and timestamp directories
-            dirs[:] = [
-                d for d in dirs
-                if not (d == "codebundle" or is_timestamp_dir(d)) and
-                   d not in exclude_dirs and
-                   os.path.abspath(os.path.join(root, d)) != dest_dir
-            ]
+            # Exclude directories
+            dirs[:] = [d for d in dirs if d not in exclude_dirs]
 
-            # Create corresponding directory in destination
-            rel_path = os.path.relpath(root, source_dir)
-            target_dir = os.path.join(dest_dir, rel_path) if rel_path != '.' else dest_dir
-            os.makedirs(target_dir, exist_ok=True)
+            rel_output_path = os.path.relpath(root, source_dir)
+            output_path = os.path.normpath(os.path.join(output_dir, rel_output_path))
+            os.makedirs(output_path, exist_ok=True)
 
             for file in files:
                 stats["total_files_processed"] += 1
+                file_path = os.path.join(root, file)
+                output_file_path = os.path.join(output_path, file)
 
-                # Use centralized file filtering logic
+                # Skip if source and destination are the same
+                if os.path.abspath(file_path) == os.path.abspath(output_file_path):
+                    stats["skipped_files"] += 1
+                    continue
+
                 should_include = should_process_file(file, self.extensions, exclude_exts, exclude_files, include_exts, include_files)
-
                 if should_include:
                     files_found = True
-                    source_file = os.path.join(root, file)
-                    target_file = os.path.join(target_dir, file)
-
-                    # Get file extension
-                    _, file_ext = os.path.splitext(file)
-
                     try:
-                        # For text files that can be minified
-                        with open(source_file, 'r', encoding='utf-8') as f:
-                            content = f.read()
+                        with open(file_path, 'r', encoding='utf-8') as infile:
+                            content = infile.read()
                             original_size = len(content)
                             stats["bytes_original"] += original_size
 
-                        # Apply minification based on file type
-                        if file_ext.lower() in ['.py', '.json', '.jsonl', '.geojson', '.json5', '.ndjson']:
-                            minified_content = minify_code(content, file_ext)
+                        _, ext = os.path.splitext(file)
+                        try:
+                            minified_content = minify_code(content, ext)
                             minified_size = len(minified_content)
+                            stats["bytes_minified"] += minified_size
 
-                            with open(target_file, 'w', encoding='utf-8') as f:
-                                f.write(minified_content)
+                            with open(output_file_path, 'w', encoding='utf-8') as outfile:
+                                outfile.write(minified_content)
 
                             stats["files_minified"] += 1
-                            stats["bytes_minified"] += minified_size
                             stats["files_copied"] += 1
+                            stats["bytes_copied"] += minified_size
 
                             if not silent:
-                                rel_source = get_relative_path(source_file)
-                                rel_dest = get_relative_path(target_file)
                                 reduction = (1 - minified_size / max(original_size, 1)) * 100
-                                print(f"{rel_source} → {rel_dest} (Size reduction: {reduction:.2f}%)")
-                        else:
-                            # Just copy non-minifiable files
-                            shutil.copy2(source_file, target_file)
+                                rel_file_path = os.path.join(rel_output_path, file).replace('\\', '/')
+                                if rel_output_path == '.':
+                                    rel_file_path = file
+                                print(f"{get_relative_path(file_path, os.path.dirname(source_dir))} → {rel_file_path} (Size reduction: {reduction:.2f}%)")
+
+                        except Exception as e:
+                            # If minification fails, just copy the file
+                            shutil.copy2(file_path, output_file_path)
                             stats["files_copied"] += 1
+                            stats["bytes_copied"] += original_size
                             stats["bytes_minified"] += original_size  # No reduction
 
                             if not silent:
-                                rel_source = get_relative_path(source_file)
-                                rel_dest = get_relative_path(target_file)
-                                print(f"{rel_source} → {rel_dest}")
+                                rel_file_path = os.path.join(rel_output_path, file)
+                                rel_file_path = rel_file_path.replace('\\', '/')
+                                if rel_output_path == '.':
+                                    rel_file_path = file
+                                print(f"{file_path} → {rel_file_path} (Minification failed: {str(e)})")
 
                     except UnicodeDecodeError:
-                        # Handle binary files
-                        shutil.copy2(source_file, target_file)
-                        file_size = os.path.getsize(source_file)
+                        # Binary file, just copy it
+                        shutil.copy2(file_path, output_file_path)
                         stats["files_copied"] += 1
-                        stats["bytes_original"] += file_size
-                        stats["bytes_minified"] += file_size  # No reduction for binary files
 
                         if not silent:
-                            rel_source = get_relative_path(source_file)
-                            rel_dest = get_relative_path(target_file)
-                            print(f"{rel_source} → {rel_dest} (binary file)")
-                    except Exception as e:
-                        # Report error to user
-                        error_msg = f"Error processing {file}: {str(e)}"
-                        print(error_msg)
-                        raise RuntimeError(error_msg)
+                            rel_file_path = os.path.join(rel_output_path, file)
+                            rel_file_path = rel_file_path.replace('\\', '/')
+                            if rel_output_path == '.':
+                                rel_file_path = file
+                            print(f"{file_path} → {rel_file_path} (Binary file, copied as-is)")
                 else:
                     stats["skipped_files"] += 1
-
-        if not files_found and not silent:
-            print(f"No files found to minify in {source_dir}.")
-            print(f"No files were copied to {dest_dir}.")
 
         end_time = time.time()
         duration = end_time - start_time
 
         if not silent:
+            if not files_found:
+                print(f"No files found to minify.")
+                print(f"No files were copied.")
+
             print_stats(stats, OPERATION_MINIFY, duration)
 
         return stats
@@ -415,10 +388,9 @@ class FileExtHandler:
 
         start_time = time.time()
         if not silent:
-            print(f"Source: {format_path(source_dir)}")
-            print(f"Destination: {format_path(output_file)}")
+            print(f"Destination: {get_relative_path(output_file)}")
             if minify:
-                print(f"Minification: Using python-minifier for Python files and JSON compression for JSON files")
+                print(f"Minification: Using python-minifier for Python files and terser for JSTS files\n")
 
         # Gather files to bundle
         files_to_bundle = []
@@ -445,8 +417,7 @@ class FileExtHandler:
                     stats["skipped_files"] += 1
                     continue
 
-                should_include = should_process_file(file, self.extensions, exclude_exts, exclude_files, include_exts,
-                                                     include_files)
+                should_include = should_process_file(file, self.extensions, exclude_exts, exclude_files, include_exts, include_files)
                 if should_include:
                     path_parts = os.path.normpath(root).split(os.sep)[source_dir_parts:]
                     if path_parts:
@@ -472,7 +443,7 @@ class FileExtHandler:
         # If no files were found to bundle
         if not files_to_bundle:
             if not silent:
-                print(f"No files found to bundle in {source_dir}.")
+                print(f"No files found to bundle.")
 
             end_time = time.time()
             duration = end_time - start_time
@@ -484,8 +455,7 @@ class FileExtHandler:
 
         # Sort files to group similar types together
         files_to_bundle.sort(key=lambda x: (x['extension'], x['formatted_path']))
-        stats["original_size"] = sum(
-            os.path.getsize(f['file_path']) for f in files_to_bundle if os.path.exists(f['file_path']))
+        stats["original_size"] = sum(os.path.getsize(f['file_path']) for f in files_to_bundle if os.path.exists(f['file_path']))
 
         # Group files by extension for more efficient processing
         extension_groups = {}
@@ -493,7 +463,6 @@ class FileExtHandler:
             ext = file_info['extension']
             if ext not in extension_groups:
                 extension_groups[ext] = []
-
             extension_groups[ext].append(file_info)
         os.makedirs(os.path.dirname(output_file), exist_ok=True)
 
@@ -501,8 +470,7 @@ class FileExtHandler:
             outfile.write(f"# {os.path.basename(source_dir)} ({len(files_to_bundle)} files)\n")
             outfile.write(f"# Created: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
             if minify:
-                outfile.write(
-                    f"# Minification: Enabled (using python-minifier for Python files and JSON compression for JSON files)\n")
+                outfile.write(f"# Minification: Enabled (Using python-minifier for Python files and terser for JSTS files)\n")
             outfile.write("\n")
 
             for ext, group_files in extension_groups.items():
@@ -528,7 +496,6 @@ class FileExtHandler:
                             minified_content = minify_code(content, file_extension)
                             stats["minified_size"] += len(minified_content)
                             content = minified_content
-
                         else:
                             stats["minified_size"] = 0  # Not using minification
 
@@ -632,6 +599,16 @@ class JsonHandler(FileExtHandler):
         )
 
 
+class GoHandler(FileExtHandler):
+    def __init__(self):
+        super().__init__(
+            extensions=GO_EXTENSIONS,
+            exclude_dirs=DEFAULT_EXCLUDE_DIRS,
+            exclude_extensions=GO_EXCLUDE_EXTENSIONS,
+            exclude_filenames=GO_EXCLUDE_FILENAMES
+        )
+
+
 HANDLERS = {
     "py": PythonHandler(),
     "ipynb": NotebookHandler(),
@@ -640,4 +617,5 @@ HANDLERS = {
     "yml": YamlHandler(),
     "shell": ShellHandler(),
     "json": JsonHandler(),
+    "go": GoHandler(),
 }

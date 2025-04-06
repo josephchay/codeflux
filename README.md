@@ -91,12 +91,12 @@ pnpm add git+https://github.com/josephchay/codebundle.git --save-dev
 * **Base output directory**: A `codebundle` directory in the current working directory
 * **Operation directories**: A single timestamped directory containing all operations executed in one run
 * **Destination paths** (when running multiple operations in a single command):
-  * `./codebundle/20250404_131051/flattened/` (for flatten operation)
-  * `./codebundle/20250404_131051/deflattened/` (for deflatten operation)
-  * `./codebundle/20250404_131051/bundled.txt` (for bundle operation)
-  * `./codebundle/20250404_131051/minified/` (for minify operation)
-  * `./codebundle/20250404_131051/minified_bundle.txt` (for minify-bundle operation)
-  * `./codebundle/20250404_131051/operations_summary.txt` (summary of all operations performed)
+  * `./codebundle/{timestamp}/flattened/` (for flatten operation)
+  * `./codebundle/{timestamp}/deflattened/` (for deflatten operation)
+  * `./codebundle/{timestamp}/bundled.txt` (for bundle operation)
+  * `./codebundle/{timestamp}/minified/` (for minify operation)
+  * `./codebundle/{timestamp}/minified_bundle.txt` (for minify-bundle operation)
+  * `./codebundle/{timestamp}/operations_summary.txt` (summary of all operations performed)
 
 For detailed information on default values, refer to the [constants](src/constants.py) file.
 
@@ -499,7 +499,7 @@ or
 codebundle src -m
 ```
 
-This operation creates a minified copy of the directory while preserving the original structure. Python files are minified using python-minifier, while other files are simply copied. This is especially useful for deployment preparation or when you need to optimize code while maintaining the same organization.
+This operation creates a minified copy of the directory while preserving the original structure.
 
 #### Example 12: Minify-Bundle Operation
 
@@ -547,11 +547,8 @@ Clone the Repository:
 ```bash
 git clone https://github.com/josephchay/codebundle.git
 cd codebundle
-```
 
-Install Locally:
-
-```bash
+# Install locally
 pip install -e .
 ```
 
