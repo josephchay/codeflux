@@ -106,7 +106,7 @@ Here are various scenarios and how to use the tool:
 
 | Scenario                            | Command                                                       | Description                                                                               |
 |-------------------------------------|---------------------------------------------------------------|-------------------------------------------------------------------------------------------|
-| Basic Flattening                    | `codebundle`                                                  | Flattens the current directory into a timestamped output directory                        |
+| All Operations                      | `codebundle`                                                  | Performs all operations onto the current directory into a timestamped output directory    |
 | Multiple Operations                 | `codebundle -f -df -b`                                        | Performs flatten, deflatten and bundle operations in sequence                             |
 | Process Specific Types              | `codebundle -t py ipynb shell`                                | Process only Python, Python Notebooks, and Shell Script files from current directory      |
 | Bundle with Minification            | `codebundle -mb`                                              | Bundle the current directory with minified code                                           |
@@ -150,7 +150,7 @@ src/                               flat/
         └── env.yml
 ```
 
-Command: 
+Command:
 ```bash
 codebundle --src src --dest flat
 ```
