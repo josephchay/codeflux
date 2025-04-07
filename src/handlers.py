@@ -74,9 +74,10 @@ class FileExtHandler:
 
             for file in files:
                 stats["total_files_processed"] += 1
-
-                if should_process_file(file, self.extensions, exclude_exts, exclude_files, include_exts, include_files):
-                    source_file = os.path.join(root, file)
+                source_file = os.path.join(root, file)
+                rel_path = os.path.relpath(source_file, source_dir)
+                if should_process_file(file, self.extensions, exclude_exts, exclude_files, include_exts, include_files,
+                                       file_rel_path=rel_path):
                     path_parts = os.path.normpath(root).split(os.sep)[source_dir_parts:]
 
                     if path_parts:
@@ -168,13 +169,21 @@ class FileExtHandler:
                 stats["skipped_files"] += 1
                 continue
 
+            path_parts = file.split("___")
+            original_path = '/'.join(path_parts[:-1] + [original_filename]) if len(path_parts) > 1 else original_filename
             should_include = True
             if include_exts:
                 is_included_ext = any(original_filename.lower().endswith(ext) for ext in include_exts)
                 if not is_included_ext:
                     should_include = False
-            if exclude_files and original_filename in exclude_files:
-                should_include = False
+            if exclude_files:
+                for exclude_pattern in exclude_files:
+                    norm_exclude = exclude_pattern.replace('\\', '/')
+                    norm_path = original_path.replace('\\', '/')
+                    if norm_path == norm_exclude or norm_path.endswith('/' + norm_exclude) or original_filename == norm_exclude:
+                        should_include = False
+                        break
+
             if include_dirs:
                 path_parts = file.split("___")[:-1]  # Get directory parts
                 if not any(part in include_dirs for part in path_parts):
@@ -298,7 +307,8 @@ class FileExtHandler:
                     stats["skipped_files"] += 1
                     continue
 
-                should_include = should_process_file(file, self.extensions, exclude_exts, exclude_files, include_exts, include_files)
+                rel_file_path = os.path.relpath(file_path, source_dir)
+                should_include = should_process_file(file, self.extensions, exclude_exts, exclude_files, include_exts, include_files, file_rel_path=rel_file_path)
                 if should_include:
                     files_found = True
                     try:
@@ -413,7 +423,9 @@ class FileExtHandler:
                     stats["skipped_files"] += 1
                     continue
 
-                should_include = should_process_file(file, self.extensions, exclude_exts, exclude_files, include_exts, include_files)
+                rel_path = os.path.relpath(file_path, source_dir)
+                should_include = should_process_file(file, self.extensions, exclude_exts, exclude_files, include_exts,
+                                                     include_files, file_rel_path=rel_path)
                 if should_include:
                     path_parts = os.path.normpath(root).split(os.sep)[source_dir_parts:]
                     if path_parts:
@@ -429,7 +441,7 @@ class FileExtHandler:
                     files_to_bundle.append({
                         'file_path': file_path,
                         'formatted_path': formatted_path,
-                        'rel_path': os.path.relpath(file_path, source_dir),
+                        'rel_path': rel_path,
                         'extension': file_ext,
                         'full_extension': file_ext
                     })

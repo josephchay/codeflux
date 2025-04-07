@@ -92,7 +92,6 @@ def print_stats(stats, operation_type, duration, show_full=True):
             if files_processed > 0:
                 print(f"Processing rate: {files_per_second:.2f} files/second")
 
-
         elif operation_type == OPERATION_BUNDLE:
             files_bundled = stats.get("files_bundled", 0)
             bytes_bundled = stats.get("bytes_bundled", 0) / 1024  # Convert to KB
@@ -202,7 +201,7 @@ def merge_stats(stats_list):
 
 
 def should_process_file(filename, handler_extensions, exclude_exts=None, exclude_files=None,
-                        include_exts=None, include_files=None):
+                        include_exts=None, include_files=None, file_rel_path=None):
     if include_files:
         return filename in include_files
     if include_exts:
@@ -215,7 +214,14 @@ def should_process_file(filename, handler_extensions, exclude_exts=None, exclude
             return False
 
     is_excluded_ext = exclude_exts and any(filename.endswith(ext) for ext in exclude_exts)
-    is_excluded_file = exclude_files and filename in exclude_files
+    is_excluded_file = False
+    if exclude_files and file_rel_path:
+        norm_rel_path = file_rel_path.replace('\\', '/')
+        for exclude_pattern in exclude_files:
+            norm_exclude = exclude_pattern.replace('\\', '/')
+            if norm_rel_path == norm_exclude:
+                is_excluded_file = True
+                break
 
     return not (is_excluded_ext or is_excluded_file)
 

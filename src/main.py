@@ -62,7 +62,7 @@ def main():
     exclusion_group.add_argument(
         "--exclude-files", "-xf",
         nargs="+",
-        help="Specific filenames to exclude"
+        help="Specific file paths to exclude (requires full path relative to source dir, e.g. 'path/to/file.py')"
     )
 
     inclusion_group = parser.add_argument_group('inclusion options')
@@ -164,7 +164,8 @@ def main():
     exclude_dirs = merge_with_defaults(args.exclude_dirs, DEFAULT_EXCLUDE_DIRS, args.ignore_defaults)
     exclude_exts = merge_with_defaults(args.exclude_extensions, ALL_EXCLUDE_EXTENSIONS, args.ignore_defaults)
     exclude_files = merge_with_defaults(args.exclude_files, ALL_EXCLUDE_FILENAMES, args.ignore_defaults)
-
+    if exclude_files:
+        exclude_files = [path.replace('\\', '/') for path in exclude_files]
     try:
         for operation in operations:
             handler_results = []
