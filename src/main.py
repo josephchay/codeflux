@@ -9,7 +9,7 @@ from constants import (
     DEFAULT_MINIFY_OUTPUT_PATH, DEFAULT_MINIFY_BUNDLE_OUTPUT_PATH,
     OPERATION_FLATTEN, OPERATION_DEFLATTEN, OPERATION_BUNDLE, OPERATION_MINIFY, OPERATION_MINIFY_BUNDLE
 )
-from handlers import HANDLERS
+from handlers import HANDLERS, FileExtHandler
 from utils import merge_with_defaults, merge_stats, create_output_dir, format_path, get_relative_path
 
 
@@ -279,19 +279,27 @@ def main():
                 else:
                     print("\n\n========== EXECUTING MINIFY-BUNDLE ==========")
 
-                # Since bundle operates on multiple file types at once, we need a combined handler
-                # We'll use the first handler but extend its extensions
+                # Create a combined bundle of all file types
                 if args.file_types and HANDLERS:
-                    # Find first available handler
-                    first_type = args.file_types[0]
-                    if first_type in HANDLERS:
-                        combined_handler = HANDLERS[first_type]
-                        stats = combined_handler.bundle_files(
-                            source_dir, bundle_dest, exclude_dirs, exclude_exts, exclude_files,
-                            args.include_dirs, args.include_extensions, args.include_files,
-                            args.no_log, operation == OPERATION_MINIFY_BUNDLE
-                        )
-                        handler_results.append(stats)
+                    combined_extensions = []
+                    for file_type in args.file_types:
+                        if file_type in HANDLERS:
+                            combined_extensions.extend(HANDLERS[file_type].extensions)
+
+                    # Create a new combined handler with all extensions
+                    combined_handler = FileExtHandler(
+                        extensions=combined_extensions,
+                        exclude_dirs=DEFAULT_EXCLUDE_DIRS,
+                        exclude_extensions=ALL_EXCLUDE_EXTENSIONS,
+                        exclude_filenames=ALL_EXCLUDE_FILENAMES
+                    )
+
+                    stats = combined_handler.bundle_files(
+                        source_dir, bundle_dest, exclude_dirs, exclude_exts, exclude_files,
+                        args.include_dirs, args.include_extensions, args.include_files,
+                        args.no_log, operation == OPERATION_MINIFY_BUNDLE
+                    )
+                    handler_results.append(stats)
 
                 print("==============================")
 
