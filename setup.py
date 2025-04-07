@@ -45,7 +45,7 @@ setup(
     url="https://github.com/josephchay/codebundle",
     package_dir={"": "src"},
     packages=find_packages(where="src"),
-    py_modules=["main", "constants", "utils", "handlers"],
+    py_modules=["main", "constants", "utils", "handlers", "search"],
     entry_points={
         "console_scripts": [
             "codebundle=main:main",

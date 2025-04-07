@@ -11,7 +11,7 @@ from constants import (
     OPERATION_SEARCH
 )
 from handlers import HANDLERS, FileExtHandler
-from search import SearchHandler
+from search import Searcher
 from utils import merge_with_defaults, merge_stats, create_output_dir, format_path, get_relative_path
 
 
@@ -133,6 +133,24 @@ def main():
         nargs=2,
         metavar=('MIN_KB', 'MAX_KB'),
         help="Search for files within a size range (in KB, use 'none' for no limit)"
+    )
+    search_group.add_argument(
+        "--search-date", "-sd",
+        nargs='+',
+        metavar=('START_DATE', 'END_DATE'),
+        help="Search for files modified between dates (YYYY-MM-DD format, end date optional)"
+    )
+    search_group.add_argument(
+        "--search-imports", "-si",
+        help="Find files that import a specific module"
+    )
+    search_group.add_argument(
+        "--search-duplicates", "-sd",
+        nargs='?',
+        const=5,
+        type=int,
+        metavar='MIN_LINES',
+        help="Find duplicate code blocks (optional: minimum lines, default 5)"
     )
 
     parser.add_argument(
@@ -312,15 +330,8 @@ def main():
                     for file_type in args.file_types:
                         if file_type in HANDLERS:
                             combined_extensions.extend(HANDLERS[file_type].extensions)
-
-                    # Create a new combined handler with all extensions
-                    combined_handler = FileExtHandler(
-                        extensions=combined_extensions,
-                        exclude_dirs=DEFAULT_EXCLUDE_DIRS,
-                        exclude_extensions=ALL_EXCLUDE_EXTENSIONS,
-                        exclude_filenames=ALL_EXCLUDE_FILENAMES
-                    )
-
+                    combined_handler = FileExtHandler(extensions=combined_extensions, exclude_dirs=DEFAULT_EXCLUDE_DIRS,
+                                                      exclude_extensions=ALL_EXCLUDE_EXTENSIONS, exclude_filenames=ALL_EXCLUDE_FILENAMES)
                     stats = combined_handler.bundle_files(
                         source_dir, bundle_dest, exclude_dirs, exclude_exts, exclude_files,
                         args.include_dirs, args.include_extensions, args.include_files,
@@ -379,7 +390,7 @@ def main():
             elif operation == OPERATION_SEARCH:
                 print("\n\n========== EXECUTING SEARCH ==========")
 
-                search_handler = SearchHandler(exclude_dirs=exclude_dirs, exclude_exts=exclude_exts, exclude_files=exclude_files)
+                search_handler = Searcher(exclude_dirs=exclude_dirs, exclude_exts=exclude_exts, exclude_files=exclude_files)
                 if args.search_ext:
                     print(f"\nSearching for files with extensions: {', '.join(args.search_ext)}")
                     search_handler.search_by_extension(source_dir, args.search_ext, args.no_log)
@@ -405,8 +416,31 @@ def main():
                     print(f"\nSearching for files with size {' and '.join(size_range)}")
                     if target_exts:
                         print(f"In files with extensions: {', '.join(target_exts)}")
-
                     search_handler.search_by_size(source_dir, min_size, max_size, target_exts, args.no_log)
+
+                if args.search_date:
+                    start_date = args.search_date[0]
+                    end_date = args.search_date[1] if len(args.search_date) > 1 else None
+                    target_exts = args.include_extensions or None
+                    print(f"\nSearching for files modified since {start_date} until {end_date}" if end_date else "")
+                    if target_exts:
+                        print(f"In files with extensions: {', '.join(target_exts)}")
+                    search_handler.search_by_date(source_dir, start_date, end_date, target_exts, args.no_log)
+
+                if args.search_imports:
+                    target_exts = args.include_extensions or ['.py']
+                    print(f"\nSearching for imports of '{args.search_imports}'")
+                    if target_exts:
+                        print(f"In files with extensions: {', '.join(target_exts)}")
+                    search_handler.search_imports(source_dir, args.search_imports, target_exts, args.no_log)
+
+                if args.search_duplicates is not None:
+                    target_exts = args.include_extensions or None
+                    min_lines = args.search_duplicates
+                    print(f"\nSearching for duplicate code blocks (min {min_lines} lines)")
+                    if target_exts:
+                        print(f"In files with extensions: {', '.join(target_exts)}")
+                    search_handler.search_duplicates(source_dir, min_lines, extensions=target_exts, silent=args.no_log)
 
                 print("==============================")
 

@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `src/search.py` file for search functionality.
 - New `--search-ext`, `--search-pattern`, `--search-size` arguments for file and content searching.
+- `--search-date`, `--search-imports`, `--search-duplicates` arguments for file searching.
 
 ### Fixed
 
