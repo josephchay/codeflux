@@ -609,6 +609,26 @@ class GoHandler(FileExtHandler):
         )
 
 
+class IniHandler(FileExtHandler):
+    def __init__(self):
+        super().__init__(
+            extensions=INI_EXTENSIONS,
+            exclude_dirs=DEFAULT_EXCLUDE_DIRS,
+            exclude_extensions=INI_EXCLUDE_EXTENSIONS,
+            exclude_filenames=INI_EXCLUDE_FILENAMES
+        )
+
+
+class ScpHandler(FileExtHandler):
+    def __init__(self):
+        super().__init__(
+            extensions=SCP_EXTENSIONS,
+            exclude_dirs=DEFAULT_EXCLUDE_DIRS,
+            exclude_extensions=SCP_EXCLUDE_EXTENSIONS,
+            exclude_filenames=SCP_EXCLUDE_FILENAMES
+        )
+
+
 HANDLERS = {
     "py": PythonHandler(),
     "ipynb": NotebookHandler(),
@@ -618,4 +638,6 @@ HANDLERS = {
     "shell": ShellHandler(),
     "json": JsonHandler(),
     "go": GoHandler(),
+    "ini": IniHandler(),
+    "scp": ScpHandler(),
 }
