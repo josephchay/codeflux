@@ -27,7 +27,18 @@ def get_unique_filename(destination_file):
 def get_relative_path(path, base_path=None):
     base_path = base_path or os.getcwd()
     try:
-        return os.path.relpath(path, base_path)
+        rel_path = os.path.relpath(path, base_path)
+
+        # Special handling for codebundle timestamp directories
+        timestamp_match = re.search(r'codebundle[/\\]\d{8}_\d{6}', path)
+        if timestamp_match:
+            # Extract the part after the timestamp directory
+            timestamp_dir = timestamp_match.group(0)
+            timestamp_index = path.find(timestamp_dir) + len(timestamp_dir)
+            if timestamp_index < len(path):
+                return path[timestamp_index + 1:].replace('\\', '/')
+
+        return rel_path
     except ValueError:
         return path
 
@@ -64,25 +75,33 @@ def print_stats(stats, operation_type, duration, show_full=True):
         if operation_type in [OPERATION_FLATTEN, OPERATION_DEFLATTEN]:
             files_copied = stats.get("files_copied", 0)
             bytes_copied = stats.get("bytes_copied", 0) / 1024  # Convert to KB
+            avg_file_size = bytes_copied / max(files_copied, 1)
 
             if operation_type == OPERATION_FLATTEN:
                 print(f"Files in flatten output: {files_copied}")
                 print(f"Data in flatten output: {bytes_copied:.2f} KB")
+                if files_copied > 0:
+                    print(f"Average file size: {avg_file_size:.2f} KB")
             else:
                 print(f"Files in deflatten output: {files_copied}")
                 print(f"Data in deflatten output: {bytes_copied:.2f} KB")
                 print(f"Directories created: {stats.get('dirs_created', 0)}")
+                if files_copied > 0:
+                    print(f"Average file size: {avg_file_size:.2f} KB")
 
             if files_processed > 0:
                 print(f"Processing rate: {files_per_second:.2f} files/second")
 
+
         elif operation_type == OPERATION_BUNDLE:
             files_bundled = stats.get("files_bundled", 0)
             bytes_bundled = stats.get("bytes_bundled", 0) / 1024  # Convert to KB
-
+            avg_file_size = bytes_bundled / max(files_bundled, 1)
             print(f"Files bundled: {files_bundled}")
             print(f"Data bundled: {bytes_bundled:.2f} KB")
 
+            if files_bundled > 0:
+                print(f"Average file size: {avg_file_size:.2f} KB")
             if files_processed > 0:
                 print(f"Processing rate: {files_per_second:.2f} files/second")
 
@@ -95,6 +114,12 @@ def print_stats(stats, operation_type, duration, show_full=True):
 
             bytes_original = stats.get("bytes_original", 0) / 1024  # Convert to KB
             bytes_minified = stats.get("bytes_minified", 0) / 1024  # Convert to KB
+
+            if files_copied > 0:
+                avg_orig_size = bytes_original / max(files_copied, 1)
+                avg_mini_size = bytes_minified / max(files_copied, 1)
+                print(f"Average original file size: {avg_orig_size:.2f} KB")
+                print(f"Average minified file size: {avg_mini_size:.2f} KB")
 
             if bytes_original > 0:
                 reduction = (1 - stats.get("bytes_minified", 0) / max(stats.get("bytes_original", 1), 1)) * 100
@@ -111,6 +136,9 @@ def print_stats(stats, operation_type, duration, show_full=True):
 
             print(f"Files bundled: {files_bundled}")
             print(f"Data bundled: {bytes_bundled:.2f} KB")
+            if files_bundled > 0:
+                avg_bundle_size = bytes_bundled / max(files_bundled, 1)
+                print(f"Average bundled file size: {avg_bundle_size:.2f} KB")
 
             bytes_original = stats.get("original_size", 0) / 1024  # Convert to KB
             bytes_minified = stats.get("minified_size", 0) / 1024  # Convert to KB
@@ -120,6 +148,12 @@ def print_stats(stats, operation_type, duration, show_full=True):
                 print(f"Original size: {bytes_original:.2f} KB")
                 print(f"Minified size: {bytes_minified:.2f} KB")
                 print(f"Size reduction: {reduction:.2f}%")
+
+                if files_bundled > 0:
+                    avg_orig_size = bytes_original / max(files_bundled, 1)
+                    avg_mini_size = bytes_minified / max(files_bundled, 1)
+                    print(f"Average original file size: {avg_orig_size:.2f} KB")
+                    print(f"Average minified file size: {avg_mini_size:.2f} KB")
 
             if files_processed > 0:
                 print(f"Processing rate: {files_per_second:.2f} files/second")
@@ -245,7 +279,7 @@ def minify_code(source, file_extension):
         node_result = subprocess.run(['node', '--version'], capture_output=True)
         if node_result.returncode != 0:
             print("WARNING: Node.js is required for JavaScript/TypeScript minification.")
-            print("JavaScript/TypeScript files will not be minified.")
+            print("JavaScript/TypeScript files will not be minified.\n")
             return source
 
         with tempfile.NamedTemporaryFile(suffix=file_extension, mode='w', delete=False) as temp_in:
@@ -253,11 +287,11 @@ def minify_code(source, file_extension):
             temp_in_path = temp_in.name
         temp_out_path = temp_in_path + '.min'
         script_dir = os.path.dirname(os.path.abspath(__file__))
-        minify_script = os.path.join(script_dir, 'scripts', 'minify.js')
+        minify_script = os.path.join(script_dir, 'scripts', 'jsts_minify.js')
 
         if not os.path.exists(minify_script):
             print(f"WARNING: minify.js script not found at {minify_script}")
-            print("JavaScript/TypeScript files will not be minified.")
+            print("JavaScript/TypeScript files will not be minified.\n")
             os.unlink(temp_in_path)
             return source
 
@@ -286,7 +320,7 @@ def minify_code(source, file_extension):
             parsed_json = json.loads(source)
             return json.dumps(parsed_json, separators=(',', ':'))
         except json.JSONDecodeError:
-            print("WARNING: Invalid JSON content. File will not be minified.")
+            print("WARNING: Invalid JSON content. File will not be minified.\n")
             return source
     elif file_extension.lower() in ['.yaml', '.yml']:
         return minify_yaml(source, flow_style=True)

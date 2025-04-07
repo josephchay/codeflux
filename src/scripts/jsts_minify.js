@@ -6,7 +6,7 @@ const inputFile = process.argv[2];
 const outputFile = process.argv[3];
 
 if (!inputFile || !outputFile) {
-  console.error('Usage: node minify.js <input-file> <output-file>');
+  console.error('Usage: node jsts_minify.js <input-file> <output-file>');
   process.exit(1);
 }
 

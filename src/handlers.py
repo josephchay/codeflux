@@ -41,7 +41,7 @@ class FileExtHandler:
 
         if not silent:
             print(f"Destination: {get_relative_path(dest_dir)}")
-            print(f"Processing files: {', '.join(self.extensions)}...")
+            print(f"Processing files: {', '.join(self.extensions)}...\n")
             if include_exts:
                 print(f"Including only extensions: {', '.join(include_exts)}")
             if include_dirs:
@@ -93,7 +93,8 @@ class FileExtHandler:
                         stats["bytes_copied"] += os.path.getsize(source_file)
 
                         if not silent:
-                            print(f"{get_relative_path(source_file)} → {get_relative_path(unique_destination_file)}")
+                            file_size_kb = os.path.getsize(source_file) / 1024
+                            print(f"{get_relative_path(source_file)} → {get_relative_path(unique_destination_file)} (Size: {file_size_kb:.2f} KB)")
                     except Exception as e:
                         error_msg = f"Error copying {file}: {str(e)}"
                         print(error_msg)
@@ -145,7 +146,7 @@ class FileExtHandler:
 
         if not os.path.exists(flattened_dir) or not os.listdir(flattened_dir):
             if not silent:
-                print(f"Source directory {flattened_dir} does not exist or is empty.")
+                print(f"Source directory {get_relative_path(flattened_dir)} does not exist or is empty.")
                 print(f"No files to deflatten.")
                 print("\nNothing to do for this file type.")
 
@@ -190,7 +191,7 @@ class FileExtHandler:
             original_file = path_parts[-1]
             original_dir = os.path.join(dest_dir, *path_parts[:-1])
             if os.path.abspath(original_dir).startswith(flattened_dir):
-                print(f"Skipping to avoid overwriting source: {flattened_file}")
+                print(f"Skipping to avoid overwriting source: {get_relative_path(flattened_file)}")
                 stats["skipped_files"] += 1
                 continue
 
@@ -212,7 +213,8 @@ class FileExtHandler:
                 stats["bytes_copied"] += os.path.getsize(flattened_file)
 
                 if not silent:
-                    print(f"{get_relative_path(flattened_file)} → {get_relative_path(unique_destination_file)}")
+                    file_size_kb = os.path.getsize(flattened_file) / 1024
+                    print(f"{get_relative_path(flattened_file)} → {get_relative_path(unique_destination_file)} (Size: {file_size_kb:.2f} KB)")
             except Exception as e:
                 error_msg = f"Error copying {file}: {str(e)}"
                 print(error_msg)
@@ -323,22 +325,14 @@ class FileExtHandler:
                                 rel_file_path = os.path.join(rel_output_path, file).replace('\\', '/')
                                 if rel_output_path == '.':
                                     rel_file_path = file
-                                print(f"{get_relative_path(file_path, os.path.dirname(source_dir))} → {rel_file_path} (Size reduction: {reduction:.2f}%)")
-
+                                orig_kb = original_size / 1024
+                                mini_kb = minified_size / 1024
+                                print(f"{get_relative_path(file_path, os.path.dirname(source_dir))} → {rel_file_path} "
+                                      f"(Size reduction: {reduction:.2f}%, Original: {orig_kb:.2f} KB, Minified: {mini_kb:.2f} KB)")
                         except Exception as e:
-                            # If minification fails, just copy the file
-                            shutil.copy2(file_path, output_file_path)
-                            stats["files_copied"] += 1
-                            stats["bytes_copied"] += original_size
-                            stats["bytes_minified"] += original_size  # No reduction
-
-                            if not silent:
-                                rel_file_path = os.path.join(rel_output_path, file)
-                                rel_file_path = rel_file_path.replace('\\', '/')
-                                if rel_output_path == '.':
-                                    rel_file_path = file
-                                print(f"{file_path} → {rel_file_path} (Minification failed: {str(e)})")
-
+                            error_msg = f"Error minifying {file}: {str(e)}"
+                            print(error_msg)
+                            raise RuntimeError(error_msg)
                     except UnicodeDecodeError:
                         # Binary file, just copy it
                         shutil.copy2(file_path, output_file_path)
@@ -349,7 +343,7 @@ class FileExtHandler:
                             rel_file_path = rel_file_path.replace('\\', '/')
                             if rel_output_path == '.':
                                 rel_file_path = file
-                            print(f"{file_path} → {rel_file_path} (Binary file, copied as-is)")
+                            print(f"{get_relative_path(file_path, os.path.dirname(source_dir))} → {rel_file_path} (Binary file, copied as-is)")
                 else:
                     stats["skipped_files"] += 1
 
@@ -391,6 +385,8 @@ class FileExtHandler:
             print(f"Destination: {get_relative_path(output_file)}")
             if minify:
                 print(f"Minification: Using python-minifier for Python files and terser for JSTS files\n")
+            else:
+                print("")
 
         # Gather files to bundle
         files_to_bundle = []
@@ -508,9 +504,13 @@ class FileExtHandler:
                         if not silent:
                             if minify and file_extension.lower() in ['.py', '.json', '.jsonl', '.geojson', '.json5', '.ndjson']:
                                 reduction = (1 - len(content) / max(original_content_size, 1)) * 100
-                                print(f"Bundled: {formatted_path} (Size reduction: {reduction:.2f}%)")
+                                orig_kb = original_content_size / 1024
+                                mini_kb = len(content) / 1024
+                                print(f"Bundled: {formatted_path} (Size reduction: {reduction:.2f}%, "
+                                      f"Original: {orig_kb:.2f} KB, Minified: {mini_kb:.2f} KB)")
                             else:
-                                print(f"Bundled: {formatted_path}")
+                                file_kb = len(content) / 1024
+                                print(f"Bundled: {formatted_path} (Size: {file_kb:.2f} KB)")
                     except UnicodeDecodeError:
                         if not silent:
                             print(f"Skipped binary file: {formatted_path}")

@@ -16,7 +16,6 @@ from utils import merge_with_defaults, merge_stats, create_output_dir, format_pa
 def main():
     parser = argparse.ArgumentParser(description="Flatten, deflatten, bundle, or minify a directory of files.")
 
-    # [argument parsing code remains unchanged]
     src_group = parser.add_argument_group('source')
     src_group.add_argument(
         "src_pos",
@@ -202,7 +201,7 @@ def main():
                             try:
                                 os.rmdir(file_dest_dir)
                                 if not args.no_log:
-                                    print(f"Removed empty directory: {file_dest_dir}")
+                                    print(f"Removed empty directory: {get_relative_path(file_dest_dir)}")
                             except OSError:
                                 pass
 
@@ -228,29 +227,43 @@ def main():
 
                 print("\n\n========== EXECUTING DEFLATTEN ==========")
 
-                if not args.no_log:
-                    print(f"Destination: {get_relative_path(deflatten_dest)}")
-
+                # Check if there are any files to process
+                has_files_to_process = False
                 for file_type in args.file_types:
                     if file_type in HANDLERS:
-                        handler = HANDLERS[file_type]
                         file_source_dir = os.path.join(source_dir, file_type)
-
-                        if args.include_extensions and not any(ext in args.include_extensions for ext in handler.extensions):
-                            continue
-
                         if os.path.exists(file_source_dir) and os.listdir(file_source_dir):
-                            if not args.no_log:
-                                print(f"---------- {file_type.upper()} FILES ----------")
+                            has_files_to_process = True
+                            break
 
-                            stats = handler.deflatten_dir(
-                                file_source_dir, deflatten_dest, exclude_files,
-                                args.include_dirs, args.include_extensions, args.include_files,
-                                args.clear_dest_dir, args.no_log
-                            )
+                if not has_files_to_process and not args.no_log:
+                    print("No files found to deflatten.")
+                    print("No operations performed.")
 
-                            handler_results.append(stats)
-                            print("--------------------\n")
+                else:
+                    if not args.no_log:
+                        print(f"Destination: {get_relative_path(deflatten_dest)}\n")
+
+                    for file_type in args.file_types:
+                        if file_type in HANDLERS:
+                            handler = HANDLERS[file_type]
+                            file_source_dir = os.path.join(source_dir, file_type)
+
+                            if args.include_extensions and not any(ext in args.include_extensions for ext in handler.extensions):
+                                continue
+
+                            if os.path.exists(file_source_dir) and os.listdir(file_source_dir):
+                                if not args.no_log:
+                                    print(f"---------- {file_type.upper()} FILES ----------")
+
+                                stats = handler.deflatten_dir(
+                                    file_source_dir, deflatten_dest, exclude_files,
+                                    args.include_dirs, args.include_extensions, args.include_files,
+                                    args.clear_dest_dir, args.no_log
+                                )
+
+                                handler_results.append(stats)
+                                print("--------------------\n")
 
                 merged_stats = merge_stats(handler_results)
                 if not args.no_log and handler_results:

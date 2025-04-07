@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - File handling for INI and SCP related file extensions.
 - Database and Batch scripts file extension handling in `constants.py`.
 - Minification for YAML files with `ruamel.yaml` package library.
+- Original file size for each file, and minified file size for each file when minifying.
 
 ### Fixed
 
