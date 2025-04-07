@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - File handling for INI and SCP related file extensions.
+- Database and Batch scripts file extension handling in `constants.py`.
 
 ### Fixed
 
@@ -18,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - If no operations are specified, then it will perform all operations (flattening, deflattening, minifying, bundling, and minifying-bundling) by default.
+- Updated INI config and SCP scripts related file extensions constants.
 
 ## [0.7.0] - 2025-04-06
 

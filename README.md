@@ -13,18 +13,22 @@ to process exactly what you need.
 
 ### Supported File Types
 
-| Language         | Extensions                                                                  |
-|------------------|-----------------------------------------------------------------------------|
-| Python           | `.py`                                                                       |
-| Python Notebooks | `.ipynb`                                                                    |
-| JavaScript       | `.js`, `.jsx`                                                               |
-| TypeScript       | `.ts`, `.tsx`                                                               |
-| Shell Scripts    | `.sh`, `.bash`, `.zsh`                                                      |
-| Markdown         | `.md`, `.markdown`, `.mdown`, `.mkdn`, `.mkd`, `.mdwn`, `.mdtxt`, `.mdtext` |
-| Plain Text       | `.txt`                                                                      |
-| YAML             | `.yaml`, `.yml`                                                             |
-| JSON             | `.json`, `.jsonl`, `.geojson`, `.json5`, `.ndjson`                          |
-| GO               | `.go`, `.mod`, `.sum`, `.pb.go`, `.tmpl`, `.tpl`                            |
+| Language          | Extensions                                                                  |
+|-------------------|-----------------------------------------------------------------------------|
+| Python            | `.py`                                                                       |
+| Python Notebooks  | `.ipynb`                                                                    |
+| JavaScript        | `.js`, `.jsx`                                                               |
+| TypeScript        | `.ts`, `.tsx`                                                               |
+| Shell Scripts     | `.sh`, `.bash`, `.zsh`                                                      |
+| Markdown          | `.md`, `.markdown`, `.mdown`, `.mkdn`, `.mkd`, `.mdwn`, `.mdtxt`, `.mdtext` |
+| Plain Text        | `.txt`                                                                      |
+| YAML              | `.yaml`, `.yml`                                                             |
+| JSON              | `.json`, `.jsonl`, `.geojson`, `.json5`, `.ndjson`                          |
+| GO                | `.go`, `.mod`, `.sum`, `.pb.go`, `.tmpl`, `.tpl`                            |
+| INI Configuration | `.ini`, `.cfg`, `.conf`, `.properties`                                      |
+| Database Scripts  | `.sql`, `.ddl`, `.dml`                                                      |
+| Batch Scripts     | `.bat`, `.cmd`, `.btm`                                                      |
+| Custom Scripts    | `.scp`, `.script`                                                           |
 
 _More extensions to be added in the future._
 
