@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Made sure now `--exclude-files` properly handle path-based exclusion. 
+- Duplicate shorthand argument for `--search-duplicate` and `--search-date` fixed.
 
 ## [0.8.0] - 2025-04-07
 

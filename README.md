@@ -92,7 +92,7 @@ pnpm add git+https://github.com/josephchay/codebundle.git --save-dev
 | `--search-size`        | `-ss`     | `None`                                                                                  | Search for files within a size range (in KB, use 'none' for no limit)                              |
 | `--search-date`        | `-sd`     | `None`                                                                                  | Search for files modified between dates (YYYY-MM-DD format)                                        |
 | `--search-imports`     | `-si`     | `None`                                                                                  | Search for files that import a specific module                                                     |
-| `--search-duplicates`  | `-sd`     | `None`                                                                                  | Search for duplicate code blocks (with optional minimum line threshold)                            |
+| `--search-duplicates`  | `-sdu`    | `None`                                                                                  | Search for duplicate code blocks (with optional minimum line threshold)                            |
 | **Other Options**      |           |                                                                                         |                                                                                                    |
 | `--clear-dest-dir`     | `-c`      | `False`                                                                                 | Clear the destination directory before copying files                                               |
 | `--no-log`             | `-nl`     | `False`                                                                                 | Disable logging output                                                                             |
@@ -145,9 +145,9 @@ Here are various scenarios and how to use the tool:
 | Find Medium-Sized JavaScript Files      | `codebundle -ss 10 100 -ie .js`                               | Finds JS files between 10KB and 100KB                                                     |
 | Find HTML Files in Specific Directory   | `codebundle -se .html -id templates views`                    | Finds HTML files but only in templates and views directories                              |
 | Find Files With Sensitive Data Patterns | `codebundle -sp "password\|token\|secret" -ie .js .py .env`   | Finds potential security issues in specific file types                                    |
-| Find Modified Files                     | `codebundle --search-date 2025-04-08`                         | Find files modified since April 8, 2025                                                   |
-| Analyze Module Dependencies             | `codebundle --search-imports requests`                        | Find all files importing the 'requests' module                                            |
-| Find Duplicate Code                     | `codebundle --search-duplicates 10`                           | Find code duplicated across 10 or more lines                                              |
+| Find Modified Files                     | `codebundle -sd 2025-04-08`                                   | Find files modified since April 8, 2025                                                   |
+| Analyze Module Dependencies             | `codebundle -si requests`                                     | Find all files importing the 'requests' module                                            |
+| Find Duplicate Code                     | `codebundle -sdu 10`                                          | Find code duplicated across 10 or more lines                                              |
 
 ## Development
 

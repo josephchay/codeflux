@@ -145,7 +145,7 @@ def main():
         help="Find files that import a specific module"
     )
     search_group.add_argument(
-        "--search-duplicates", "-sd",
+        "--search-duplicates", "-sdu",
         nargs='?',
         const=5,
         type=int,
