@@ -7,14 +7,16 @@ from constants import (
     DEFAULT_EXCLUDE_DIRS, ALL_EXCLUDE_EXTENSIONS, ALL_EXCLUDE_FILENAMES,
     DEFAULT_FLATTEN_OUTPUT_PATH, DEFAULT_DEFLATTEN_OUTPUT_PATH, DEFAULT_BUNDLE_OUTPUT_PATH,
     DEFAULT_MINIFY_OUTPUT_PATH, DEFAULT_MINIFY_BUNDLE_OUTPUT_PATH,
-    OPERATION_FLATTEN, OPERATION_DEFLATTEN, OPERATION_BUNDLE, OPERATION_MINIFY, OPERATION_MINIFY_BUNDLE
+    OPERATION_FLATTEN, OPERATION_DEFLATTEN, OPERATION_BUNDLE, OPERATION_MINIFY, OPERATION_MINIFY_BUNDLE,
+    OPERATION_SEARCH
 )
 from handlers import HANDLERS, FileExtHandler
+from search import SearchHandler
 from utils import merge_with_defaults, merge_stats, create_output_dir, format_path, get_relative_path
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Flatten, deflatten, bundle, or minify a directory of files.")
+    parser = argparse.ArgumentParser(description="A plugin that gives you full control and deep insight into any project's codebase structure.")
 
     src_group = parser.add_argument_group('source')
     src_group.add_argument(
@@ -40,11 +42,38 @@ def main():
         help="Destination directory or file path (named)"
     )
 
+    operation_group = parser.add_argument_group('operations')
+    operation_group.add_argument(
+        "--flatten", "-f",
+        action="store_true",
+        help="Flatten the directory structure (default: True if no other operation specified)"
+    )
+    operation_group.add_argument(
+        "--deflatten", "-df",
+        action="store_true",
+        help="Deflatten the directory - restore original structure (default: True if no other operation specified)"
+    )
+    operation_group.add_argument(
+        "--minify", "-m",
+        action="store_true",
+        help="Create a minified copy of the directory while preserving structure (default: True if no other operation specified)"
+    )
+    operation_group.add_argument(
+        "--bundle", "-b",
+        action="store_true",
+        help="Bundle files into a single document file (default: True if no other operation specified)"
+    )
+    operation_group.add_argument(
+        "--minify-bundle", "-mb",
+        action="store_true",
+        help="Minify files and bundle them into a single document file (default: True if no other operation specified)"
+    )
+
     parser.add_argument(
         "--file-types", "-t",
         nargs="+",
-        choices=["py", "ipynb", "jsts", "mdtxt", "yml", "shell", "json", "go", "ini", "scp"],
-        default=["py", "ipynb", "jsts", "mdtxt", "yml", "shell", "json", "go", "ini", "scp"],
+        choices=["py", "ipynb", "jsts", "mdtxt", "yml", "shell", "json", "go", "ini", "db", "bat", "scp"],
+        default=["py", "ipynb", "jsts", "mdtxt", "yml", "shell", "json", "go", "ini", "db", "bat", "scp"],
         help="File types to process (default: all)"
     )
 
@@ -89,31 +118,21 @@ def main():
         help="Ignore all default exclusion lists and only use the provided options"
     )
 
-    operation_group = parser.add_argument_group('operations')
-    operation_group.add_argument(
-        "--flatten", "-f",
-        action="store_true",
-        help="Flatten the directory structure (default: True if no other operation specified)"
+    search_group = parser.add_argument_group('search operations')
+    search_group.add_argument(
+        "--search-ext", "-se",
+        nargs="+",
+        help="Search for files with specific extensions"
     )
-    operation_group.add_argument(
-        "--deflatten", "-df",
-        action="store_true",
-        help="Deflatten the directory (restore original structure)"
+    search_group.add_argument(
+        "--search-pattern", "-sp",
+        help="Search for files containing a specific regex pattern"
     )
-    operation_group.add_argument(
-        "--bundle", "-b",
-        action="store_true",
-        help="Bundle files into a single document file"
-    )
-    operation_group.add_argument(
-        "--minify-bundle", "-mb",
-        action="store_true",
-        help="Minify files and bundle them into a single document file"
-    )
-    operation_group.add_argument(
-        "--minify", "-m",
-        action="store_true",
-        help="Create a minified copy of the directory while preserving structure"
+    search_group.add_argument(
+        "--search-size", "-ss",
+        nargs=2,
+        metavar=('MIN_KB', 'MAX_KB'),
+        help="Search for files within a size range (in KB, use 'none' for no limit)"
     )
 
     parser.add_argument(
@@ -146,19 +165,14 @@ def main():
         operations.append(OPERATION_BUNDLE)
     if args.minify_bundle:
         operations.append(OPERATION_MINIFY_BUNDLE)
+    if args.search_ext or args.search_pattern or args.search_size:
+        operations.append(OPERATION_SEARCH)
     if not operations:
-        operations = [
-            OPERATION_FLATTEN,
-            OPERATION_DEFLATTEN,
-            OPERATION_MINIFY,
-            OPERATION_BUNDLE,
-            OPERATION_MINIFY_BUNDLE,
-        ]
+        operations = [OPERATION_FLATTEN, OPERATION_DEFLATTEN, OPERATION_MINIFY, OPERATION_BUNDLE, OPERATION_MINIFY_BUNDLE]
 
     timestamp_dir, _ = create_output_dir("multiple")
     print(f"Source directory (absolute): {os.path.abspath(source_dir)}")
     print(f"Destination directory (absolute): {timestamp_dir}")
-
     output_paths = {}
 
     exclude_dirs = merge_with_defaults(args.exclude_dirs, DEFAULT_EXCLUDE_DIRS, args.ignore_defaults)
@@ -182,8 +196,7 @@ def main():
                         handler = HANDLERS[file_type]
                         file_dest_dir = os.path.join(flatten_dest, file_type)
 
-                        if args.include_extensions and not any(
-                                ext in args.include_extensions for ext in handler.extensions):
+                        if args.include_extensions and not any(ext in args.include_extensions for ext in handler.extensions):
                             continue
 
                         if not args.no_log:
@@ -360,6 +373,40 @@ def main():
                     else:
                         print("----- OVERALL SUMMARY -----")
                         print(f"No files were minified.")
+
+                print("==============================")
+
+            elif operation == OPERATION_SEARCH:
+                print("\n\n========== EXECUTING SEARCH ==========")
+
+                search_handler = SearchHandler(exclude_dirs=exclude_dirs, exclude_exts=exclude_exts, exclude_files=exclude_files)
+                if args.search_ext:
+                    print(f"\nSearching for files with extensions: {', '.join(args.search_ext)}")
+                    search_handler.search_by_extension(source_dir, args.search_ext, args.no_log)
+
+                if args.search_pattern:
+                    target_exts = args.include_extensions or None
+                    print(f"\nSearching for pattern: '{args.search_pattern}'")
+                    if target_exts:
+                        print(f"In files with extensions: {', '.join(target_exts)}")
+                    search_handler.search_by_pattern(source_dir, args.search_pattern, target_exts, args.no_log)
+
+                if args.search_size:
+                    min_size = None if args.search_size[0].lower() == 'none' else float(args.search_size[0])
+                    max_size = None if args.search_size[1].lower() == 'none' else float(args.search_size[1])
+                    target_exts = args.include_extensions or None
+
+                    size_range = []
+                    if min_size is not None:
+                        size_range.append(f">= {min_size} KB")
+                    if max_size is not None:
+                        size_range.append(f"<= {max_size} KB")
+
+                    print(f"\nSearching for files with size {' and '.join(size_range)}")
+                    if target_exts:
+                        print(f"In files with extensions: {', '.join(target_exts)}")
+
+                    search_handler.search_by_size(source_dir, min_size, max_size, target_exts, args.no_log)
 
                 print("==============================")
 

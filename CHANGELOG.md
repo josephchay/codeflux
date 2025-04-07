@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `src/search.py` file for search functionality.
+- New `--search-ext`, `--search-pattern`, `--search-size` arguments for file and content searching.
+
 ### Fixed
 
 - Made sure now `--exclude-files` properly handle path-based exclusion. 
