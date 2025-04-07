@@ -58,7 +58,7 @@ setup(
     },
     package_data={
         '': ['package.json'],
-        'src': ['scripts/minify.js'],
+        'src': ['scripts/jsts_minify.js'],
     },
     include_package_data=True,
     classifiers=[

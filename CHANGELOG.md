@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - File handling for INI and SCP related file extensions.
 - Database and Batch scripts file extension handling in `constants.py`.
+- Minification for YAML files with `ruamel.yaml` package library.
 
 ### Fixed
 
@@ -20,6 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - If no operations are specified, then it will perform all operations (flattening, deflattening, minifying, bundling, and minifying-bundling) by default.
 - Updated INI config and SCP scripts related file extensions constants.
+- Renamed the `src/scripts/minify.js` file to `src/scripts/jsts_minify.js`.
+- Added `pyyaml` and `ruamel.yaml` to the `requirements.txt` file.
 
 ## [0.7.0] - 2025-04-06
 

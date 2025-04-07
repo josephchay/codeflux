@@ -4,6 +4,9 @@ import datetime
 import subprocess
 import tempfile
 import python_minifier
+import re
+import yaml
+from ruamel.yaml import YAML
 
 from constants import OPERATION_DEFLATTEN, OPERATION_BUNDLE, OPERATION_MINIFY_BUNDLE, OPERATION_MINIFY, \
     OPERATION_FLATTEN
@@ -196,6 +199,31 @@ def create_output_dir(operation=None):
     return base_dir, None
 
 
+def minify_yaml(yaml_content):
+    try:
+        yaml_parser = YAML(typ='safe')
+        data = yaml_parser.load(yaml_content)
+
+        minified = yaml.dump(data, default_flow_style=False, indent=2, width=float('inf'), allow_unicode=True, sort_keys=False)
+        minified = re.sub(r'^\s*#.*$', '', minified, flags=re.MULTILINE)
+        minified = re.sub(r'\n\s*\n', '\n', minified)
+        minified = re.sub(r'[ \t]+$', '', minified, flags=re.MULTILINE)
+
+        lines = minified.split('\n')
+        for i, line in enumerate(lines):
+            match = re.match(r'^(\s*\w+:\s+)["\']([\w\s\-]+)["\']$', line)
+            if match:
+                prefix, value = match.groups()
+                if not (value.lower() in ('yes', 'no', 'true', 'false', 'null', 'on', 'off') or re.search(r'^\d', value) or re.search(r'[:#{}[\],&*!|>\'"%@`]', value)):
+                    lines[i] = f"{prefix}{value}"
+        minified = '\n'.join(lines)
+        return minified.strip()
+
+    except Exception as e:
+        print(f"Warning: YAML minification failed: {str(e)}")
+        return yaml_content
+
+
 def minify_code(source, file_extension):
     if not source:
         return source
@@ -249,5 +277,7 @@ def minify_code(source, file_extension):
         except json.JSONDecodeError:
             print("WARNING: Invalid JSON content. File will not be minified.")
             return source
+    elif file_extension.lower() in ['.yaml', '.yml']:
+        return minify_yaml(source)
 
     return source
