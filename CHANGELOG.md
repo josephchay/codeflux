@@ -31,7 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Imported `create_timestamped_dir` function in `main.py` to create a timestamped directory for output files.
 - Minor console output printing inconsistencies.
 - Minor printing inconsistencies in `main.py`.
-- Bundling now performs for all file handlers, and not just only for the first one.
+- Bundling operation now performs for all file handlers, and not just only for the first one.
 
 ### Changed
 

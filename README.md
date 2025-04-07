@@ -24,6 +24,7 @@ to process exactly what you need.
 | Plain Text       | `.txt`                                                                      |
 | YAML             | `.yaml`, `.yml`                                                             |
 | JSON             | `.json`, `.jsonl`, `.geojson`, `.json5`, `.ndjson`                          |
+| GO               | `.go`, `.mod`, `.sum`, `.pb.go`, `.tmpl`, `.tpl`                            |
 
 _More extensions to be added in the future._
 
