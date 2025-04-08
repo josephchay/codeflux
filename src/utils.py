@@ -2,6 +2,7 @@ import json
 import os
 import datetime
 import subprocess
+import sys
 import tempfile
 import python_minifier
 import re
@@ -181,46 +182,96 @@ def minify_code(source, file_extension):
 
     if file_extension.lower() in ['.py']:
         return python_minifier.minify(source)
-    elif file_extension.lower() in ['.js', '.jsx', '.ts', '.tsx']:
-        node_result = subprocess.run(['node', '--version'], capture_output=True)
-        if node_result.returncode != 0:
-            print("WARNING: Node.js is required for JavaScript/TypeScript minification.")
-            print("JavaScript/TypeScript files will not be minified.\n")
-            return source
+    elif file_extension.lower() in ['.ipynb']:
+        try:
+            notebook = json.loads(source)
+            if 'cells' in notebook:
+                for cell in notebook['cells']:
+                    if cell.get('cell_type') == 'code' and 'source' in cell and cell.get('language', 'python') == 'python':
+                        if isinstance(cell['source'], list):
+                            code = ''.join(cell['source'])
+                            try:
+                                minified_code = python_minifier.minify(code)
+                                cell['source'] = minified_code
+                            except Exception as e:
+                                print(f"Warning: Failed to minify a code cell: {str(e)}")
+                                sys.exit(1)
 
+            return json.dumps(notebook, separators=(',', ':'))
+        except json.JSONDecodeError as e:
+            print(f"Warning: Invalid notebook JSON format: {str(e)}")
+            sys.exit(1)
+        except Exception as e:
+            print(f"Warning: Error processing notebook: {str(e)}")
+            sys.exit(1)
+    elif file_extension.lower() in ['.js', '.jsx', '.ts', '.tsx']:
         with tempfile.NamedTemporaryFile(suffix=file_extension, mode='w', delete=False) as temp_in:
             temp_in.write(source)
             temp_in_path = temp_in.name
         temp_out_path = temp_in_path + '.min'
         script_dir = os.path.dirname(os.path.abspath(__file__))
         minify_script = os.path.join(script_dir, 'scripts', 'jsts_minify.js')
-
-        if not os.path.exists(minify_script):
-            print(f"WARNING: minify.js script not found at {minify_script}")
-            print("JavaScript/TypeScript files will not be minified.\n")
+        try:
+            result = subprocess.run(
+                ['node', minify_script, temp_in_path, temp_out_path],
+                capture_output=True,
+                text=True,
+                check=True
+            )
+        except subprocess.CalledProcessError as e:
             os.unlink(temp_in_path)
-            return source
-
-        result = subprocess.run(
-            ['node', minify_script, temp_in_path, temp_out_path],
-            capture_output=True,
-            text=True
-        )
+            if os.path.exists(temp_out_path):
+                os.unlink(temp_out_path)
+            print(f"ERROR: JS/TS minification failed with return code {e.returncode}")
+            if e.stderr:
+                print(f"Details: {e.stderr}")
+            print("Operation aborted due to JS/TS minification error.")
+            sys.exit(1)
 
         os.unlink(temp_in_path)
-        if result.returncode == 0 and os.path.exists(temp_out_path):
+        if os.path.exists(temp_out_path):
             with open(temp_out_path, 'r', encoding='utf-8') as out_file:
                 minified = out_file.read()
             os.unlink(temp_out_path)
             return minified
         else:
+            print("ERROR: JS/TS minification failed. Output file not created.")
+            print("Operation aborted due to JS/TS minification error.")
+            sys.exit(1)
+    elif file_extension.lower() in ['.html', '.htm', '.xhtml', '.shtml']:
+        with tempfile.NamedTemporaryFile(suffix=file_extension, mode='w', delete=False) as temp_in:
+            temp_in.write(source)
+            temp_in_path = temp_in.name
+        temp_out_path = temp_in_path + '.min'
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        minify_script = os.path.join(script_dir, 'scripts', 'html_minify.js')
+        try:
+            result = subprocess.run(
+                ['node', minify_script, temp_in_path, temp_out_path],
+                capture_output=True,
+                text=True,
+                check=True
+            )
+        except subprocess.CalledProcessError as e:
+            os.unlink(temp_in_path)
             if os.path.exists(temp_out_path):
                 os.unlink(temp_out_path)
+            print(f"ERROR: HTML minification failed with return code {e.returncode}")
+            if e.stderr:
+                print(f"Details: {e.stderr}")
+            print("Operation aborted due to HTML minification error.")
+            sys.exit(1)
 
-            print("WARNING: JavaScript/TypeScript minification failed.")
-            if result.stderr:
-                print(f"Details: {result.stderr}")
-            return source
+        os.unlink(temp_in_path)
+        if os.path.exists(temp_out_path):
+            with open(temp_out_path, 'r', encoding='utf-8') as out_file:
+                minified = out_file.read()
+            os.unlink(temp_out_path)
+            return minified
+        else:
+            print("ERROR: HTML minification failed. Output file not created.")
+            print("Operation aborted due to HTML minification error.")
+            sys.exit(1)
     elif file_extension.lower() in ['.json', '.jsonl', '.geojson', '.json5', '.ndjson']:
         try:
             parsed_json = json.loads(source)
@@ -230,8 +281,6 @@ def minify_code(source, file_extension):
             return source
     elif file_extension.lower() in ['.yaml', '.yml']:
         return minify_yaml(source, flow_style=True)
-
-    return source
 
 
 def get_file_snippet(content, max_lines=50, position="top", pattern=None, context_lines=5):

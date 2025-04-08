@@ -300,7 +300,7 @@ class FileExtHandler:
 
         if not silent:
             print(f"Destination: {get_relative_path(output_dir)}")
-            print(f"Minification: Using python-minifier for Python files and terser for JSTS files\n")
+            print(f"Minification: Using \"python-minifier\" for Python files; \"terser\" for JS/TS files; \"html-minifier\" for HTML files\n")
 
         files_found = False
         for root, dirs, files in os.walk(source_dir):
@@ -444,7 +444,7 @@ class FileExtHandler:
         if not silent:
             print(f"Destination: {get_relative_path(output_file)}")
             if minify:
-                print(f"Minification: Using python-minifier for Python files and terser for JSTS files\n")
+                print(f"Minification: Using \"python-minifier\" for Python files; \"terser\" for JS/TS files; \"html-minifier\" for HTML files\n")
             else:
                 print("")
             if snippet:
@@ -534,8 +534,7 @@ class FileExtHandler:
             outfile.write(f"# {os.path.basename(source_dir)} ({len(files_to_bundle)} files)\n")
             outfile.write(f"# Created: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
             if minify:
-                outfile.write(
-                    f"# Minification: Enabled (Using python-minifier for Python files and terser for JSTS files)\n")
+                outfile.write(f"# Minification: Enabled (Using \"python-minifier\" for Python files; \"terser\" for JS/TS files; \"html-minifier\" for HTML files)\n")
             if snippet:
                 outfile.write(f"# Snippet mode: Enabled (max {snippet_lines} lines per file, from {snippet_start})\n")
             outfile.write("\n")

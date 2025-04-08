@@ -23,6 +23,7 @@
   },
   "homepage": "https://github.com/josephchay/codebundle#readme",
   "dependencies": {
+    "html-minifier": "^4.0.0",
     "terser": "^5.39.0"
   }
 }

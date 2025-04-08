@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - New `--snippet`, `--snippet-lines`, `--snippet-start`, `--snippet-context` arguments for snippet generation for bundling and minify-bundling operations.
 - Optional table UI output display using `tabulate` library package with `grid` as `tablefmt`.
 - `html`, `css`, `php`, `ruby`, `swift`, `kotlin`, `java`, `csharp` file extensions handling.
+- HTML minifier using the JS-based library package `html-minifier`.
+- Use of `python-minifier` minification for python codes in `.ipynb` files.
 
 ### Fixed
 
@@ -28,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Updated `bundle_files` method to include snippet generation feature.
 - Updated `print_stats` method in the `src/utils.py` file to include the new `tabulate` table UI functionality. 
+- `minify_code` method to not return any default `source` value, and when encountering an error, it will print it and exit.
 
 ## [0.8.0] - 2025-04-07
 
