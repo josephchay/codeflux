@@ -18,6 +18,10 @@ class FileExtHandler:
         self.default_exclude_extensions = exclude_extensions
         self.default_exclude_filenames = exclude_filenames
 
+    def handles_file(self, filename):
+        """Check if this handler should process the given filename based on its extension."""
+        return any(filename.lower().endswith(ext.lower()) for ext in self.extensions)
+
     def flatten_dir(self, source_dir, dest_dir, exclude_dirs=None, exclude_exts=None,
                     exclude_files=None, include_dirs=None, include_exts=None, include_files=None,
                     clear_dest_dir=False, silent=False):
@@ -43,7 +47,6 @@ class FileExtHandler:
         start_time = time.time()
 
         if not silent:
-            print(f"Destination: {get_relative_path(dest_dir)}")
             print(f"Processing files: {', '.join(self.extensions)}...\n")
             if include_exts:
                 print(f"Including only extensions: {', '.join(include_exts)}")
@@ -79,6 +82,14 @@ class FileExtHandler:
                 stats["total_files_processed"] += 1
                 source_file = os.path.join(root, file)
                 rel_path = os.path.relpath(source_file, source_dir)
+
+                # Only process files that match this handler's extensions
+                is_handler_file_type = self.handles_file(file)
+                if not is_handler_file_type:
+                    stats["skipped_files"] += 1
+                    continue
+
+                # Apply additional file filters
                 if should_process_file(file, self.extensions, exclude_exts, exclude_files, include_exts, include_files,
                                        file_rel_path=rel_path):
                     path_parts = os.path.normpath(root).split(os.sep)[source_dir_parts:]
@@ -117,7 +128,7 @@ class FileExtHandler:
                 print(f"No files were copied.")
                 print("\nNothing to do for this file type.")
             elif files_info:
-                print("\n[FILES PROCESSED]")
+                print("[FILES PROCESSED]")
                 file_table = format_file_table(files_info, OPERATION_FLATTEN)
                 print(file_table)
 
@@ -151,7 +162,6 @@ class FileExtHandler:
         start_time = time.time()
 
         if not silent:
-            print(f"Destination: {get_relative_path(dest_dir)}\n")
             print(f"Processing files: {', '.join(self.extensions)}...")
             if include_exts:
                 print(f"Including only extensions: {', '.join(include_exts)}")
@@ -179,8 +189,7 @@ class FileExtHandler:
             original_filename = file.split("___")[-1]
 
             # Check if it's a file type this handler processes
-            is_target_ext = any(file.lower().endswith(ext) for ext in self.extensions)
-            if not is_target_ext:
+            if not self.handles_file(original_filename):
                 stats["skipped_files"] += 1
                 continue
 
@@ -188,16 +197,18 @@ class FileExtHandler:
             original_path = '/'.join(path_parts[:-1] + [original_filename]) if len(
                 path_parts) > 1 else original_filename
             should_include = True
+
             if include_exts:
-                is_included_ext = any(original_filename.lower().endswith(ext) for ext in include_exts)
+                is_included_ext = any(original_filename.lower().endswith(ext.lower()) for ext in include_exts)
                 if not is_included_ext:
                     should_include = False
+
             if exclude_files:
                 for exclude_pattern in exclude_files:
                     norm_exclude = exclude_pattern.replace('\\', '/')
                     norm_path = original_path.replace('\\', '/')
-                    if norm_path == norm_exclude or norm_path.endswith(
-                            '/' + norm_exclude) or original_filename == norm_exclude:
+                    if norm_path.lower() == norm_exclude.lower() or norm_path.lower().endswith(
+                            '/' + norm_exclude.lower()) or original_filename.lower() == norm_exclude.lower():
                         should_include = False
                         break
 
@@ -205,8 +216,15 @@ class FileExtHandler:
                 path_parts = file.split("___")[:-1]  # Get directory parts
                 if not any(part in include_dirs for part in path_parts):
                     should_include = False
+
             if include_files:
-                should_include = original_filename in include_files
+                file_matches = False
+                for include_file in include_files:
+                    if original_filename.lower() == include_file.lower() or original_path.lower().endswith(
+                            include_file.lower()):
+                        file_matches = True
+                        break
+                should_include = file_matches
 
             if not should_include:
                 stats["skipped_files"] += 1
@@ -256,7 +274,7 @@ class FileExtHandler:
                 print(f"No files found to process.")
                 print(f"No files were copied.")
             elif files_info:
-                print("\n[FILES PROCESSED]")
+                print("[FILES PROCESSED]")
                 file_table = format_file_table(files_info, OPERATION_DEFLATTEN)
                 print(file_table)
 
@@ -295,13 +313,7 @@ class FileExtHandler:
         }
 
         files_info = []  # For table output
-
         start_time = time.time()
-
-        if not silent:
-            print(f"Destination: {get_relative_path(output_dir)}")
-            print(f"Minification: Using \"python-minifier\" for Python files; \"terser\" for JS/TS files; \"html-minifier\" for HTML files\n")
-
         files_found = False
         for root, dirs, files in os.walk(source_dir):
             stats["dirs_traversed"] += 1
@@ -333,6 +345,10 @@ class FileExtHandler:
 
                 # Skip if source and destination are the same
                 if os.path.abspath(file_path) == os.path.abspath(output_file_path):
+                    stats["skipped_files"] += 1
+                    continue
+
+                if not self.handles_file(file):
                     stats["skipped_files"] += 1
                     continue
 
@@ -404,7 +420,7 @@ class FileExtHandler:
                 print(f"No files found to minify.")
                 print(f"No files were copied.")
             elif files_info:
-                print("\n[FILES PROCESSED]")
+                print("[FILES PROCESSED]")
                 file_table = format_file_table(files_info, OPERATION_MINIFY)
                 print(file_table)
 
@@ -442,11 +458,6 @@ class FileExtHandler:
 
         start_time = time.time()
         if not silent:
-            print(f"Destination: {get_relative_path(output_file)}")
-            if minify:
-                print(f"Minification: Using \"python-minifier\" for Python files; \"terser\" for JS/TS files; \"html-minifier\" for HTML files\n")
-            else:
-                print("")
             if snippet:
                 print(f"Snippet mode: Enabled (max {snippet_lines} lines, from {snippet_start})")
                 if snippet_pattern:
@@ -475,6 +486,10 @@ class FileExtHandler:
                 stats["total_files_processed"] += 1
                 file_path = os.path.join(root, file)
                 if os.path.abspath(file_path) == output_file:
+                    stats["skipped_files"] += 1
+                    continue
+
+                if not self.handles_file(file):
                     stats["skipped_files"] += 1
                     continue
 
@@ -625,7 +640,7 @@ class FileExtHandler:
                         raise RuntimeError(error_msg)
 
         if not silent and files_info:
-            print("\n[FILES PROCESSED]")
+            print("[FILES PROCESSED]")
             file_table = format_file_table(files_info, OPERATION_BUNDLE if not minify else OPERATION_MINIFY_BUNDLE)
             print(file_table)
 

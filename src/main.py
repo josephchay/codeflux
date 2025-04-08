@@ -197,8 +197,19 @@ def main():
     source_dir = args.src_named if args.src_named else args.src_pos
     if not source_dir:
         source_dir = os.getcwd()
+    if not os.path.isdir(source_dir):
+        print(f"Error: Source directory '{source_dir}' does not exist or is not a directory")
+        return 1
+
     base_dir, _ = create_output_dir()
-    # print(f"Base output directory: {base_dir}")
+    timestamp_dir, _ = create_output_dir("multiple")
+
+    if not args.no_log:
+        # print(f"Base output directory: {base_dir}")
+        print(f"Source directory (absolute): {os.path.abspath(source_dir)}")
+        print(f"Destination directory (absolute): {timestamp_dir}")
+        if not get_table_formatter()[1]:
+            print("Notice: 'tabulate' module is not available. Reverting to default output formatting.")
 
     operations = []
     if args.flatten:
@@ -216,12 +227,6 @@ def main():
     if not operations:
         operations = [OPERATION_FLATTEN, OPERATION_DEFLATTEN, OPERATION_MINIFY, OPERATION_BUNDLE, OPERATION_MINIFY_BUNDLE]
 
-    timestamp_dir, _ = create_output_dir("multiple")
-    print(f"Source directory (absolute): {os.path.abspath(source_dir)}")
-    print(f"Destination directory (absolute): {timestamp_dir}")
-    if not get_table_formatter()[1]:
-        print("Notice: 'tabulate' module is not available. Reverting to default output formatting.")
-
     output_paths = {}
     exclude_dirs = merge_with_defaults(args.exclude_dirs, DEFAULT_EXCLUDE_DIRS, args.ignore_defaults)
     exclude_exts = merge_with_defaults(args.exclude_extensions, ALL_EXCLUDE_EXTENSIONS, args.ignore_defaults)
@@ -237,7 +242,9 @@ def main():
                     flatten_dest = os.path.join(timestamp_dir, DEFAULT_FLATTEN_OUTPUT_PATH)
                 output_paths[operation] = flatten_dest
 
-                print("\n\n========== EXECUTING FLATTEN ==========")
+                if not args.no_log:
+                    print("\n\n========== EXECUTING FLATTEN ==========")
+                    print(f"Destination: {get_relative_path(flatten_dest)}")
 
                 for file_type in args.file_types:
                     if file_type in HANDLERS:
@@ -255,7 +262,6 @@ def main():
                             args.include_dirs, args.include_extensions, args.include_files,
                             args.clear_dest_dir, args.no_log
                         )
-
                         handler_results.append(stats)
 
                         # Clean up empty directories
@@ -266,20 +272,20 @@ def main():
                                     print(f"Removed empty directory: {get_relative_path(file_dest_dir)}")
                             except OSError:
                                 pass
-
-                        print("--------------------\n")
+                        if not args.no_log:
+                            print("--------------------\n")
 
                 merged_stats = merge_stats(handler_results)
-                if not args.no_log and handler_results:
-                    if merged_stats["files_copied"] > 0:
-                        print("----- OVERALL SUMMARY -----")
-                        print(f"Total files flattened: {merged_stats['files_copied']}")
-                        print(f"Total data processed: {merged_stats['bytes_copied'] / 1024:.2f} KB")
-                    else:
-                        print("----- OVERALL SUMMARY -----")
-                        print(f"No files were flattened.")
-
-                print("==============================")
+                if not args.no_log:
+                    if handler_results:
+                        if merged_stats["files_copied"] > 0:
+                            print("----- OVERALL SUMMARY -----")
+                            print(f"Total files flattened: {merged_stats['files_copied']}")
+                            print(f"Total data processed: {merged_stats['bytes_copied'] / 1024:.2f} KB")
+                        else:
+                            print("----- OVERALL SUMMARY -----")
+                            print(f"No files were flattened.")
+                    print("==============================")
 
             elif operation == OPERATION_DEFLATTEN:
                 deflatten_dest = args.dest_named if args.dest_named else args.dest_pos
@@ -287,7 +293,9 @@ def main():
                     deflatten_dest = os.path.join(timestamp_dir, DEFAULT_DEFLATTEN_OUTPUT_PATH)
                 output_paths[operation] = deflatten_dest
 
-                print("\n\n========== EXECUTING DEFLATTEN ==========")
+                if not args.no_log:
+                    print("\n\n========== EXECUTING DEFLATTEN ==========")
+                    print(f"Destination: {get_relative_path(deflatten_dest)}")
 
                 # Check if there are any files to process
                 has_files_to_process = False
@@ -325,20 +333,22 @@ def main():
                                 )
 
                                 handler_results.append(stats)
-                                print("--------------------\n")
+
+                                if not args.no_log:
+                                    print("--------------------\n")
 
                 merged_stats = merge_stats(handler_results)
-                if not args.no_log and handler_results:
-                    if merged_stats["files_copied"] > 0:
-                        print("----- OVERALL SUMMARY -----")
-                        print(f"Total files deflattened: {merged_stats['files_copied']}")
-                        print(f"Total directories created: {merged_stats['dirs_created']}")
-                        print(f"Total data processed: {merged_stats['bytes_copied'] / 1024:.2f} KB")
-                    else:
-                        print("----- OVERALL SUMMARY -----")
-                        print(f"No files were deflattened.")
-
-                print("==============================")
+                if not args.no_log:
+                    if handler_results:
+                        if merged_stats["files_copied"] > 0:
+                            print("----- OVERALL SUMMARY -----")
+                            print(f"Total files deflattened: {merged_stats['files_copied']}")
+                            print(f"Total directories created: {merged_stats['dirs_created']}")
+                            print(f"Total data processed: {merged_stats['bytes_copied'] / 1024:.2f} KB")
+                        else:
+                            print("----- OVERALL SUMMARY -----")
+                            print(f"No files were deflattened.")
+                    print("==============================")
 
             elif operation in [OPERATION_BUNDLE, OPERATION_MINIFY_BUNDLE]:
                 bundle_dest = args.dest_named if args.dest_named else args.dest_pos
@@ -349,10 +359,14 @@ def main():
                         bundle_dest = os.path.join(timestamp_dir, DEFAULT_MINIFY_BUNDLE_OUTPUT_PATH)
                 output_paths[operation] = bundle_dest
 
-                if operation == OPERATION_BUNDLE:
-                    print("\n\n========== EXECUTING BUNDLE ==========")
-                else:
-                    print("\n\n========== EXECUTING MINIFY-BUNDLE ==========")
+                if not args.no_log:
+                    if operation == OPERATION_BUNDLE:
+                        print("\n\n========== EXECUTING BUNDLE ==========")
+                        print(f"Destination: {get_relative_path(bundle_dest)}")
+                    else:
+                        print("\n\n========== EXECUTING MINIFY-BUNDLE ==========")
+                        print(f"Destination: {get_relative_path(minify_dest)}")
+                        print(f"Minification: Using \"python-minifier\" for Python files; \"terser\" for JS/TS files; \"html-minifier\" for HTML files\n")
 
                 # Create a combined bundle of all file types
                 if args.file_types and HANDLERS:
@@ -371,7 +385,8 @@ def main():
                     )
                     handler_results.append(stats)
 
-                print("==============================")
+                if not args.no_log:
+                    print("==============================")
 
             elif operation == OPERATION_MINIFY:
                 minify_dest = args.dest_named if args.dest_named else args.dest_pos
@@ -379,7 +394,23 @@ def main():
                     minify_dest = os.path.join(timestamp_dir, DEFAULT_MINIFY_OUTPUT_PATH)
                 output_paths[operation] = minify_dest
 
-                print("\n\n========== EXECUTING MINIFY ==========")
+                if not args.no_log:
+                    print("\n\n========== EXECUTING MINIFY ==========")
+                    print(f"Destination: {get_relative_path(minify_dest)}")
+                    print(f"Minification: Using \"python-minifier\" for Python files; \"terser\" for JS/TS files; \"html-minifier\" for HTML files\n")
+
+                processed_files = set()
+                file_type_map = {}
+                if args.include_files:
+                    for include_file in args.include_files:
+                        file_ext = os.path.splitext(include_file)[1].lower()
+                        matched_handler = None
+                        for handler_type, handler in HANDLERS.items():
+                            if any(file_ext == ext.lower() for ext in handler.extensions):
+                                if handler_type not in file_type_map:
+                                    file_type_map[handler_type] = []
+                                file_type_map[handler_type].append(include_file)
+                                break
 
                 for file_type in args.file_types:
                     if file_type in HANDLERS:
@@ -387,40 +418,54 @@ def main():
 
                         if args.include_extensions and not any(ext in args.include_extensions for ext in handler.extensions):
                             continue
+                        if args.include_files and file_type not in file_type_map:
+                            continue
 
                         if not args.no_log:
                             print(f"----- {file_type.upper()} FILES -----")
 
+                        handler_include_files = file_type_map.get(file_type, []) if args.include_files else args.include_files
                         stats = handler.minify_dir(
                             source_dir, minify_dest, exclude_dirs, exclude_exts, exclude_files,
-                            args.include_dirs, args.include_extensions, args.include_files,
+                            args.include_dirs, args.include_extensions, handler_include_files,
                             args.clear_dest_dir, args.no_log
                         )
-
                         handler_results.append(stats)
-                        print("--------------------\n")
+
+                        if stats["files_copied"] == 0 and os.path.exists(
+                                os.path.join(minify_dest, file_type)) and not os.listdir(
+                                os.path.join(minify_dest, file_type)):
+                            try:
+                                os.rmdir(os.path.join(minify_dest, file_type))
+                                if not args.no_log:
+                                    print(f"Removed empty directory: {get_relative_path(os.path.join(minify_dest, file_type))}")
+                            except OSError:
+                                pass
+                        if not args.no_log:
+                            print("--------------------\n")
 
                 merged_stats = merge_stats(handler_results)
-                if not args.no_log and handler_results:
-                    if merged_stats["files_copied"] > 0:
-                        print("----- OVERALL SUMMARY -----")
-                        print(f"Total files minified: {merged_stats['files_minified']}")
-                        print(f"Total files processed: {merged_stats['files_copied']}")
-                        if merged_stats["bytes_original"] > 0 and merged_stats["bytes_minified"] > 0:
-                            orig_kb = merged_stats["bytes_original"] / 1024
-                            mini_kb = merged_stats["bytes_minified"] / 1024
-                            reduction = (1 - merged_stats["bytes_minified"] / max(merged_stats["bytes_original"], 1)) * 100
-                            print(f"Original size: {orig_kb:.2f} KB")
-                            print(f"Minified size: {mini_kb:.2f} KB")
-                            print(f"Overall reduction: {reduction:.2f}%")
-                    else:
-                        print("----- OVERALL SUMMARY -----")
-                        print(f"No files were minified.")
-
-                print("==============================")
+                if not args.no_log:
+                    if handler_results:
+                        if merged_stats["files_copied"] > 0:
+                            print("----- OVERALL SUMMARY -----")
+                            print(f"Total files minified: {merged_stats['files_minified']}")
+                            print(f"Total files processed: {merged_stats['files_copied']}")
+                            if merged_stats["bytes_original"] > 0 and merged_stats["bytes_minified"] > 0:
+                                orig_kb = merged_stats["bytes_original"] / 1024
+                                mini_kb = merged_stats["bytes_minified"] / 1024
+                                reduction = (1 - merged_stats["bytes_minified"] / max(merged_stats["bytes_original"], 1)) * 100
+                                print(f"Original size: {orig_kb:.2f} KB")
+                                print(f"Minified size: {mini_kb:.2f} KB")
+                                print(f"Overall reduction: {reduction:.2f}%")
+                        else:
+                            print("----- OVERALL SUMMARY -----")
+                            print(f"No files were minified.")
+                    print("==============================")
 
             elif operation == OPERATION_SEARCH:
-                print("\n\n========== EXECUTING SEARCH ==========")
+                if not args.no_log:
+                    print("\n\n========== EXECUTING SEARCH ==========")
 
                 search_handler = Searcher(exclude_dirs=exclude_dirs, exclude_exts=exclude_exts, exclude_files=exclude_files)
                 if args.search_ext:
@@ -474,7 +519,8 @@ def main():
                         print(f"In files with extensions: {', '.join(target_exts)}")
                     search_handler.search_duplicates(source_dir, min_lines, extensions=target_exts, silent=args.no_log)
 
-                print("==============================")
+                if not args.no_log:
+                    print("==============================")
 
         summary_path = os.path.join(timestamp_dir, "operations_summary.txt")
         with open(summary_path, 'w') as summary_file:
@@ -489,7 +535,8 @@ def main():
                     summary_file.write(f"## {op.upper()}\n")
                     summary_file.write(f"Destination: {format_path(dest_path)}\n\n")
 
-        print(f"\nSummary written to {get_relative_path(summary_path)}")
+        if not args.no_log:
+            print(f"\nSummary of operations written to {get_relative_path(summary_path)}")
         return 0
     except ValueError as e:
         print(f"Error: {e}")

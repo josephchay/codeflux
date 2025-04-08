@@ -25,6 +25,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Made sure now `--exclude-files` properly handle path-based exclusion. 
 - Duplicate shorthand argument for `--search-duplicate` and `--search-date` fixed.
 - Added missing file extension handlers for `db` and `bat` files.
+- Prevented multiple exact printing of Destination and minification information for each file type.
+- Processing for files passed using argument `--include-files` or `-if` now works as expected.
 
 ### Changed
 

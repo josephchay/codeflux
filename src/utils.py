@@ -104,24 +104,47 @@ def merge_stats(stats_list):
 
 def should_process_file(filename, handler_extensions, exclude_exts=None, exclude_files=None,
                         include_exts=None, include_files=None, file_rel_path=None):
+    """Determine if a file should be processed based on various criteria."""
+
+    # First, check if this file is specifically included
     if include_files:
-        return filename in include_files
+        # Convert to lowercase for case-insensitive comparison
+        lower_include_files = [f.lower() for f in include_files]
+
+        # Check if the filename or the relative path matches any include file
+        filename_lower = filename.lower()
+        if filename_lower in lower_include_files:
+            return True
+
+        if file_rel_path:
+            rel_path_lower = file_rel_path.lower()
+            for inc in lower_include_files:
+                if rel_path_lower.endswith(inc) or rel_path_lower == inc:
+                    return True
+
+        return False
+
+    # Otherwise check file extensions
     if include_exts:
-        is_included_ext = any(filename.lower().endswith(ext) for ext in include_exts)
+        is_included_ext = any(filename.lower().endswith(ext.lower()) for ext in include_exts)
         if not is_included_ext:
             return False
     else:
-        is_target_ext = any(filename.lower().endswith(ext) for ext in handler_extensions)
+        is_target_ext = any(filename.lower().endswith(ext.lower()) for ext in handler_extensions)
         if not is_target_ext:
             return False
 
-    is_excluded_ext = exclude_exts and any(filename.endswith(ext) for ext in exclude_exts)
+    # Now check exclusions
+    is_excluded_ext = exclude_exts and any(filename.lower().endswith(ext.lower()) for ext in exclude_exts)
+
     is_excluded_file = False
     if exclude_files and file_rel_path:
         norm_rel_path = file_rel_path.replace('\\', '/')
         for exclude_pattern in exclude_files:
             norm_exclude = exclude_pattern.replace('\\', '/')
-            if norm_rel_path == norm_exclude:
+            if (norm_rel_path.lower() == norm_exclude.lower() or
+                    norm_rel_path.lower().endswith('/' + norm_exclude.lower()) or
+                    filename.lower() == norm_exclude.lower()):
                 is_excluded_file = True
                 break
 
