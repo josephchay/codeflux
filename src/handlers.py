@@ -6,7 +6,7 @@ import datetime
 from constants import *
 from utils import (
     get_unique_filename, print_stats, should_process_file,
-    get_relative_path, minify_code
+    get_relative_path, minify_code, get_file_snippet
 )
 
 
@@ -371,7 +371,8 @@ class FileExtHandler:
 
     def bundle_files(self, source_dir, output_file, exclude_dirs=None, exclude_exts=None,
                      exclude_files=None, include_dirs=None, include_exts=None, include_files=None, silent=False,
-                     minify=False):
+                     minify=False, snippet=False, snippet_lines=50, snippet_start="top", snippet_pattern=None,
+                     snippet_context=5):
         source_dir = os.path.abspath(source_dir)
         output_file = os.path.abspath(output_file)
         output_filename = os.path.basename(output_file)
@@ -507,22 +508,45 @@ class FileExtHandler:
                         else:
                             stats["minified_size"] = 0  # Not using minification
 
-                        outfile.write(f"`{formatted_path}`\n```\n")
+                        is_truncated = False
+                        original_lines = 0
+                        if snippet:
+                            content, is_truncated, original_lines = get_file_snippet(content, max_lines=snippet_lines,
+                                                                                     position=snippet_start, pattern=snippet_pattern,
+                                                                                     context_lines=snippet_context)
+
+                        if is_truncated:
+                            outfile.write(f"`{formatted_path}` (snippet of {original_lines} lines)\n```\n")
+                        else:
+                            outfile.write(f"`{formatted_path}`\n```\n")
                         outfile.write(content.rstrip())
                         outfile.write("\n```\n\n")
                         stats["files_bundled"] += 1
                         stats["bytes_bundled"] += len(content)
 
                         if not silent:
-                            if minify and file_extension.lower() in ['.py', '.json', '.jsonl', '.geojson', '.json5', '.ndjson']:
-                                reduction = (1 - len(content) / max(original_content_size, 1)) * 100
-                                orig_kb = original_content_size / 1024
-                                mini_kb = len(content) / 1024
-                                print(f"Bundled: {formatted_path} (Size reduction: {reduction:.2f}%, "
-                                      f"Original: {orig_kb:.2f} KB, Minified: {mini_kb:.2f} KB)")
+                            if is_truncated:
+                                if minify and file_extension.lower() in ['.py', '.json', '.jsonl', '.geojson', '.json5', '.ndjson']:
+                                    reduction = (1 - len(content) / max(original_content_size, 1)) * 100
+                                    orig_kb = original_content_size / 1024
+                                    mini_kb = len(content) / 1024
+                                    print(f"Bundled: {formatted_path} (Size reduction: {reduction:.2f}%, "
+                                          f"Original: {orig_kb:.2f} KB, Minified: {mini_kb:.2f} KB, "
+                                          f"Snippet of {original_lines} lines)")
+                                else:
+                                    file_kb = len(content) / 1024
+                                    print(f"Bundled: {formatted_path} (Size: {file_kb:.2f} KB, "
+                                          f"Snippet of {original_lines} lines)")
                             else:
-                                file_kb = len(content) / 1024
-                                print(f"Bundled: {formatted_path} (Size: {file_kb:.2f} KB)")
+                                if minify and file_extension.lower() in ['.py', '.json', '.jsonl', '.geojson', '.json5', '.ndjson']:
+                                    reduction = (1 - len(content) / max(original_content_size, 1)) * 100
+                                    orig_kb = original_content_size / 1024
+                                    mini_kb = len(content) / 1024
+                                    print(f"Bundled: {formatted_path} (Size reduction: {reduction:.2f}%, "
+                                          f"Original: {orig_kb:.2f} KB, Minified: {mini_kb:.2f} KB)")
+                                else:
+                                    file_kb = len(content) / 1024
+                                    print(f"Bundled: {formatted_path} (Size: {file_kb:.2f} KB)")
                     except UnicodeDecodeError:
                         if not silent:
                             print(f"Skipped binary file: {formatted_path}")

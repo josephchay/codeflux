@@ -13,11 +13,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - New `--search-ext`, `--search-pattern`, `--search-size` arguments for file and content searching.
 - `--search-date`, `--search-imports`, `--search-duplicates` arguments for file searching.
 - Each search functionality to have the file size shown. 
+- `get_file_snippet` method for getting file snippets.
+- New `--snippet`, `--snippet-lines`, `--snippet-start`, `--snippet-context` arguments for snippet generation for bundling and minify-bundling operations.
 
 ### Fixed
 
 - Made sure now `--exclude-files` properly handle path-based exclusion. 
 - Duplicate shorthand argument for `--search-duplicate` and `--search-date` fixed.
+
+### Changed
+
+- Updated `bundle_files` method to include snippet generation feature.
 
 ## [0.8.0] - 2025-04-07
 

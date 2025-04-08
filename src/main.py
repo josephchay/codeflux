@@ -153,6 +153,31 @@ def main():
         help="Find duplicate code blocks (optional: minimum lines, default 5)"
     )
 
+    snippet_group = parser.add_argument_group('snippet options (for bundle and minify-bundle operations)')
+    snippet_group.add_argument(
+        "--snippet", "-sn",
+        action="store_true",
+        help="Enable snippet mode for bundling operations (only includes a portion of each file)"
+    )
+    snippet_group.add_argument(
+        "--snippet-lines", "-snl",
+        type=int,
+        default=50,
+        help="Maximum number of lines to include per file in snippet mode (default: 50)"
+    )
+    snippet_group.add_argument(
+        "--snippet-start", "-sns",
+        choices=["top", "middle", "bottom"],
+        default="top",
+        help="Where to take the snippet from: top, middle, or bottom of the file (default: top)"
+    )
+    snippet_group.add_argument(
+        "--snippet-context", "-snc",
+        type=int,
+        default=5,
+        help="Number of context lines to include around matches when using with search-pattern (default: 5)"
+    )
+
     parser.add_argument(
         "--clear-dest-dir", "-c",
         action="store_true",
@@ -335,7 +360,9 @@ def main():
                     stats = combined_handler.bundle_files(
                         source_dir, bundle_dest, exclude_dirs, exclude_exts, exclude_files,
                         args.include_dirs, args.include_extensions, args.include_files,
-                        args.no_log, operation == OPERATION_MINIFY_BUNDLE
+                        args.no_log, operation == OPERATION_MINIFY_BUNDLE,
+                        snippet=args.snippet, snippet_lines=args.snippet_lines, snippet_start=args.snippet_start,
+                        snippet_pattern=args.search_pattern if args.search_pattern else None, snippet_context=args.snippet_context
                     )
                     handler_results.append(stats)
 

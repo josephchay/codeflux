@@ -332,3 +332,61 @@ def minify_code(source, file_extension):
         return minify_yaml(source, flow_style=True)
 
     return source
+
+
+def get_file_snippet(content, max_lines=50, position="top", pattern=None, context_lines=5):
+    lines = content.splitlines()
+    original_line_count = len(lines)
+
+    if len(lines) <= max_lines:
+        return content, False, original_line_count
+    if pattern:
+        matches = list(re.finditer(pattern, content))
+        if matches:
+            match_line_numbers = []
+            line_indexes = [0]
+            for i, line in enumerate(lines):
+                line_indexes.append(line_indexes[-1] + len(line) + 1)
+            for match in matches:
+                start_pos = match.start()
+                for i in range(len(line_indexes) - 1):
+                    if line_indexes[i] <= start_pos < line_indexes[i + 1]:
+                        match_line_numbers.append(i)
+                        break
+
+            extracted_lines = set()
+            for line_num in match_line_numbers:
+                start = max(0, line_num - context_lines)
+                end = min(len(lines), line_num + context_lines + 1)
+                for i in range(start, end):
+                    extracted_lines.add(i)
+
+            extracted_lines = sorted(list(extracted_lines))
+            if len(extracted_lines) > max_lines:
+                # If we have too many lines, prioritize first matches
+                extracted_lines = extracted_lines[:max_lines]
+
+            result_lines = []
+            current_group = []
+            for i, line_num in enumerate(extracted_lines):
+                if i > 0 and line_num > extracted_lines[i - 1] + 1:
+                    result_lines.extend(current_group)
+                    result_lines.append("# [...] Skipped lines")
+                    current_group = []
+                current_group.append(lines[line_num])
+
+            result_lines.extend(current_group)
+            return "\n".join(result_lines), True, original_line_count
+
+    if position == "top":
+        return "\n".join(lines[:max_lines]) + "\n# [...] Remaining lines omitted", True, original_line_count
+    elif position == "bottom":
+        return "\n".join(["# [...] Initial lines omitted"] + lines[-max_lines:]), True, original_line_count
+    else:  # middle
+        mid_point = len(lines) // 2
+        half_snippet = max_lines // 2
+        start = max(0, mid_point - half_snippet)
+        end = min(len(lines), mid_point + half_snippet)
+        return "\n".join(["# [...] Initial lines omitted"] +
+                         lines[start:end] +
+                         ["# [...] Remaining lines omitted"]), True, original_line_count
