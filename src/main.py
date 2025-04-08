@@ -243,7 +243,7 @@ def main():
                 output_paths[operation] = flatten_dest
 
                 if not args.no_log:
-                    print("\n\n========== EXECUTING FLATTEN ==========")
+                    print("\n\n:::::::::: EXECUTING FLATTEN ::::::::::")
                     print(f"Destination: {get_relative_path(flatten_dest)}")
 
                 for file_type in args.file_types:
@@ -285,7 +285,7 @@ def main():
                         else:
                             print("----- OVERALL SUMMARY -----")
                             print(f"No files were flattened.")
-                    print("==============================")
+                    print("::::::::::::::::::::::::::::::::::::::::")
 
             elif operation == OPERATION_DEFLATTEN:
                 deflatten_dest = args.dest_named if args.dest_named else args.dest_pos
@@ -294,7 +294,7 @@ def main():
                 output_paths[operation] = deflatten_dest
 
                 if not args.no_log:
-                    print("\n\n========== EXECUTING DEFLATTEN ==========")
+                    print("\n\n:::::::::: EXECUTING DEFLATTEN ::::::::::")
                     print(f"Destination: {get_relative_path(deflatten_dest)}")
 
                 # Check if there are any files to process
@@ -348,7 +348,7 @@ def main():
                         else:
                             print("----- OVERALL SUMMARY -----")
                             print(f"No files were deflattened.")
-                    print("==============================")
+                    print("::::::::::::::::::::::::::::::::::::::::")
 
             elif operation in [OPERATION_BUNDLE, OPERATION_MINIFY_BUNDLE]:
                 bundle_dest = args.dest_named if args.dest_named else args.dest_pos
@@ -361,10 +361,10 @@ def main():
 
                 if not args.no_log:
                     if operation == OPERATION_BUNDLE:
-                        print("\n\n========== EXECUTING BUNDLE ==========")
+                        print("\n\n:::::::::: EXECUTING BUNDLE ::::::::::")
                         print(f"Destination: {get_relative_path(bundle_dest)}")
                     else:
-                        print("\n\n========== EXECUTING MINIFY-BUNDLE ==========")
+                        print("\n\n:::::::::: EXECUTING MINIFY-BUNDLE ::::::::::")
                         print(f"Destination: {get_relative_path(minify_dest)}")
                         print(f"Minification: Using \"python-minifier\" for Python files; \"terser\" for JS/TS files; \"html-minifier\" for HTML files\n")
 
@@ -386,7 +386,7 @@ def main():
                     handler_results.append(stats)
 
                 if not args.no_log:
-                    print("==============================")
+                    print("::::::::::::::::::::::::::::::::::::::::")
 
             elif operation == OPERATION_MINIFY:
                 minify_dest = args.dest_named if args.dest_named else args.dest_pos
@@ -395,7 +395,7 @@ def main():
                 output_paths[operation] = minify_dest
 
                 if not args.no_log:
-                    print("\n\n========== EXECUTING MINIFY ==========")
+                    print("\n\n:::::::::: EXECUTING MINIFY ::::::::::")
                     print(f"Destination: {get_relative_path(minify_dest)}")
                     print(f"Minification: Using \"python-minifier\" for Python files; \"terser\" for JS/TS files; \"html-minifier\" for HTML files\n")
 
@@ -461,11 +461,11 @@ def main():
                         else:
                             print("----- OVERALL SUMMARY -----")
                             print(f"No files were minified.")
-                    print("==============================")
+                    print("::::::::::::::::::::::::::::::::::::::::")
 
             elif operation == OPERATION_SEARCH:
                 if not args.no_log:
-                    print("\n\n========== EXECUTING SEARCH ==========")
+                    print("\n\n:::::::::: EXECUTING SEARCH ::::::::::")
 
                 search_handler = Searcher(exclude_dirs=exclude_dirs, exclude_exts=exclude_exts, exclude_files=exclude_files)
                 if args.search_ext:
@@ -520,7 +520,7 @@ def main():
                     search_handler.search_duplicates(source_dir, min_lines, extensions=target_exts, silent=args.no_log)
 
                 if not args.no_log:
-                    print("==============================")
+                    print("::::::::::::::::::::::::::::::::::::::::")
 
         summary_path = os.path.join(timestamp_dir, "operations_summary.txt")
         with open(summary_path, 'w') as summary_file:

@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added missing file extension handlers for `db` and `bat` files.
 - Prevented multiple exact printing of Destination and minification information for each file type.
 - Processing for files passed using argument `--include-files` or `-if` now works as expected.
+- Information for original size and reduction size now being calculated and displayed for all file types.
 
 ### Changed
 

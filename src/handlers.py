@@ -580,24 +580,22 @@ class FileExtHandler:
 
                         is_truncated = False
                         original_lines = 0
+                        minified_content = None
 
                         if minify:
+                            original_content_bytes = len(content.encode('utf-8'))
+                            stats["original_size"] += original_content_bytes
                             minified_content = minify_code(content, file_extension)
-                            stats["minified_size"] += len(minified_content)
+                            minified_content_bytes = len(minified_content.encode('utf-8'))
+                            stats["minified_size"] += minified_content_bytes
                             content = minified_content
                         else:
                             stats["minified_size"] = 0  # Not using minification
 
-                        # Apply snippet mode if enabled
                         if snippet:
-                            content, is_truncated, original_lines = get_file_snippet(
-                                content,
-                                max_lines=snippet_lines,
-                                position=snippet_start,
-                                pattern=snippet_pattern,
-                                context_lines=snippet_context
-                            )
-
+                            content, is_truncated, original_lines = get_file_snippet(content, max_lines=snippet_lines,
+                                                                                     position=snippet_start, pattern=snippet_pattern,
+                                                                                     context_lines=snippet_context)
                         if is_truncated:
                             outfile.write(f"`{formatted_path}` (snippet of {original_lines} lines)\n```\n")
                         else:
@@ -618,8 +616,7 @@ class FileExtHandler:
                             else:
                                 file_info["status"] = "Bundled"
 
-                            if minify and file_extension.lower() in ['.py', '.json', '.jsonl', '.geojson', '.json5',
-                                                                     '.ndjson']:
+                            if minify:
                                 reduction = (1 - len(content) / max(original_content_size, 1)) * 100
                                 file_info["original_size"] = original_content_size
                                 file_info["reduction"] = reduction
