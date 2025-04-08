@@ -19,6 +19,7 @@ class Searcher:
         """Search for files with specific extensions."""
         results = []
         file_count = 0
+        total_size_bytes = 0
 
         for root, dirs, files in os.walk(source_dir):
             dirs[:] = [d for d in dirs if d not in self.exclude_dirs]
@@ -30,14 +31,22 @@ class Searcher:
                     if self.is_excluded_file(rel_path):
                         continue
 
-                    results.append(rel_path)
+                    file_size = os.path.getsize(file_path)
+                    file_size_kb = file_size / 1024
+                    total_size_bytes += file_size
+                    results.append((rel_path, file_size))
                     file_count += 1
 
                     if not silent:
-                        print(f"Found: {rel_path}")
+                        print(f"Found: {rel_path} (Size: {file_size_kb:.2f} KB)")
 
         if not silent:
+            total_size_kb = total_size_bytes / 1024
             print(f"\nTotal files found: {file_count}")
+            print(f"Total size: {total_size_kb:.2f} KB")
+            if file_count > 0:
+                avg_size_kb = total_size_kb / file_count
+                print(f"Average file size: {avg_size_kb:.2f} KB")
 
         return results
 
@@ -46,49 +55,52 @@ class Searcher:
         results = []
         file_count = 0
         match_count = 0
+        total_size_bytes = 0
 
         extensions = extensions or self.extensions
-
         for root, dirs, files in os.walk(source_dir):
             dirs[:] = [d for d in dirs if d not in self.exclude_dirs]
-
             for file in files:
                 if not any(file.lower().endswith(ext) for ext in extensions):
                     continue
 
                 file_path = os.path.join(root, file)
                 rel_path = get_relative_path(file_path, source_dir)
-
-                # Skip excluded files
                 if self.is_excluded_file(rel_path):
                     continue
-
                 try:
+                    file_size = os.path.getsize(file_path)
+                    file_size_kb = file_size / 1024
                     with open(file_path, 'r', encoding='utf-8') as f:
                         content = f.read()
                         matches = re.finditer(pattern, content)
                         found_matches = list(matches)
-
                         if found_matches:
                             file_count += 1
                             match_count += len(found_matches)
+                            total_size_bytes += file_size
 
                             if not silent:
-                                print(f"\nFile: {rel_path}")
+                                print(f"\nFile: {rel_path} (Size: {file_size_kb:.2f} KB)")
                                 for i, match in enumerate(found_matches):
                                     start = max(0, match.start() - 20)
                                     end = min(len(content), match.end() + 20)
                                     context = content[start:end].replace('\n', ' ')
                                     print(f"  Match {i + 1}: ...{context}...")
 
-                            results.append((rel_path, found_matches))
+                            results.append((rel_path, found_matches, file_size))
                 except UnicodeDecodeError:
                     # Skip binary files
                     continue
 
         if not silent:
+            total_size_kb = total_size_bytes / 1024
             print(f"\nTotal files with matches: {file_count}")
             print(f"Total matches found: {match_count}")
+            print(f"Total size of matching files: {total_size_kb:.2f} KB")
+            if file_count > 0:
+                avg_size_kb = total_size_kb / file_count
+                print(f"Average matching file size: {avg_size_kb:.2f} KB")
 
         return results
 
@@ -129,7 +141,7 @@ class Searcher:
     def search_by_date(self, source_dir, start_date, end_date=None, extensions=None, silent=False):
         results = []
         file_count = 0
-
+        total_size_bytes = 0
         start_date = datetime.datetime.strptime(start_date, "%Y-%m-%d").timestamp()
         if end_date:
             end_date = datetime.datetime.strptime(end_date, "%Y-%m-%d").timestamp()
@@ -145,21 +157,29 @@ class Searcher:
 
                 file_path = os.path.join(root, file)
                 rel_path = get_relative_path(file_path, source_dir)
-
                 if self.is_excluded_file(rel_path):
                     continue
 
                 mod_time = os.path.getmtime(file_path)
                 if start_date <= mod_time <= end_date:
+                    file_size = os.path.getsize(file_path)
+                    file_size_kb = file_size / 1024
+                    total_size_bytes += file_size
+
                     mod_date = datetime.datetime.fromtimestamp(mod_time).strftime("%Y-%m-%d %H:%M:%S")
-                    results.append((rel_path, mod_date))
+                    results.append((rel_path, mod_date, file_size))
                     file_count += 1
 
                     if not silent:
-                        print(f"Found: {rel_path} (Modified: {mod_date})")
+                        print(f"Found: {rel_path} (Modified: {mod_date}, Size: {file_size_kb:.2f} KB)")
 
         if not silent:
+            total_size_kb = total_size_bytes / 1024
             print(f"\nTotal files found: {file_count}")
+            print(f"Total size: {total_size_kb:.2f} KB")
+            if file_count > 0:
+                avg_size_kb = total_size_kb / file_count
+                print(f"Average file size: {avg_size_kb:.2f} KB")
 
         return results
 
@@ -167,6 +187,7 @@ class Searcher:
         results = []
         file_count = 0
         import_count = 0
+        total_size_bytes = 0
 
         # Default to Python files only for this search
         extensions = extensions or ['.py']
@@ -180,8 +201,9 @@ class Searcher:
                 rel_path = get_relative_path(file_path, source_dir)
                 if self.is_excluded_file(rel_path):
                     continue
-
                 try:
+                    file_size = os.path.getsize(file_path)
+                    file_size_kb = file_size / 1024
                     with open(file_path, 'r', encoding='utf-8') as f:
                         content = f.read()
 
@@ -200,26 +222,32 @@ class Searcher:
                     if imports:
                         file_count += 1
                         import_count += len(imports)
+                        total_size_bytes += file_size
 
                         if not silent:
-                            print(f"\nFile: {rel_path}")
+                            print(f"\nFile: {rel_path} (Size: {file_size_kb:.2f} KB)")
                             for import_stmt, line_num in imports:
                                 print(f"  Line {line_num}: {import_stmt}")
-
-                        results.append((rel_path, imports))
-
+                        results.append((rel_path, imports, file_size))
                 except (UnicodeDecodeError, SyntaxError):
                     # Skip files that can't be parsed
                     continue
 
         if not silent:
+            total_size_kb = total_size_bytes / 1024
             print(f"\nTotal files with imports: {file_count}")
             print(f"Total imports found: {import_count}")
+            print(f"Total size of files with imports: {total_size_kb:.2f} KB")
+            if file_count > 0:
+                avg_size_kb = total_size_kb / file_count
+                print(f"Average file size: {avg_size_kb:.2f} KB")
 
         return results
 
     def search_duplicates(self, source_dir, min_lines=5, threshold=0.8, extensions=None, silent=False):
         file_contents = []
+        total_size_bytes = 0
+        file_count = 0
         extensions = extensions or self.extensions
         for root, dirs, files in os.walk(source_dir):
             dirs[:] = [d for d in dirs if d not in self.exclude_dirs]
@@ -231,14 +259,18 @@ class Searcher:
                 rel_path = get_relative_path(file_path, source_dir)
                 if self.is_excluded_file(rel_path):
                     continue
-
                 try:
+                    file_size = os.path.getsize(file_path)
+                    file_size_kb = file_size / 1024
+                    total_size_bytes += file_size
+                    file_count += 1
+
                     with open(file_path, 'r', encoding='utf-8') as f:
                         content = f.read()
 
                     lines = content.splitlines()
                     if len(lines) >= min_lines:
-                        file_contents.append((rel_path, lines))
+                        file_contents.append((rel_path, lines, file_size))
 
                 except UnicodeDecodeError:
                     # Skip binary files
@@ -247,8 +279,8 @@ class Searcher:
         # Now compare chunks across files
         duplicates = []
         compared = set()
-        for i, (file1, lines1) in enumerate(file_contents):
-            for j, (file2, lines2) in enumerate(file_contents):
+        for i, (file1, lines1, size1) in enumerate(file_contents):
+            for j, (file2, lines2, size2) in enumerate(file_contents):
                 if i == j or (i, j) in compared or (j, i) in compared:
                     continue
 
@@ -257,34 +289,45 @@ class Searcher:
                     chunk1 = '\n'.join(lines1[idx1:idx1 + min_lines])
                     for idx2 in range(len(lines2) - min_lines + 1):
                         chunk2 = '\n'.join(lines2[idx2:idx2 + min_lines])
-
                         similarity = SequenceMatcher(None, chunk1, chunk2).ratio()
                         if similarity >= threshold:
                             duplicates.append({
                                 'file1': file1,
                                 'start_line1': idx1 + 1,
                                 'end_line1': idx1 + min_lines,
+                                'size1': size1,
                                 'file2': file2,
                                 'start_line2': idx2 + 1,
                                 'end_line2': idx2 + min_lines,
+                                'size2': size2,
                                 'similarity': similarity,
                                 'code': chunk1
                             })
 
         duplicates.sort(key=lambda x: x['similarity'], reverse=True)
+
         if not silent:
             if duplicates:
                 print(f"\nFound {len(duplicates)} potential duplicate code blocks:")
                 for i, dup in enumerate(duplicates):
+                    size1_kb = dup['size1'] / 1024
+                    size2_kb = dup['size2'] / 1024
                     print(f"\nDuplicate #{i + 1} (Similarity: {dup['similarity']:.2f}):")
-                    print(f"  {dup['file1']} (lines {dup['start_line1']}-{dup['end_line1']})")
-                    print(f"  {dup['file2']} (lines {dup['start_line2']}-{dup['end_line2']})")
+                    print(f"  {dup['file1']} (lines {dup['start_line1']}-{dup['end_line1']}, Size: {size1_kb:.2f} KB)")
+                    print(f"  {dup['file2']} (lines {dup['start_line2']}-{dup['end_line2']}, Size: {size2_kb:.2f} KB)")
                     print(f"\nCode:")
                     print("```")
                     print(dup['code'])
                     print("```")
             else:
                 print("\nNo duplicate code blocks found.")
+
+            total_size_kb = total_size_bytes / 1024
+            print(f"\nTotal files processed: {file_count}")
+            print(f"Total size of processed files: {total_size_kb:.2f} KB")
+            if file_count > 0:
+                avg_size_kb = total_size_kb / file_count
+                print(f"Average file size: {avg_size_kb:.2f} KB")
 
         return duplicates
 
