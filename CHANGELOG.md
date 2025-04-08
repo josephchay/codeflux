@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Each search functionality to have the file size shown. 
 - `get_file_snippet` method for getting file snippets.
 - New `--snippet`, `--snippet-lines`, `--snippet-start`, `--snippet-context` arguments for snippet generation for bundling and minify-bundling operations.
+- Optional table UI output display using `tabulate` library package with `grid` as `tablefmt`.
 
 ### Fixed
 
@@ -24,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Updated `bundle_files` method to include snippet generation feature.
+- Updated `print_stats` method in the `src/utils.py` file to include the new `tabulate` table UI functionality. 
 
 ## [0.8.0] - 2025-04-07
 

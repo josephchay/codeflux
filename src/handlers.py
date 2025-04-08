@@ -4,6 +4,7 @@ import time
 import datetime
 
 from constants import *
+from ui.table import format_file_table
 from utils import (
     get_unique_filename, print_stats, should_process_file,
     get_relative_path, minify_code, get_file_snippet
@@ -31,6 +32,8 @@ class FileExtHandler:
             "skipped_files": 0,
             "max_nesting_level": 0
         }
+
+        files_info = []  # For table output
 
         if clear_dest_dir and os.path.exists(dest_dir):
             shutil.rmtree(dest_dir)
@@ -91,11 +94,16 @@ class FileExtHandler:
                     try:
                         shutil.copy2(source_file, unique_destination_file)
                         stats["files_copied"] += 1
-                        stats["bytes_copied"] += os.path.getsize(source_file)
+                        file_size = os.path.getsize(source_file)
+                        stats["bytes_copied"] += file_size
 
                         if not silent:
-                            file_size_kb = os.path.getsize(source_file) / 1024
-                            print(f"{get_relative_path(source_file)} → {get_relative_path(unique_destination_file)} (Size: {file_size_kb:.2f} KB)")
+                            file_info = {
+                                "file": get_relative_path(source_file),
+                                "size": file_size,
+                                "status": f"Flattened to {get_relative_path(unique_destination_file)}"
+                            }
+                            files_info.append(file_info)
                     except Exception as e:
                         error_msg = f"Error copying {file}: {str(e)}"
                         print(error_msg)
@@ -103,10 +111,15 @@ class FileExtHandler:
                 else:
                     stats["skipped_files"] += 1
 
-        if stats["files_copied"] == 0 and not silent:
-            print(f"No files found to process.")
-            print(f"No files were copied.")
-            print("\nNothing to do for this file type.")
+        if not silent:
+            if stats["files_copied"] == 0:
+                print(f"No files found to process.")
+                print(f"No files were copied.")
+                print("\nNothing to do for this file type.")
+            elif files_info:
+                print("\n[FILES PROCESSED]")
+                file_table = format_file_table(files_info, OPERATION_FLATTEN)
+                print(file_table)
 
         end_time = time.time()
         duration = end_time - start_time
@@ -128,6 +141,8 @@ class FileExtHandler:
             "bytes_copied": 0,
             "skipped_files": 0
         }
+
+        files_info = []  # For table output
 
         if clear_dest_dir and os.path.exists(dest_dir):
             shutil.rmtree(dest_dir)
@@ -170,7 +185,8 @@ class FileExtHandler:
                 continue
 
             path_parts = file.split("___")
-            original_path = '/'.join(path_parts[:-1] + [original_filename]) if len(path_parts) > 1 else original_filename
+            original_path = '/'.join(path_parts[:-1] + [original_filename]) if len(
+                path_parts) > 1 else original_filename
             should_include = True
             if include_exts:
                 is_included_ext = any(original_filename.lower().endswith(ext) for ext in include_exts)
@@ -180,7 +196,8 @@ class FileExtHandler:
                 for exclude_pattern in exclude_files:
                     norm_exclude = exclude_pattern.replace('\\', '/')
                     norm_path = original_path.replace('\\', '/')
-                    if norm_path == norm_exclude or norm_path.endswith('/' + norm_exclude) or original_filename == norm_exclude:
+                    if norm_path == norm_exclude or norm_path.endswith(
+                            '/' + norm_exclude) or original_filename == norm_exclude:
                         should_include = False
                         break
 
@@ -219,19 +236,29 @@ class FileExtHandler:
             try:
                 shutil.copy2(flattened_file, unique_destination_file)
                 stats["files_copied"] += 1
-                stats["bytes_copied"] += os.path.getsize(flattened_file)
+                file_size = os.path.getsize(flattened_file)
+                stats["bytes_copied"] += file_size
 
                 if not silent:
-                    file_size_kb = os.path.getsize(flattened_file) / 1024
-                    print(f"{get_relative_path(flattened_file)} → {get_relative_path(unique_destination_file)} (Size: {file_size_kb:.2f} KB)")
+                    file_info = {
+                        "file": get_relative_path(flattened_file),
+                        "size": file_size,
+                        "status": f"Deflattened to {get_relative_path(unique_destination_file)}"
+                    }
+                    files_info.append(file_info)
             except Exception as e:
                 error_msg = f"Error copying {file}: {str(e)}"
                 print(error_msg)
                 raise RuntimeError(error_msg)
 
-        if stats["files_copied"] == 0 and not silent:
-            print(f"No files found to process.")
-            print(f"No files were copied.")
+        if not silent:
+            if stats["files_copied"] == 0:
+                print(f"No files found to process.")
+                print(f"No files were copied.")
+            elif files_info:
+                print("\n[FILES PROCESSED]")
+                file_table = format_file_table(files_info, OPERATION_DEFLATTEN)
+                print(file_table)
 
         end_time = time.time()
         duration = end_time - start_time
@@ -266,6 +293,8 @@ class FileExtHandler:
             "skipped_files": 0,
             "max_nesting_level": 0
         }
+
+        files_info = []  # For table output
 
         start_time = time.time()
 
@@ -308,7 +337,8 @@ class FileExtHandler:
                     continue
 
                 rel_file_path = os.path.relpath(file_path, source_dir)
-                should_include = should_process_file(file, self.extensions, exclude_exts, exclude_files, include_exts, include_files, file_rel_path=rel_file_path)
+                should_include = should_process_file(file, self.extensions, exclude_exts, exclude_files, include_exts,
+                                                     include_files, file_rel_path=rel_file_path)
                 if should_include:
                     files_found = True
                     try:
@@ -335,10 +365,15 @@ class FileExtHandler:
                                 rel_file_path = os.path.join(rel_output_path, file).replace('\\', '/')
                                 if rel_output_path == '.':
                                     rel_file_path = file
-                                orig_kb = original_size / 1024
-                                mini_kb = minified_size / 1024
-                                print(f"{get_relative_path(file_path, os.path.dirname(source_dir))} → {rel_file_path} "
-                                      f"(Size reduction: {reduction:.2f}%, Original: {orig_kb:.2f} KB, Minified: {mini_kb:.2f} KB)")
+
+                                file_info = {
+                                    "file": get_relative_path(file_path, os.path.dirname(source_dir)),
+                                    "size": minified_size,
+                                    "status": f"Minified to {rel_file_path}",
+                                    "original_size": original_size,
+                                    "reduction": reduction
+                                }
+                                files_info.append(file_info)
                         except Exception as e:
                             error_msg = f"Error minifying {file}: {str(e)}"
                             print(error_msg)
@@ -347,24 +382,36 @@ class FileExtHandler:
                         # Binary file, just copy it
                         shutil.copy2(file_path, output_file_path)
                         stats["files_copied"] += 1
+                        file_size = os.path.getsize(file_path)
 
                         if not silent:
                             rel_file_path = os.path.join(rel_output_path, file)
                             rel_file_path = rel_file_path.replace('\\', '/')
                             if rel_output_path == '.':
                                 rel_file_path = file
-                            print(f"{get_relative_path(file_path, os.path.dirname(source_dir))} → {rel_file_path} (Binary file, copied as-is)")
+
+                            file_info = {
+                                "file": get_relative_path(file_path, os.path.dirname(source_dir)),
+                                "size": file_size,
+                                "status": f"Copied as-is (binary) to {rel_file_path}"
+                            }
+                            files_info.append(file_info)
                 else:
                     stats["skipped_files"] += 1
-
-        end_time = time.time()
-        duration = end_time - start_time
 
         if not silent:
             if not files_found:
                 print(f"No files found to minify.")
                 print(f"No files were copied.")
+            elif files_info:
+                print("\n[FILES PROCESSED]")
+                file_table = format_file_table(files_info, OPERATION_MINIFY)
+                print(file_table)
 
+        end_time = time.time()
+        duration = end_time - start_time
+
+        if not silent:
             print_stats(stats, OPERATION_MINIFY, duration)
 
         return stats
@@ -391,12 +438,19 @@ class FileExtHandler:
             "minified_size": 0
         }
 
+        files_info = []  # For table output
+
         start_time = time.time()
         if not silent:
             print(f"Destination: {get_relative_path(output_file)}")
             if minify:
                 print(f"Minification: Using python-minifier for Python files and terser for JSTS files\n")
             else:
+                print("")
+            if snippet:
+                print(f"Snippet mode: Enabled (max {snippet_lines} lines, from {snippet_start})")
+                if snippet_pattern:
+                    print(f"Pattern focus: '{snippet_pattern}' with {snippet_context} context lines")
                 print("")
 
         # Gather files to bundle
@@ -464,7 +518,8 @@ class FileExtHandler:
 
         # Sort files to group similar types together
         files_to_bundle.sort(key=lambda x: (x['extension'], x['formatted_path']))
-        stats["original_size"] = sum(os.path.getsize(f['file_path']) for f in files_to_bundle if os.path.exists(f['file_path']))
+        stats["original_size"] = sum(
+            os.path.getsize(f['file_path']) for f in files_to_bundle if os.path.exists(f['file_path']))
 
         # Group files by extension for more efficient processing
         extension_groups = {}
@@ -479,7 +534,10 @@ class FileExtHandler:
             outfile.write(f"# {os.path.basename(source_dir)} ({len(files_to_bundle)} files)\n")
             outfile.write(f"# Created: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
             if minify:
-                outfile.write(f"# Minification: Enabled (Using python-minifier for Python files and terser for JSTS files)\n")
+                outfile.write(
+                    f"# Minification: Enabled (Using python-minifier for Python files and terser for JSTS files)\n")
+            if snippet:
+                outfile.write(f"# Snippet mode: Enabled (max {snippet_lines} lines per file, from {snippet_start})\n")
             outfile.write("\n")
 
             for ext, group_files in extension_groups.items():
@@ -497,9 +555,17 @@ class FileExtHandler:
 
                         if not content.strip():
                             if not silent:
-                                print(f"Skipped empty file: {formatted_path}")
+                                file_info = {
+                                    "file": formatted_path,
+                                    "size": 0,
+                                    "status": "Skipped (empty file)"
+                                }
+                                files_info.append(file_info)
                             stats["skipped_files"] += 1
                             continue
+
+                        is_truncated = False
+                        original_lines = 0
 
                         if minify:
                             minified_content = minify_code(content, file_extension)
@@ -508,12 +574,15 @@ class FileExtHandler:
                         else:
                             stats["minified_size"] = 0  # Not using minification
 
-                        is_truncated = False
-                        original_lines = 0
+                        # Apply snippet mode if enabled
                         if snippet:
-                            content, is_truncated, original_lines = get_file_snippet(content, max_lines=snippet_lines,
-                                                                                     position=snippet_start, pattern=snippet_pattern,
-                                                                                     context_lines=snippet_context)
+                            content, is_truncated, original_lines = get_file_snippet(
+                                content,
+                                max_lines=snippet_lines,
+                                position=snippet_start,
+                                pattern=snippet_pattern,
+                                context_lines=snippet_context
+                            )
 
                         if is_truncated:
                             outfile.write(f"`{formatted_path}` (snippet of {original_lines} lines)\n```\n")
@@ -525,36 +594,41 @@ class FileExtHandler:
                         stats["bytes_bundled"] += len(content)
 
                         if not silent:
+                            file_info = {
+                                "file": formatted_path,
+                                "size": len(content)
+                            }
+
                             if is_truncated:
-                                if minify and file_extension.lower() in ['.py', '.json', '.jsonl', '.geojson', '.json5', '.ndjson']:
-                                    reduction = (1 - len(content) / max(original_content_size, 1)) * 100
-                                    orig_kb = original_content_size / 1024
-                                    mini_kb = len(content) / 1024
-                                    print(f"Bundled: {formatted_path} (Size reduction: {reduction:.2f}%, "
-                                          f"Original: {orig_kb:.2f} KB, Minified: {mini_kb:.2f} KB, "
-                                          f"Snippet of {original_lines} lines)")
-                                else:
-                                    file_kb = len(content) / 1024
-                                    print(f"Bundled: {formatted_path} (Size: {file_kb:.2f} KB, "
-                                          f"Snippet of {original_lines} lines)")
+                                file_info["status"] = f"Bundled (Snippet of {original_lines} lines)"
                             else:
-                                if minify and file_extension.lower() in ['.py', '.json', '.jsonl', '.geojson', '.json5', '.ndjson']:
-                                    reduction = (1 - len(content) / max(original_content_size, 1)) * 100
-                                    orig_kb = original_content_size / 1024
-                                    mini_kb = len(content) / 1024
-                                    print(f"Bundled: {formatted_path} (Size reduction: {reduction:.2f}%, "
-                                          f"Original: {orig_kb:.2f} KB, Minified: {mini_kb:.2f} KB)")
-                                else:
-                                    file_kb = len(content) / 1024
-                                    print(f"Bundled: {formatted_path} (Size: {file_kb:.2f} KB)")
+                                file_info["status"] = "Bundled"
+
+                            if minify and file_extension.lower() in ['.py', '.json', '.jsonl', '.geojson', '.json5',
+                                                                     '.ndjson']:
+                                reduction = (1 - len(content) / max(original_content_size, 1)) * 100
+                                file_info["original_size"] = original_content_size
+                                file_info["reduction"] = reduction
+
+                            files_info.append(file_info)
                     except UnicodeDecodeError:
                         if not silent:
-                            print(f"Skipped binary file: {formatted_path}")
+                            file_info = {
+                                "file": formatted_path,
+                                "size": os.path.getsize(file_path),
+                                "status": "Skipped (binary file)"
+                            }
+                            files_info.append(file_info)
                         stats["skipped_files"] += 1
                     except Exception as e:
                         error_msg = f"Error bundling {formatted_path}: {str(e)}"
                         print(error_msg)
                         raise RuntimeError(error_msg)
+
+        if not silent and files_info:
+            print("\n[FILES PROCESSED]")
+            file_table = format_file_table(files_info, OPERATION_BUNDLE if not minify else OPERATION_MINIFY_BUNDLE)
+            print(file_table)
 
         end_time = time.time()
         duration = end_time - start_time

@@ -7,9 +7,7 @@ import python_minifier
 import re
 import yaml
 from ruamel.yaml import YAML
-
-from constants import OPERATION_DEFLATTEN, OPERATION_BUNDLE, OPERATION_MINIFY_BUNDLE, OPERATION_MINIFY, \
-    OPERATION_FLATTEN
+from ui.table import format_stats_table
 
 
 def get_unique_filename(destination_file):
@@ -53,109 +51,12 @@ def format_path(path):
 
 
 def print_stats(stats, operation_type, duration, show_full=True):
-    """Print statistics about an operation"""
-    files_processed = stats.get("files_processed", 0) or stats.get("total_files_processed", 0)
-    files_per_second = files_processed / max(duration, 0.001)
+    if not show_full:
+        print(f"\nTime taken: {duration:.6f} seconds")
+        return
 
-    print(f"\nTime taken: {duration:.6f} seconds")
-    if show_full:
-        print("\n[INPUT PROCESSING]")
-        dirs_traversed = stats.get("dirs_traversed", 0)
-        max_nesting = stats.get("max_nesting_level", 0)
-        total_files = stats.get("total_files_processed", 0)
-        skipped_files = stats.get("skipped_files", 0)
-
-        print(f"Directories scanned: {dirs_traversed}")
-        print(f"Maximum nesting level: {max_nesting}")
-        print(f"Total files scanned: {total_files}")
-        print(f"Files skipped: {skipped_files} (non-target or excluded)")
-
-        print("\n[OUTPUT RESULT]")
-
-        if operation_type in [OPERATION_FLATTEN, OPERATION_DEFLATTEN]:
-            files_copied = stats.get("files_copied", 0)
-            bytes_copied = stats.get("bytes_copied", 0) / 1024  # Convert to KB
-            avg_file_size = bytes_copied / max(files_copied, 1)
-
-            if operation_type == OPERATION_FLATTEN:
-                print(f"Files in flatten output: {files_copied}")
-                print(f"Data in flatten output: {bytes_copied:.2f} KB")
-                if files_copied > 0:
-                    print(f"Average file size: {avg_file_size:.2f} KB")
-            else:
-                print(f"Files in deflatten output: {files_copied}")
-                print(f"Data in deflatten output: {bytes_copied:.2f} KB")
-                print(f"Directories created: {stats.get('dirs_created', 0)}")
-                if files_copied > 0:
-                    print(f"Average file size: {avg_file_size:.2f} KB")
-
-            if files_processed > 0:
-                print(f"Processing rate: {files_per_second:.2f} files/second")
-
-        elif operation_type == OPERATION_BUNDLE:
-            files_bundled = stats.get("files_bundled", 0)
-            bytes_bundled = stats.get("bytes_bundled", 0) / 1024  # Convert to KB
-            avg_file_size = bytes_bundled / max(files_bundled, 1)
-            print(f"Files bundled: {files_bundled}")
-            print(f"Data bundled: {bytes_bundled:.2f} KB")
-
-            if files_bundled > 0:
-                print(f"Average file size: {avg_file_size:.2f} KB")
-            if files_processed > 0:
-                print(f"Processing rate: {files_per_second:.2f} files/second")
-
-        elif operation_type == OPERATION_MINIFY:
-            files_copied = stats.get("files_copied", 0)
-            files_minified = stats.get("files_minified", 0)
-
-            print(f"Files copied: {files_copied}")
-            print(f"Files minified: {files_minified}")
-
-            bytes_original = stats.get("bytes_original", 0) / 1024  # Convert to KB
-            bytes_minified = stats.get("bytes_minified", 0) / 1024  # Convert to KB
-
-            if files_copied > 0:
-                avg_orig_size = bytes_original / max(files_copied, 1)
-                avg_mini_size = bytes_minified / max(files_copied, 1)
-                print(f"Average original file size: {avg_orig_size:.2f} KB")
-                print(f"Average minified file size: {avg_mini_size:.2f} KB")
-
-            if bytes_original > 0:
-                reduction = (1 - stats.get("bytes_minified", 0) / max(stats.get("bytes_original", 1), 1)) * 100
-                print(f"Original size: {bytes_original:.2f} KB")
-                print(f"Minified size: {bytes_minified:.2f} KB")
-                print(f"Size reduction: {reduction:.2f}%")
-
-            if files_processed > 0:
-                print(f"Processing rate: {files_per_second:.2f} files/second")
-
-        elif operation_type == OPERATION_MINIFY_BUNDLE:
-            files_bundled = stats.get("files_bundled", 0)
-            bytes_bundled = stats.get("bytes_bundled", 0) / 1024  # Convert to KB
-
-            print(f"Files bundled: {files_bundled}")
-            print(f"Data bundled: {bytes_bundled:.2f} KB")
-            if files_bundled > 0:
-                avg_bundle_size = bytes_bundled / max(files_bundled, 1)
-                print(f"Average bundled file size: {avg_bundle_size:.2f} KB")
-
-            bytes_original = stats.get("original_size", 0) / 1024  # Convert to KB
-            bytes_minified = stats.get("minified_size", 0) / 1024  # Convert to KB
-
-            if bytes_original > 0:
-                reduction = (1 - stats.get("minified_size", 0) / max(stats.get("original_size", 1), 1)) * 100
-                print(f"Original size: {bytes_original:.2f} KB")
-                print(f"Minified size: {bytes_minified:.2f} KB")
-                print(f"Size reduction: {reduction:.2f}%")
-
-                if files_bundled > 0:
-                    avg_orig_size = bytes_original / max(files_bundled, 1)
-                    avg_mini_size = bytes_minified / max(files_bundled, 1)
-                    print(f"Average original file size: {avg_orig_size:.2f} KB")
-                    print(f"Average minified file size: {avg_mini_size:.2f} KB")
-
-            if files_processed > 0:
-                print(f"Processing rate: {files_per_second:.2f} files/second")
+    print("\n[OPERATION SUMMARY]")
+    print(format_stats_table(stats, operation_type, duration))
 
 
 def merge_with_defaults(user_values, defaults, ignore_defaults=False):
@@ -259,7 +160,6 @@ def minify_yaml(yaml_content, flow_style=False):
             minified = re.sub(r'^\s*#.*$', '', minified, flags=re.MULTILINE)
             minified = re.sub(r'\n\s*\n', '\n', minified)
             minified = re.sub(r'[ \t]+$', '', minified, flags=re.MULTILINE)
-
             lines = minified.split('\n')
             for i, line in enumerate(lines):
                 match = re.match(r'^(\s*\w+:\s+)["\']([\w\s\-]+)["\']$', line)

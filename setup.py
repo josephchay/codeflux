@@ -36,7 +36,7 @@ def install_node_dependencies():
 
 setup(
     name="codebundle",
-    version="0.8.0",
+    version="0.9.0",
     description="A lightweight CLI tool to flatten, deflatten, bundle, and minify codebase files.",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",

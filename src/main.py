@@ -12,6 +12,7 @@ from constants import (
 )
 from handlers import HANDLERS, FileExtHandler
 from search import Searcher
+from ui.table import get_table_formatter
 from utils import merge_with_defaults, merge_stats, create_output_dir, format_path, get_relative_path
 
 
@@ -216,8 +217,10 @@ def main():
     timestamp_dir, _ = create_output_dir("multiple")
     print(f"Source directory (absolute): {os.path.abspath(source_dir)}")
     print(f"Destination directory (absolute): {timestamp_dir}")
-    output_paths = {}
+    if not get_table_formatter()[1]:
+        print("Notice: 'tabulate' module is not available. Reverting to default output formatting.")
 
+    output_paths = {}
     exclude_dirs = merge_with_defaults(args.exclude_dirs, DEFAULT_EXCLUDE_DIRS, args.ignore_defaults)
     exclude_exts = merge_with_defaults(args.exclude_extensions, ALL_EXCLUDE_EXTENSIONS, args.ignore_defaults)
     exclude_files = merge_with_defaults(args.exclude_files, ALL_EXCLUDE_FILENAMES, args.ignore_defaults)
