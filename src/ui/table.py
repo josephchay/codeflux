@@ -1,5 +1,5 @@
 from constants import OPERATION_BUNDLE, OPERATION_MINIFY_BUNDLE, OPERATION_FLATTEN, OPERATION_DEFLATTEN, \
-    OPERATION_MINIFY
+    OPERATION_MINIFY, TABULATE_FORMAT
 
 
 def get_table_formatter():
@@ -35,7 +35,7 @@ def format_file_table(files_data, operation_type):
         table_data.append(row)
 
     if has_tabulate:
-        return tabulate_func(table_data, headers, tablefmt="grid")
+        return tabulate_func(table_data, headers, tablefmt=TABULATE_FORMAT)
     else:
         result = []
         for file_info in files_data:
@@ -156,7 +156,7 @@ def format_stats_table(stats, operation_type, duration):
         data.append(["Processing rate", f"{files_per_second:.2f} files/second"])
 
     if has_tabulate:
-        return tabulate_func(data, headers=["Statistic", "Value"], tablefmt="grid")
+        return tabulate_func(data, headers=["Statistic", "Value"], tablefmt=TABULATE_FORMAT)
     else:
         result = []
         for row in data:

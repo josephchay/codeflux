@@ -639,23 +639,13 @@ class FileExtHandler:
         return stats
 
 
-class JavaScriptTypescriptHandler(FileExtHandler):
+class PythonHandler(FileExtHandler):
     def __init__(self):
         super().__init__(
-            extensions=JSTS_EXTENSIONS,
+            extensions=PYTHON_EXTENSIONS,
             exclude_dirs=DEFAULT_EXCLUDE_DIRS,
-            exclude_extensions=JSTS_EXCLUDE_EXTENSIONS,
-            exclude_filenames=JSTS_EXCLUDE_FILENAMES
-        )
-
-
-class MarkdownTextHandler(FileExtHandler):
-    def __init__(self):
-        super().__init__(
-            extensions=MDTXT_EXTENSIONS,
-            exclude_dirs=DEFAULT_EXCLUDE_DIRS,
-            exclude_extensions=MDTXT_EXCLUDE_EXTENSIONS,
-            exclude_filenames=MDTXT_EXCLUDE_FILENAMES
+            exclude_extensions=PYTHON_EXCLUDE_EXTENSIONS,
+            exclude_filenames=PYTHON_EXCLUDE_FILENAMES
         )
 
 
@@ -669,23 +659,93 @@ class NotebookHandler(FileExtHandler):
         )
 
 
-class PythonHandler(FileExtHandler):
+class JavaScriptTypescriptHandler(FileExtHandler):
     def __init__(self):
         super().__init__(
-            extensions=PYTHON_EXTENSIONS,
+            extensions=JSTS_EXTENSIONS,
             exclude_dirs=DEFAULT_EXCLUDE_DIRS,
-            exclude_extensions=PYTHON_EXCLUDE_EXTENSIONS,
-            exclude_filenames=PYTHON_EXCLUDE_FILENAMES
+            exclude_extensions=JSTS_EXCLUDE_EXTENSIONS,
+            exclude_filenames=JSTS_EXCLUDE_FILENAMES
         )
 
 
-class YamlHandler(FileExtHandler):
+class HtmlHandler(FileExtHandler):
     def __init__(self):
         super().__init__(
-            extensions=YML_EXTENSIONS,
+            extensions=HTML_EXTENSIONS,
             exclude_dirs=DEFAULT_EXCLUDE_DIRS,
-            exclude_extensions=YML_EXCLUDE_EXTENSIONS,
-            exclude_filenames=YML_EXCLUDE_FILENAMES
+            exclude_extensions=HTML_EXCLUDE_EXTENSIONS,
+            exclude_filenames=HTML_EXCLUDE_FILENAMES
+        )
+
+
+class CssHandler(FileExtHandler):
+    def __init__(self):
+        super().__init__(
+            extensions=CSS_EXTENSIONS,
+            exclude_dirs=DEFAULT_EXCLUDE_DIRS,
+            exclude_extensions=CSS_EXCLUDE_EXTENSIONS,
+            exclude_filenames=CSS_EXCLUDE_FILENAMES
+        )
+
+
+class PhpHandler(FileExtHandler):
+    def __init__(self):
+        super().__init__(
+            extensions=PHP_EXTENSIONS,
+            exclude_dirs=DEFAULT_EXCLUDE_DIRS,
+            exclude_extensions=PHP_EXCLUDE_EXTENSIONS,
+            exclude_filenames=PHP_EXCLUDE_FILENAMES
+        )
+
+
+class RubyHandler(FileExtHandler):
+    def __init__(self):
+        super().__init__(
+            extensions=RUBY_EXTENSIONS,
+            exclude_dirs=DEFAULT_EXCLUDE_DIRS,
+            exclude_extensions=RUBY_EXCLUDE_EXTENSIONS,
+            exclude_filenames=RUBY_EXCLUDE_FILENAMES
+        )
+
+
+class SwiftHandler(FileExtHandler):
+    def __init__(self):
+        super().__init__(
+            extensions=SWIFT_EXTENSIONS,
+            exclude_dirs=DEFAULT_EXCLUDE_DIRS,
+            exclude_extensions=SWIFT_EXCLUDE_EXTENSIONS,
+            exclude_filenames=SWIFT_EXCLUDE_FILENAMES
+        )
+
+
+class KotlinHandler(FileExtHandler):
+    def __init__(self):
+        super().__init__(
+            extensions=KOTLIN_EXTENSIONS,
+            exclude_dirs=DEFAULT_EXCLUDE_DIRS,
+            exclude_extensions=KOTLIN_EXCLUDE_EXTENSIONS,
+            exclude_filenames=KOTLIN_EXCLUDE_FILENAMES
+        )
+
+
+class JavaHandler(FileExtHandler):
+    def __init__(self):
+        super().__init__(
+            extensions=JAVA_EXTENSIONS,
+            exclude_dirs=DEFAULT_EXCLUDE_DIRS,
+            exclude_extensions=JAVA_EXCLUDE_EXTENSIONS,
+            exclude_filenames=JAVA_EXCLUDE_FILENAMES
+        )
+
+
+class CSharpHandler(FileExtHandler):
+    def __init__(self):
+        super().__init__(
+            extensions=CSHARP_EXTENSIONS,
+            exclude_dirs=DEFAULT_EXCLUDE_DIRS,
+            exclude_extensions=CSHARP_EXCLUDE_EXTENSIONS,
+            exclude_filenames=CSHARP_EXCLUDE_FILENAMES
         )
 
 
@@ -696,6 +756,26 @@ class ShellHandler(FileExtHandler):
             exclude_dirs=DEFAULT_EXCLUDE_DIRS,
             exclude_extensions=SHELL_EXCLUDE_EXTENSIONS,
             exclude_filenames=SHELL_EXCLUDE_FILENAMES
+        )
+
+
+class MarkdownTextHandler(FileExtHandler):
+    def __init__(self):
+        super().__init__(
+            extensions=MDTXT_EXTENSIONS,
+            exclude_dirs=DEFAULT_EXCLUDE_DIRS,
+            exclude_extensions=MDTXT_EXCLUDE_EXTENSIONS,
+            exclude_filenames=MDTXT_EXCLUDE_FILENAMES
+        )
+
+
+class YamlHandler(FileExtHandler):
+    def __init__(self):
+        super().__init__(
+            extensions=YML_EXTENSIONS,
+            exclude_dirs=DEFAULT_EXCLUDE_DIRS,
+            exclude_extensions=YML_EXCLUDE_EXTENSIONS,
+            exclude_filenames=YML_EXCLUDE_FILENAMES
         )
 
 
@@ -729,6 +809,26 @@ class IniHandler(FileExtHandler):
         )
 
 
+class DatabaseHandler(FileExtHandler):
+    def __init__(self):
+        super().__init__(
+            extensions=DB_EXTENSIONS,
+            exclude_dirs=DEFAULT_EXCLUDE_DIRS,
+            exclude_extensions=DB_EXCLUDE_EXTENSIONS,
+            exclude_filenames=DB_EXCLUDE_FILENAMES
+        )
+
+
+class BatchHandler(FileExtHandler):
+    def __init__(self):
+        super().__init__(
+            extensions=BAT_EXTENSIONS,
+            exclude_dirs=DEFAULT_EXCLUDE_DIRS,
+            exclude_extensions=BAT_EXCLUDE_EXTENSIONS,
+            exclude_filenames=BAT_EXCLUDE_FILENAMES
+        )
+
+
 class ScpHandler(FileExtHandler):
     def __init__(self):
         super().__init__(
@@ -743,11 +843,21 @@ HANDLERS = {
     "py": PythonHandler(),
     "ipynb": NotebookHandler(),
     "jsts": JavaScriptTypescriptHandler(),
+    "html": HtmlHandler(),
+    "css": CssHandler(),
+    "php": PhpHandler(),
+    "ruby": RubyHandler(),
+    "swift": SwiftHandler(),
+    "kotlin": KotlinHandler(),
+    "java": JavaHandler(),
+    "csharp": CSharpHandler(),
+    "shell": ShellHandler(),
     "mdtxt": MarkdownTextHandler(),
     "yml": YamlHandler(),
-    "shell": ShellHandler(),
     "json": JsonHandler(),
     "go": GoHandler(),
     "ini": IniHandler(),
+    "db": DatabaseHandler(),
+    "bat": BatchHandler(),
     "scp": ScpHandler(),
 }

@@ -19,6 +19,14 @@ With robust filtering and deep code insight features, **Codebundle** transforms 
 | Python Notebooks  | `.ipynb`                                                                    |
 | JavaScript        | `.js`, `.jsx`                                                               |
 | TypeScript        | `.ts`, `.tsx`                                                               |
+| HTML              | `.html`, `.htm`, `.xhtml`, `.shtml`                                         |
+| CSS               | `.css`, `.scss`, `.sass`, `.less`                                           |
+| PHP               | `.php`, `.phtml`, `.php5`, `.php7`, `.phps`                                 |
+| Ruby              | `.rb`, `.rake`, `.gemspec`, `.erb`                                          |
+| Swift             | `.swift`                                                                    |
+| Kotlin            | `.kt`, `.kts`                                                               |
+| Java              | `.java`                                                                     |
+| C#                | `.cs`, `.cshtml`, `.csx`                                                    |
 | Shell Scripts     | `.sh`, `.bash`, `.zsh`                                                      |
 | Markdown          | `.md`, `.markdown`, `.mdown`, `.mkdn`, `.mkd`, `.mdwn`, `.mdtxt`, `.mdtext` |
 | Plain Text        | `.txt`                                                                      |

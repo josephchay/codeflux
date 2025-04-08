@@ -73,8 +73,10 @@ def main():
     parser.add_argument(
         "--file-types", "-t",
         nargs="+",
-        choices=["py", "ipynb", "jsts", "mdtxt", "yml", "shell", "json", "go", "ini", "db", "bat", "scp"],
-        default=["py", "ipynb", "jsts", "mdtxt", "yml", "shell", "json", "go", "ini", "db", "bat", "scp"],
+        choices=["py", "ipynb", "jsts", "html", "css", "php", "ruby", "swift", "kotlin", "java", "csharp", "shell",
+                 "mdtxt", "yml", "json", "go", "ini", "db", "bat", "scp"],
+        default=["py", "ipynb", "jsts", "html", "css", "php", "ruby", "swift", "kotlin", "java", "csharp", "shell",
+                 "mdtxt", "yml", "json", "go", "ini", "db", "bat", "scp"],
         help="File types to process (default: all)"
     )
 

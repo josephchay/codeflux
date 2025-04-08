@@ -16,11 +16,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `get_file_snippet` method for getting file snippets.
 - New `--snippet`, `--snippet-lines`, `--snippet-start`, `--snippet-context` arguments for snippet generation for bundling and minify-bundling operations.
 - Optional table UI output display using `tabulate` library package with `grid` as `tablefmt`.
+- `html`, `css`, `php`, `ruby`, `swift`, `kotlin`, `java`, `csharp` file extensions handling.
 
 ### Fixed
 
 - Made sure now `--exclude-files` properly handle path-based exclusion. 
 - Duplicate shorthand argument for `--search-duplicate` and `--search-date` fixed.
+- Added missing file extension handlers for `db` and `bat` files.
 
 ### Changed
 
