@@ -14,12 +14,14 @@ class PostDevelopCommand(develop):
     def run(self):
         develop.run(self)
         self.execute(install_node_dependencies, (), msg="Installing Node.js dependencies...")
+        self.execute(check_php_availability, (), msg="Checking PHP availability...")
 
 
 class PostInstallCommand(install):
     def run(self):
         install.run(self)
         self.execute(install_node_dependencies, (), msg="Installing Node.js dependencies...")
+        self.execute(check_php_availability, (), msg="Checking PHP availability...")
 
 
 def install_node_dependencies():
@@ -30,8 +32,19 @@ def install_node_dependencies():
         subprocess.check_call(['npm', 'install'], cwd=os.path.dirname(os.path.abspath(__file__)))
         print("JavaScript dependencies installed successfully!")
     except (subprocess.SubprocessError, FileNotFoundError):
-        print("Warning: npm not found. JS/TS, CSS, and HTML minification will be disabled.")
+        print("Warning: npm not found. JS/TS, CSS, HTML, and PHP minification will be disabled.")
         print("To enable minification, install Node.js and run 'npm install' in the package directory.")
+
+
+def check_php_availability():
+    try:
+        subprocess.check_call(['php', '-v'], stdout=subprocess.PIPE)
+        print("PHP detected. PHP minification is available.")
+        return True
+    except (subprocess.SubprocessError, FileNotFoundError):
+        print("Warning: PHP not found. PHP minification will be disabled.")
+        print("To enable PHP minification, install PHP and ensure it's available in your PATH.")
+        return False
 
 
 setup(
@@ -58,7 +71,7 @@ setup(
     },
     package_data={
         '': ['package.json'],
-        'src': ['scripts/jsts_minify.js', 'scripts/html_minify.js', 'scripts/css_minify.js'],
+        'src': ['scripts/jsts_minify.js', 'scripts/html_minify.js', 'scripts/css_minify.js', 'scripts/php_minify.js'],
     },
     include_package_data=True,
     classifiers=[

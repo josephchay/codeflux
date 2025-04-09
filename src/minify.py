@@ -139,6 +139,40 @@ def minify_code(source, file_extension):
             print("ERROR: HTML minification failed. Output file not created.")
             print("Operation aborted due to HTML minification error.")
             sys.exit(1)
+    elif file_extension.lower() in ['.php', '.phtml', '.php5', '.php7', '.phps']:
+        with tempfile.NamedTemporaryFile(suffix=file_extension, mode='w', delete=False) as temp_in:
+            temp_in.write(source)
+            temp_in_path = temp_in.name
+        temp_out_path = temp_in_path + '.min'
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        minify_script = os.path.join(script_dir, 'scripts', 'php_minify.js')
+        try:
+            result = subprocess.run(
+                ['node', minify_script, temp_in_path, temp_out_path],
+                capture_output=True,
+                text=True,
+                check=True
+            )
+        except subprocess.CalledProcessError as e:
+            os.unlink(temp_in_path)
+            if os.path.exists(temp_out_path):
+                os.unlink(temp_out_path)
+            print(f"ERROR: PHP minification failed with return code {e.returncode}")
+            if e.stderr:
+                print(f"Details: {e.stderr}")
+            print("Operation aborted due to PHP minification error.")
+            sys.exit(1)
+
+        os.unlink(temp_in_path)
+        if os.path.exists(temp_out_path):
+            with open(temp_out_path, 'r', encoding='utf-8') as out_file:
+                minified = out_file.read()
+            os.unlink(temp_out_path)
+            return minified
+        else:
+            print("ERROR: PHP minification failed. Output file not created.")
+            print("Operation aborted due to PHP minification error.")
+            sys.exit(1)
     elif file_extension.lower() in ['.json', '.jsonl', '.geojson', '.json5', '.ndjson']:
         try:
             parsed_json = json.loads(source)

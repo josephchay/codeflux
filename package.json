@@ -23,7 +23,9 @@
   },
   "homepage": "https://github.com/josephchay/codebundle#readme",
   "dependencies": {
+    "@cedx/php-minifier": "^11.0.0",
     "csso": "^5.0.5",
+    "gulp": "^4.0.2",
     "html-minifier": "^4.0.0",
     "terser": "^5.39.0"
   }
