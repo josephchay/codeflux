@@ -4,11 +4,10 @@ import time
 import datetime
 
 from constants import *
+from minify import minify_code
+from snipping import apply_snippet_filter
 from ui.table import format_file_table
-from utils import (
-    get_unique_filename, print_stats, should_process_file,
-    get_relative_path, minify_code, get_file_snippet
-)
+from utils import get_unique_filename, print_stats, should_process_file, get_relative_path
 
 
 class FileExtHandler:
@@ -434,8 +433,8 @@ class FileExtHandler:
 
     def bundle_files(self, source_dir, output_file, exclude_dirs=None, exclude_exts=None,
                      exclude_files=None, include_dirs=None, include_exts=None, include_files=None, silent=False,
-                     minify=False, snippet=False, snippet_lines=50, snippet_start="top", snippet_pattern=None,
-                     snippet_context=5):
+                     minify=False, snippet=False, snippet_lines=50, snippet_start="top", snippet_context=5,
+                     search_pattern=None):
         source_dir = os.path.abspath(source_dir)
         output_file = os.path.abspath(output_file)
         output_filename = os.path.basename(output_file)
@@ -451,18 +450,11 @@ class FileExtHandler:
             "skipped_files": 0,
             "max_nesting_level": 0,
             "original_size": 0,
-            "minified_size": 0
+            "minified_size": 0,
+            "files_with_snippets": 0,
         }
-
         files_info = []  # For table output
-
         start_time = time.time()
-        if not silent:
-            if snippet:
-                print(f"Snippet mode: Enabled (max {snippet_lines} lines, from {snippet_start})")
-                if snippet_pattern:
-                    print(f"Pattern focus: '{snippet_pattern}' with {snippet_context} context lines")
-                print("")
 
         # Gather files to bundle
         files_to_bundle = []
@@ -548,106 +540,117 @@ class FileExtHandler:
         with open(output_file, 'w', encoding='utf-8') as outfile:
             outfile.write(f"# {os.path.basename(source_dir)} ({len(files_to_bundle)} files)\n")
             outfile.write(f"# Created: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-            if minify:
-                outfile.write(f"# Minification: Enabled (Using \"python-minifier\" for Python files; \"terser\" for JS/TS files; \"html-minifier\" for HTML files)\n")
             if snippet:
-                outfile.write(f"# Snippet mode: Enabled (max {snippet_lines} lines per file, from {snippet_start})\n")
-            outfile.write("\n")
+                outfile.write(f"# Snippet mode: {snippet_start.capitalize()} {snippet_lines} lines")
+                if search_pattern:
+                    outfile.write(f" with {snippet_context} context lines around '{search_pattern}'")
+                outfile.write("\n")
+
+            if minify:
+                outfile.write(f"# Minification: Enabled {MINIFICATION_DESCRIPTION}\n")
 
             for ext, group_files in extension_groups.items():
                 if group_files:
                     outfile.write(f"## {ext.upper() or 'UNKNOWN'} FILES ({len(group_files)})\n\n")
-                for file_info in group_files:
-                    file_path = file_info['file_path']
-                    formatted_path = file_info['formatted_path']
-                    file_extension = '.' + file_info['full_extension'] if file_info['full_extension'] else ''
+                    for file_info in group_files:
+                        file_path = file_info['file_path']
+                        formatted_path = file_info['formatted_path']
+                        file_extension = '.' + file_info['full_extension'] if file_info['full_extension'] else ''
 
-                    try:
-                        with open(file_path, 'r', encoding='utf-8') as infile:
-                            content = infile.read()
-                            original_content_size = len(content)
+                        try:
+                            with open(file_path, 'r', encoding='utf-8') as infile:
+                                content = infile.read()
+                                original_content_size = len(content)
 
-                        if not content.strip():
+                            if not content.strip():
+                                if not silent:
+                                    file_info = {
+                                        "file": formatted_path,
+                                        "size": 0,
+                                        "status": "Skipped (empty file)"
+                                    }
+                                    files_info.append(file_info)
+                                stats["skipped_files"] += 1
+                                continue
+
+                            is_truncated = False
+                            original_lines = 0
+                            filtered_lines = 0
+
+                            if snippet:
+                                try:
+                                    content, filtered_lines, original_lines = apply_snippet_filter(content, snippet,
+                                                                                                   snippet_lines, snippet_start,
+                                                                                                   snippet_context, search_pattern)
+                                    is_truncated = filtered_lines < original_lines
+                                    if is_truncated:
+                                        stats["files_with_snippets"] += 1
+                                except Exception as e:
+                                    if not silent:
+                                        print(f"Warning: Failed to apply snippet filter to {formatted_path}: {str(e)}")
+                                    pass
+                            else:
+                                content_lines = content.splitlines()
+                                original_lines = len(content_lines)
+                                filtered_lines = original_lines
+
+                            if minify:
+                                original_content_bytes = len(content.encode('utf-8'))
+                                stats["original_size"] += original_content_bytes
+                                minified_content = minify_code(content, file_extension)
+                                minified_content_bytes = len(minified_content.encode('utf-8'))
+                                stats["minified_size"] += minified_content_bytes
+                                content = minified_content
+                            else:
+                                stats["minified_size"] = 0  # Not using minification
+
+                            if is_truncated:
+                                outfile.write(f"`{formatted_path}` (snippet: {filtered_lines}/{original_lines} lines) [{filtered_lines}/{original_lines}]\n```\n")
+                            else:
+                                outfile.write(f"`{formatted_path}` [{filtered_lines}/{original_lines}]\n```\n")
+                            outfile.write(content.rstrip())
+                            outfile.write(f"\n[extracted snippet lines: {filtered_lines}/{original_lines}]")
+                            outfile.write("\n```\n\n")
+                            stats["files_bundled"] += 1
+                            stats["bytes_bundled"] += len(content)
+
+                            if not silent:
+                                status = "Bundled"
+                                if is_truncated:
+                                    status = f"Bundled (snippet: {filtered_lines}/{original_lines} lines)"
+                                file_info = {"file": formatted_path, "size": len(content), "status": status}
+                                if minify:
+                                    reduction = (1 - len(content) / max(original_content_size, 1)) * 100
+                                    file_info["original_size"] = original_content_size
+                                    file_info["reduction"] = reduction
+
+                                files_info.append(file_info)
+                        except UnicodeDecodeError:
                             if not silent:
                                 file_info = {
                                     "file": formatted_path,
-                                    "size": 0,
-                                    "status": "Skipped (empty file)"
+                                    "size": os.path.getsize(file_path),
+                                    "status": "Skipped (binary file)"
                                 }
                                 files_info.append(file_info)
                             stats["skipped_files"] += 1
-                            continue
+                        except Exception as e:
+                            error_msg = f"Error bundling {formatted_path}: {str(e)}"
+                            print(error_msg)
+                            raise RuntimeError(error_msg)
 
-                        is_truncated = False
-                        original_lines = 0
-                        minified_content = None
+            if not silent and files_info:
+                print("[FILES PROCESSED]")
+                file_table = format_file_table(files_info, OPERATION_BUNDLE if not minify else OPERATION_MINIFY_BUNDLE)
+                print(file_table)
 
-                        if minify:
-                            original_content_bytes = len(content.encode('utf-8'))
-                            stats["original_size"] += original_content_bytes
-                            minified_content = minify_code(content, file_extension)
-                            minified_content_bytes = len(minified_content.encode('utf-8'))
-                            stats["minified_size"] += minified_content_bytes
-                            content = minified_content
-                        else:
-                            stats["minified_size"] = 0  # Not using minification
+            end_time = time.time()
+            duration = end_time - start_time
 
-                        if snippet:
-                            content, is_truncated, original_lines = get_file_snippet(content, max_lines=snippet_lines,
-                                                                                     position=snippet_start, pattern=snippet_pattern,
-                                                                                     context_lines=snippet_context)
-                        if is_truncated:
-                            outfile.write(f"`{formatted_path}` (snippet of {original_lines} lines)\n```\n")
-                        else:
-                            outfile.write(f"`{formatted_path}`\n```\n")
-                        outfile.write(content.rstrip())
-                        outfile.write("\n```\n\n")
-                        stats["files_bundled"] += 1
-                        stats["bytes_bundled"] += len(content)
+            if not silent:
+                print_stats(stats, OPERATION_BUNDLE if not minify else OPERATION_MINIFY_BUNDLE, duration)
 
-                        if not silent:
-                            file_info = {
-                                "file": formatted_path,
-                                "size": len(content)
-                            }
-
-                            if is_truncated:
-                                file_info["status"] = f"Bundled (Snippet of {original_lines} lines)"
-                            else:
-                                file_info["status"] = "Bundled"
-
-                            if minify:
-                                reduction = (1 - len(content) / max(original_content_size, 1)) * 100
-                                file_info["original_size"] = original_content_size
-                                file_info["reduction"] = reduction
-
-                            files_info.append(file_info)
-                    except UnicodeDecodeError:
-                        if not silent:
-                            file_info = {
-                                "file": formatted_path,
-                                "size": os.path.getsize(file_path),
-                                "status": "Skipped (binary file)"
-                            }
-                            files_info.append(file_info)
-                        stats["skipped_files"] += 1
-                    except Exception as e:
-                        error_msg = f"Error bundling {formatted_path}: {str(e)}"
-                        print(error_msg)
-                        raise RuntimeError(error_msg)
-
-        if not silent and files_info:
-            print("[FILES PROCESSED]")
-            file_table = format_file_table(files_info, OPERATION_BUNDLE if not minify else OPERATION_MINIFY_BUNDLE)
-            print(file_table)
-
-        end_time = time.time()
-        duration = end_time - start_time
-
-        if not silent:
-            print_stats(stats, OPERATION_BUNDLE if not minify else OPERATION_MINIFY_BUNDLE, duration)
-
-        return stats
+            return stats
 
 
 class PythonHandler(FileExtHandler):

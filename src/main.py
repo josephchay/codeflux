@@ -13,7 +13,7 @@ from constants import (
 from handlers import HANDLERS, FileExtHandler
 from search import Searcher
 from ui.table import get_table_formatter
-from utils import merge_with_defaults, merge_stats, create_output_dir, format_path, get_relative_path
+from utils import merge_with_defaults, merge_stats, mkdir_output, format_path, get_relative_path
 
 
 def main():
@@ -201,8 +201,8 @@ def main():
         print(f"Error: Source directory '{source_dir}' does not exist or is not a directory")
         return 1
 
-    base_dir, _ = create_output_dir()
-    timestamp_dir, _ = create_output_dir("multiple")
+    base_dir, _ = mkdir_output()
+    timestamp_dir, _ = mkdir_output("multiple")
 
     if not args.no_log:
         # print(f"Base output directory: {base_dir}")
@@ -380,8 +380,8 @@ def main():
                         source_dir, bundle_dest, exclude_dirs, exclude_exts, exclude_files,
                         args.include_dirs, args.include_extensions, args.include_files,
                         args.no_log, operation == OPERATION_MINIFY_BUNDLE,
-                        snippet=args.snippet, snippet_lines=args.snippet_lines, snippet_start=args.snippet_start,
-                        snippet_pattern=args.search_pattern if args.search_pattern else None, snippet_context=args.snippet_context
+                        args.snippet, args.snippet_lines, args.snippet_start, args.snippet_context,
+                        args.search_pattern if hasattr(args, 'search_pattern') else None
                     )
                     handler_results.append(stats)
 
@@ -522,18 +522,22 @@ def main():
                 if not args.no_log:
                     print("::::::::::::::::::::::::::::::::::::::::")
 
-        summary_path = os.path.join(timestamp_dir, "operations_summary.txt")
+        summary_path = os.path.join(timestamp_dir, "summary.txt")
         with open(summary_path, 'w') as summary_file:
             summary_file.write(f"# Codebundle Operations Summary\n")
             summary_file.write(f"# Timestamp: {os.path.basename(timestamp_dir)}\n")
             summary_file.write(f"# Source: {os.path.abspath(source_dir)}\n")
-            summary_file.write(f"# Created: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
+            summary_file.write(f"# Destination: {os.path.abspath(timestamp_dir)}\n")
+
+            local_timezone = datetime.datetime.now().astimezone().tzinfo
+            summary_file.write(f"# Created: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')} [{local_timezone}]\n\n")
 
             for op in operations:
                 if op in output_paths:
                     dest_path = output_paths[op]
+                    rel_dest_path = get_relative_path(dest_path, timestamp_dir)
                     summary_file.write(f"## {op.upper()}\n")
-                    summary_file.write(f"Destination: {format_path(dest_path)}\n\n")
+                    summary_file.write(f"Destination: {rel_dest_path}\n\n")
 
         if not args.no_log:
             print(f"\nSummary of operations written to {get_relative_path(summary_path)}")

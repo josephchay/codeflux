@@ -95,6 +95,13 @@ def format_stats_table(stats, operation_type, duration):
             ["Data bundled", f"{bytes_bundled:.2f} KB"],
         ])
 
+        if "files_with_snippets" in stats and stats["files_with_snippets"] > 0:
+            data.append(["Files with snippets applied", stats["files_with_snippets"]])
+            total_files = stats.get("files_bundled", 0)
+            if total_files > 0:
+                snippet_percentage = (stats["files_with_snippets"] / total_files) * 100
+                data.append(["Percentage of files with snippets", f"{snippet_percentage:.1f}%"])
+
         if files_bundled > 0:
             data.append(["Average file size", f"{avg_file_size:.2f} KB"])
 
@@ -133,6 +140,13 @@ def format_stats_table(stats, operation_type, duration):
             ["Files bundled", files_bundled],
             ["Data bundled", f"{bytes_bundled:.2f} KB"],
         ])
+
+        if "files_with_snippets" in stats and stats["files_with_snippets"] > 0:
+            data.append(["Files with snippets applied", stats["files_with_snippets"]])
+            total_files = stats.get("files_bundled", 0)
+            if total_files > 0:
+                snippet_percentage = (stats["files_with_snippets"] / total_files) * 100
+                data.append(["Percentage of files with snippets", f"{snippet_percentage:.1f}%"])
 
         if bytes_original > 0:
             reduction = (1 - stats.get("minified_size", 0) / max(stats.get("original_size", 1), 1)) * 100

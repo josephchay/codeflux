@@ -28,12 +28,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Prevented multiple exact printing of Destination and minification information for each file type.
 - Processing for files passed using argument `--include-files` or `-if` now works as expected.
 - Information for original size and reduction size now being calculated and displayed for all file types.
+- New `snipping.py` file for handling snippet functionality.
 
 ### Changed
 
 - Updated `bundle_files` method to include snippet generation feature.
 - Updated `print_stats` method in the `src/utils.py` file to include the new `tabulate` table UI functionality. 
 - `minify_code` method to not return any default `source` value, and when encountering an error, it will print it and exit.
+- Renamed method `create_output_dir` to `mkdir_output`.
+- Moved minification (non-script) codes to `minify.py`. 
 
 ## [0.8.0] - 2025-04-07
 
