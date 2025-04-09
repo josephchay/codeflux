@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `html`, `css`, `php`, `ruby`, `swift`, `kotlin`, `java`, `csharp` file extensions handling.
 - HTML minifier using the JS-based library package `html-minifier`.
 - Use of `python-minifier` minification for python codes in `.ipynb` files.
+- New minifier for CSS related files with package `csso`.
 
 ### Fixed
 

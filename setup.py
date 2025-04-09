@@ -30,7 +30,7 @@ def install_node_dependencies():
         subprocess.check_call(['npm', 'install'], cwd=os.path.dirname(os.path.abspath(__file__)))
         print("JavaScript dependencies installed successfully!")
     except (subprocess.SubprocessError, FileNotFoundError):
-        print("Warning: npm not found. JS/TS and HTML minification will be disabled.")
+        print("Warning: npm not found. JS/TS, CSS, and HTML minification will be disabled.")
         print("To enable minification, install Node.js and run 'npm install' in the package directory.")
 
 
@@ -58,7 +58,7 @@ setup(
     },
     package_data={
         '': ['package.json'],
-        'src': ['scripts/jsts_minify.js'],
+        'src': ['scripts/jsts_minify.js', 'scripts/html_minify.js', 'scripts/css_minify.js'],
     },
     include_package_data=True,
     classifiers=[

@@ -605,11 +605,10 @@ class FileExtHandler:
                                 stats["minified_size"] = 0  # Not using minification
 
                             if is_truncated:
-                                outfile.write(f"`{formatted_path}` (snippet: {filtered_lines}/{original_lines} lines) [{filtered_lines}/{original_lines}]\n```\n")
+                                outfile.write(f"`{formatted_path}` [Extracted snippet lines: {filtered_lines}/{original_lines}]\n```\n")
                             else:
-                                outfile.write(f"`{formatted_path}` [{filtered_lines}/{original_lines}]\n```\n")
+                                outfile.write(f"`{formatted_path}` [total lines: {filtered_lines}]\n```\n")
                             outfile.write(content.rstrip())
-                            outfile.write(f"\n[extracted snippet lines: {filtered_lines}/{original_lines}]")
                             outfile.write("\n```\n\n")
                             stats["files_bundled"] += 1
                             stats["bytes_bundled"] += len(content)

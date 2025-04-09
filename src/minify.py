@@ -71,6 +71,40 @@ def minify_code(source, file_extension):
             print("ERROR: JS/TS minification failed. Output file not created.")
             print("Operation aborted due to JS/TS minification error.")
             sys.exit(1)
+    elif file_extension.lower() in ['.css', '.scss', '.sass', '.less']:
+        with tempfile.NamedTemporaryFile(suffix=file_extension, mode='w', encoding='utf-8', delete=False) as temp_in:
+            temp_in.write(source)
+            temp_in_path = temp_in.name
+        temp_out_path = temp_in_path + '.min'
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        minify_script = os.path.join(script_dir, 'scripts', 'css_minify.js')
+        try:
+            result = subprocess.run(
+                ['node', minify_script, temp_in_path, temp_out_path],
+                capture_output=True,
+                text=True,
+                check=True
+            )
+        except subprocess.CalledProcessError as e:
+            os.unlink(temp_in_path)
+            if os.path.exists(temp_out_path):
+                os.unlink(temp_out_path)
+            print(f"ERROR: CSS minification failed with return code {e.returncode}")
+            if e.stderr:
+                print(f"Details: {e.stderr}")
+            print("Operation aborted due to CSS minification error.")
+            sys.exit(1)
+
+        os.unlink(temp_in_path)
+        if os.path.exists(temp_out_path):
+            with open(temp_out_path, 'r', encoding='utf-8') as out_file:
+                minified = out_file.read()
+            os.unlink(temp_out_path)
+            return minified
+        else:
+            print("ERROR: CSS minification failed. Output file not created.")
+            print("Operation aborted due to CSS minification error.")
+            sys.exit(1)
     elif file_extension.lower() in ['.html', '.htm', '.xhtml', '.shtml']:
         with tempfile.NamedTemporaryFile(suffix=file_extension, mode='w', delete=False) as temp_in:
             temp_in.write(source)

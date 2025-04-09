@@ -46,12 +46,9 @@ def format_path(path):
 
 
 def print_stats(stats, operation_type, duration, show_full=True):
-    if not show_full:
-        print(f"\nTime taken: {duration:.6f} seconds")
-        return
-
-    print("\n[OPERATION SUMMARY]")
-    print(format_stats_table(stats, operation_type, duration))
+    if show_full:
+        print("\n[OPERATION SUMMARY]")
+        print(format_stats_table(stats, operation_type, duration))
 
 
 def merge_with_defaults(user_values, defaults, ignore_defaults=False):

@@ -57,7 +57,7 @@ def format_file_table(files_data, operation_type):
 def format_stats_table(stats, operation_type, duration):
     tabulate_func, has_tabulate = get_table_formatter()
     data = [
-        ["Time taken", f"{duration:.2f} seconds"],
+        ["Time taken", f"{duration:.6f} seconds"],
         ["Directories scanned", stats.get("dirs_traversed", 0)],
         ["Maximum nesting level", stats.get("max_nesting_level", 0)],
         ["Total files scanned", stats.get("total_files_processed", 0)],
