@@ -45,7 +45,7 @@ _More extensions to be added in the future._
 ## Installation
 
 > [!WARNING]
-> Uninstall the package (If you have already installed a previous version of the package):
+> Uninstall the package (If you have already installed a previous version of the package)
 
 ### Python Projects
 
