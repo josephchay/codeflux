@@ -9,41 +9,6 @@ import yaml
 from ruamel.yaml import YAML
 
 
-def minify_yaml(yaml_content, flow_style=False):
-    try:
-        yaml_parser = YAML(typ='safe')
-        data = yaml_parser.load(yaml_content)
-
-        if flow_style:
-            minified = yaml.dump(data, default_flow_style=True, width=float('inf'), allow_unicode=True, sort_keys=False)
-            minified = minified.strip()
-            minified = re.sub(r',\s+', ', ', minified)
-            minified = re.sub(r':\s+', ': ', minified)
-            minified = re.sub(r'\s+}', '}', minified)
-            minified = re.sub(r'{\s+', '{', minified)
-            if minified.endswith('\n'):
-                minified = minified[:-1]
-
-        else:
-            minified = yaml.dump(data, default_flow_style=False, indent=2, width=float('inf'), allow_unicode=True, sort_keys=False)
-            minified = re.sub(r'^\s*#.*$', '', minified, flags=re.MULTILINE)
-            minified = re.sub(r'\n\s*\n', '\n', minified)
-            minified = re.sub(r'[ \t]+$', '', minified, flags=re.MULTILINE)
-            lines = minified.split('\n')
-            for i, line in enumerate(lines):
-                match = re.match(r'^(\s*\w+:\s+)["\']([\w\s\-]+)["\']$', line)
-                if match:
-                    prefix, value = match.groups()
-                    if not (value.lower() in ('yes', 'no', 'true', 'false', 'null', 'on', 'off') or re.search(r'^\d', value) or re.search(r'[:#{}[\],&*!|>\'"%@`]', value)):
-                        lines[i] = f"{prefix}{value}"
-            minified = '\n'.join(lines)
-
-        return minified.strip()
-    except Exception as e:
-        print(f"Warning: YAML minification failed: {str(e)}")
-        return yaml_content
-
-
 def minify_code(source, file_extension):
     if not source:
         return source
@@ -145,7 +110,39 @@ def minify_code(source, file_extension):
             parsed_json = json.loads(source)
             return json.dumps(parsed_json, separators=(',', ':'))
         except json.JSONDecodeError:
-            print("WARNING: Invalid JSON content. File will not be minified.\n")
-            return source
+            print("ERROR: Invalid JSON content. File will not be minified.\n")
+            sys.exit(1)
     elif file_extension.lower() in ['.yaml', '.yml']:
-        return minify_yaml(source, flow_style=True)
+        try:
+            yaml_parser = YAML(typ='safe')
+            data = yaml_parser.load(source)
+            flow_style = True
+
+            if flow_style:
+                minified = yaml.dump(data, default_flow_style=True, width=float('inf'), allow_unicode=True, sort_keys=False)
+                minified = minified.strip()
+                minified = re.sub(r',\s+', ', ', minified)
+                minified = re.sub(r':\s+', ': ', minified)
+                minified = re.sub(r'\s+}', '}', minified)
+                minified = re.sub(r'{\s+', '{', minified)
+                if minified.endswith('\n'):
+                    minified = minified[:-1]
+            else:
+                minified = yaml.dump(data, default_flow_style=False, indent=2, width=float('inf'), allow_unicode=True, sort_keys=False)
+                minified = re.sub(r'^\s*#.*$', '', minified, flags=re.MULTILINE)
+                minified = re.sub(r'\n\s*\n', '\n', minified)
+                minified = re.sub(r'[ \t]+$', '', minified, flags=re.MULTILINE)
+                lines = minified.split('\n')
+                for i, line in enumerate(lines):
+                    match = re.match(r'^(\s*\w+:\s+)["\']([\w\s\-]+)["\']$', line)
+                    if match:
+                        prefix, value = match.groups()
+                        if not (value.lower() in ('yes', 'no', 'true', 'false', 'null', 'on', 'off') or
+                                re.search(r'^\d', value) or re.search(r'[:#{}[\],&*!|>\'"%@`]', value)):
+                            lines[i] = f"{prefix}{value}"
+                minified = '\n'.join(lines)
+
+            return minified.strip()
+        except Exception as e:
+            print(f"ERROR: YAML minification failed: {str(e)}")
+            sys.exit(1)

@@ -547,7 +547,7 @@ class FileExtHandler:
                 outfile.write("\n")
 
             if minify:
-                outfile.write(f"# Minification: Enabled {MINIFICATION_DESCRIPTION}\n")
+                outfile.write(f"# Minification: Enabled ({MINIFICATION_DESCRIPTION})\n")
 
             for ext, group_files in extension_groups.items():
                 if group_files:

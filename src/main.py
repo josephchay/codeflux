@@ -8,7 +8,7 @@ from constants import (
     DEFAULT_FLATTEN_OUTPUT_PATH, DEFAULT_DEFLATTEN_OUTPUT_PATH, DEFAULT_BUNDLE_OUTPUT_PATH,
     DEFAULT_MINIFY_OUTPUT_PATH, DEFAULT_MINIFY_BUNDLE_OUTPUT_PATH,
     OPERATION_FLATTEN, OPERATION_DEFLATTEN, OPERATION_BUNDLE, OPERATION_MINIFY, OPERATION_MINIFY_BUNDLE,
-    OPERATION_SEARCH
+    OPERATION_SEARCH, MINIFICATION_DESCRIPTION
 )
 from handlers import HANDLERS, FileExtHandler
 from search import Searcher
@@ -244,7 +244,7 @@ def main():
 
                 if not args.no_log:
                     print("\n\n:::::::::: EXECUTING FLATTEN ::::::::::")
-                    print(f"Destination: {get_relative_path(flatten_dest)}")
+                    print(f"Destination: {get_relative_path(flatten_dest)}\n")
 
                 for file_type in args.file_types:
                     if file_type in HANDLERS:
@@ -295,7 +295,7 @@ def main():
 
                 if not args.no_log:
                     print("\n\n:::::::::: EXECUTING DEFLATTEN ::::::::::")
-                    print(f"Destination: {get_relative_path(deflatten_dest)}")
+                    print(f"Destination: {get_relative_path(deflatten_dest)}\n")
 
                 # Check if there are any files to process
                 has_files_to_process = False
@@ -362,11 +362,11 @@ def main():
                 if not args.no_log:
                     if operation == OPERATION_BUNDLE:
                         print("\n\n:::::::::: EXECUTING BUNDLE ::::::::::")
-                        print(f"Destination: {get_relative_path(bundle_dest)}")
+                        print(f"Destination: {get_relative_path(bundle_dest)}\n")
                     else:
                         print("\n\n:::::::::: EXECUTING MINIFY-BUNDLE ::::::::::")
                         print(f"Destination: {get_relative_path(minify_dest)}")
-                        print(f"Minification: Using \"python-minifier\" for Python files; \"terser\" for JS/TS files; \"html-minifier\" for HTML files\n")
+                        print(f"Minification: {MINIFICATION_DESCRIPTION}\n")
 
                 # Create a combined bundle of all file types
                 if args.file_types and HANDLERS:
@@ -397,7 +397,7 @@ def main():
                 if not args.no_log:
                     print("\n\n:::::::::: EXECUTING MINIFY ::::::::::")
                     print(f"Destination: {get_relative_path(minify_dest)}")
-                    print(f"Minification: Using \"python-minifier\" for Python files; \"terser\" for JS/TS files; \"html-minifier\" for HTML files\n")
+                    print(f"Minification: ({MINIFICATION_DESCRIPTION})\n")
 
                 processed_files = set()
                 file_type_map = {}
