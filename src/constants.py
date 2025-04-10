@@ -129,4 +129,4 @@ OPERATION_MINIFY_BUNDLE = "minify_bundle"
 OPERATION_SEARCH = "search"
 
 TABULATE_FORMAT = "grid"
-MINIFICATION_DESCRIPTION = "Using \"python-minifier\" for Python files; \"terser\" for JS/TS files; \"html-minifier\" for HTML files; \"csso\" for CSS files; \"php-minifier\" for PHP files"
+MINIFICATION_DESCRIPTION = "python-minifier (Python); terser (JS/TS); html-minifier (HTML); csso (CSS); php-minifier (PHP)"

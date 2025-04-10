@@ -21,6 +21,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Use of `python-minifier` minification for python codes in `.ipynb` files.
 - New minifier for CSS related files with package `csso`.
 - New minifier for PHP related files with package `php-minify`.
+- `Pre-requisites` section in `README.md` for required dependencies and versions.
+- `--continue-on-error` argument to continue the process even if an error occurs for a file or a part of it.
+- `--no-filetypes-dir` argument to disable file extension types subdirectories in the `flattened` output directory.
 
 ### Fixed
 
@@ -39,6 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `minify_code` method to not return any default `source` value, and when encountering an error, it will print it and exit.
 - Renamed method `create_output_dir` to `mkdir_output`.
 - Moved minification (non-script) codes to `minify.py`. 
+- console printing output display more accurate.
 
 ## [0.8.0] - 2025-04-07
 

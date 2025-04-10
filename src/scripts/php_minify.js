@@ -2,12 +2,10 @@
 
 const fs = require('fs');
 const path = require('path');
-const { spawn } = require('child_process');
-const { Writable } = require('stream');
-const { pipeline } = require('stream/promises');
-const gulp = require('gulp');
-const { phpMinify } = require('@cedx/php-minifier');
+const { Readable, Writable } = require('stream');
+const { promisify } = require('util');
 
+// Get command line arguments
 const inputFile = process.argv[2];
 const outputFile = process.argv[3];
 
@@ -16,118 +14,111 @@ if (!inputFile || !outputFile) {
   process.exit(1);
 }
 
-// Create a custom writable stream to collect the minified content
-class ContentCollector extends Writable {
-  constructor(options = {}) {
-    super(options);
-    this.content = Buffer.from('');
-  }
+// Ensure @cedx/php-minifier is installed
+try {
+  const { phpMinify } = require('@cedx/php-minifier');
 
-  _write(chunk, encoding, callback) {
-    this.content = Buffer.concat([this.content, chunk]);
-    callback();
-  }
+  // Custom stream to handle the minification process
+  class InputFileStream extends Readable {
+    constructor(filePath) {
+      super({ objectMode: true });
+      this.filePath = filePath;
+      this.pushed = false;
+    }
 
-  getContent() {
-    return this.content.toString('utf8');
-  }
-}
-
-// Check if PHP is available
-async function checkPhpAvailability() {
-  return new Promise((resolve) => {
-    const phpProcess = spawn('php', ['-v']);
-
-    phpProcess.on('error', () => {
-      console.error('Error: PHP is not available on your system path.');
-      console.error('Please ensure PHP is installed and available in your PATH environment variable.');
-      process.exit(1);
-    });
-
-    phpProcess.on('close', (code) => {
-      if (code === 0) {
-        resolve(true);
-      } else {
-        console.error('Error: PHP is installed but returned an error code.');
-        process.exit(1);
+    _read() {
+      if (this.pushed) {
+        this.push(null);
+        return;
       }
-    });
-  });
-}
 
-// Create a temporary directory for gulp operations
-async function createTempDir() {
-  const tempDir = path.join(os.tmpdir(), 'codebundle-php-minify-' + Date.now());
-  const inputDir = path.join(tempDir, 'input');
-  const outputDir = path.join(tempDir, 'output');
+      // Create a file object that the phpMinify function expects
+      const file = {
+        path: this.filePath,
+        relative: path.basename(this.filePath),
+        contents: null
+      };
 
-  fs.mkdirSync(inputDir, { recursive: true });
-  fs.mkdirSync(outputDir, { recursive: true });
+      this.push(file);
+      this.pushed = true;
+    }
+  }
 
-  return { tempDir, inputDir, outputDir };
-}
+  class OutputFileStream extends Writable {
+    constructor(outputPath) {
+      super({ objectMode: true });
+      this.outputPath = outputPath;
+    }
 
-async function minifyPhp() {
-  try {
-    await checkPhpAvailability();
+    _write(file, encoding, callback) {
+      // Ensure the output directory exists
+      const outputDir = path.dirname(this.outputPath);
+      if (!fs.existsSync(outputDir)) {
+        fs.mkdirSync(outputDir, { recursive: true });
+      }
 
-    if (!fs.existsSync(inputFile)) {
-      console.error(`Error: Input file does not exist: ${inputFile}`);
+      // Write the minified content to the output file
+      fs.writeFile(this.outputPath, file.contents, callback);
+    }
+  }
+
+  // Start the minification process
+  async function minifyPhpFile() {
+    try {
+      // Check if input file exists
+      if (!fs.existsSync(inputFile)) {
+        throw new Error(`Input file does not exist: ${inputFile}`);
+      }
+
+      // Get the original content and size for comparison
+      const originalContent = fs.readFileSync(inputFile, 'utf8');
+      const originalSize = originalContent.length;
+
+      // Create the streams
+      const inputStream = new InputFileStream(inputFile);
+      const outputStream = new OutputFileStream(outputFile);
+
+      // Set up the pipeline
+      const stream = inputStream
+        .pipe(phpMinify({
+          binary: 'php',   // Use the default PHP binary
+          mode: 'safe',    // Use the reliable mode
+          silent: true     // Don't print to console
+        }))
+        .pipe(outputStream);
+
+      // Use promisify to handle the stream completion
+      const streamEnd = promisify(callback => {
+        stream.on('end', () => callback(null));
+        stream.on('error', err => callback(err));
+      });
+
+      // Wait for the stream to complete
+      await streamEnd();
+
+      // Get the minified content and calculate the reduction
+      const minifiedContent = fs.readFileSync(outputFile, 'utf8');
+      const minifiedSize = minifiedContent.length;
+      const reduction = ((originalSize - minifiedSize) / originalSize * 100).toFixed(2);
+
+      console.log(`Successfully minified: ${path.basename(inputFile)} -> ${path.basename(outputFile)}`);
+      console.log(`Size reduction: ${originalSize} → ${minifiedSize} bytes (${reduction}%)`);
+
+      process.exit(0);
+    } catch (error) {
+      console.error(`Error during PHP minification: ${error.message}`);
+      if (error.stack) {
+        console.error(error.stack);
+      }
       process.exit(1);
     }
-
-    // Create a temporary file for processing
-    const tempInputFile = path.join(os.tmpdir(), `php-minify-input-${Date.now()}.php`);
-    const tempOutputFile = path.join(os.tmpdir(), `php-minify-output-${Date.now()}.php`);
-
-    // Copy the input file to the temporary file
-    fs.copyFileSync(inputFile, tempInputFile);
-
-    // Create a custom gulp task
-    const minifyTask = () => {
-      return gulp.src(tempInputFile, { read: false })
-        .pipe(phpMinify({
-          mode: "safe", // Use safe mode by default
-          silent: true
-        }))
-        .pipe(gulp.dest(path.dirname(tempOutputFile)));
-    };
-
-    // Run the task
-    await minifyTask();
-
-    // Read the output and save it to the destination
-    const minifiedContent = fs.readFileSync(tempOutputFile, 'utf8');
-    fs.writeFileSync(outputFile, minifiedContent, 'utf8');
-
-    // Clean up temporary files
-    try {
-      fs.unlinkSync(tempInputFile);
-      fs.unlinkSync(tempOutputFile);
-    } catch (err) {
-      // Ignore errors during cleanup
-    }
-
-    // Calculate size reduction
-    const originalSize = fs.statSync(inputFile).size;
-    const minifiedSize = fs.statSync(outputFile).size;
-    const reduction = ((originalSize - minifiedSize) / originalSize * 100).toFixed(2);
-
-    console.log(`Successfully minified: ${path.basename(inputFile)} -> ${path.basename(outputFile)}`);
-    console.log(`Size reduction: ${originalSize} → ${minifiedSize} bytes (${reduction}%)`);
-
-    process.exit(0);
-  } catch (error) {
-    console.error(`Error during PHP minification: ${error.message}`);
-    if (error.stack) {
-      console.error(error.stack);
-    }
-    process.exit(1);
   }
+
+  // Run the minification
+  minifyPhpFile();
+
+} catch (error) {
+  console.error(`Required package not found: @cedx/php-minifier`);
+  console.error(`Please install it using: npm install @cedx/php-minifier`);
+  process.exit(1);
 }
-
-// Import os module at the top
-const os = require('os');
-
-// Run the minification
-minifyPhp();

@@ -17,23 +17,55 @@ def get_unique_filename(destination_file):
     return unique_destination_file
 
 
-def get_relative_path(path, base_path=None):
+def get_relative_path(path, base_path=None, output_base=None):
+    # Default to current directory if no base_path provided
     base_path = base_path or os.getcwd()
+
+    # Ensure consistent format with forward slashes
+    clean_path = path.replace('\\', '/')
+
     try:
-        rel_path = os.path.relpath(path, base_path)
+        # Ensure paths are absolute for proper comparison
+        abs_path = os.path.abspath(path)
+        abs_base = os.path.abspath(base_path)
 
-        # Special handling for codebundle timestamp directories
-        timestamp_match = re.search(r'codebundle[/\\]\d{8}_\d{6}', path)
-        if timestamp_match:
-            # Extract the part after the timestamp directory
-            timestamp_dir = timestamp_match.group(0)
-            timestamp_index = path.find(timestamp_dir) + len(timestamp_dir)
-            if timestamp_index < len(path):
-                return path[timestamp_index + 1:].replace('\\', '/')
+        # Try to strip out codebundle timestamp patterns first (highest priority)
+        match = re.search(r'(codebundle[/\\]\d{8}_\d{6}[/\\])', abs_path)
+        if match:
+            # Remove the matched pattern and return the rest
+            timestamp_dir = match.group(0)
+            timestamp_index = abs_path.find(timestamp_dir) + len(timestamp_dir)
+            if timestamp_index < len(abs_path):
+                return abs_path[timestamp_index:].replace('\\', '/')
+            else:
+                # If the pattern is at the end, return an empty string or the basename
+                return os.path.basename(abs_path)
 
-        return rel_path
+        # If output_base is provided, try to make the path relative to it
+        if output_base:
+            try:
+                output_abs = os.path.abspath(output_base)
+                rel_path = os.path.relpath(abs_path, output_abs)
+                if rel_path != '.':
+                    return rel_path.replace('\\', '/')
+            except ValueError:
+                pass  # Continue to other methods if this fails
+
+        # If the path is under the base_path, calculate the relative path
+        if abs_path.startswith(abs_base + os.sep) or abs_path == abs_base:
+            rel_path = os.path.relpath(abs_path, abs_base)
+            # Don't return '.' for matching paths
+            if rel_path == '.':
+                return os.path.basename(abs_path)
+            return rel_path.replace('\\', '/')
+
+        # If none of the special cases apply, return the path relative to base_path
+        return os.path.relpath(abs_path, abs_base).replace('\\', '/')
+
     except ValueError:
-        return path
+        # If there's an error calculating the relative path (e.g., different drives on Windows),
+        # return the basename as a fallback
+        return os.path.basename(path)
 
 
 def format_path(path):
@@ -75,20 +107,34 @@ def merge_stats(stats_list):
         "dirs_created": 0,
         "files_bundled": 0,
         "bytes_bundled": 0,
-        "original_size": 0,
-        "minified_size": 0,
         "files_minified": 0,
         "bytes_original": 0,
-        "bytes_minified": 0
+        "bytes_minified": 0,
+        "failed_minifications": 0
+    }
+
+    # These fields should not be summed, but rather take the max value across all stats
+    # or should be calculated from other values
+    special_fields = {
+        "max_nesting_level": max,
+        "original_size": max,
+        "minified_size": max
     }
 
     for stats in stats_list:
         for key, value in stats.items():
-            if key in merged_stats:
+            if key in special_fields:
+                # For fields that need special handling
+                if key in merged_stats:
+                    merged_stats[key] = special_fields[key](merged_stats[key], value)
+                else:
+                    merged_stats[key] = value
+            elif key in merged_stats:
+                # Normal summation for most fields
                 merged_stats[key] += value
-                # For max_nesting_level, keep the maximum value
-                if key == "max_nesting_level":
-                    merged_stats[key] = max(merged_stats[key], value)
+            else:
+                # For any fields not explicitly handled
+                merged_stats[key] = value
 
     return merged_stats
 

@@ -68,8 +68,15 @@ pnpm add git+https://github.com/josephchay/codebundle.git --save-dev
 ```
 
 > [!NOTE]
-> Occasionally, check on the `staging` and `develop` branches for new features or bug fixes not yet been merged into the 
-> `main` branch.
+> Occasionally, check on the `staging` and `develop` branches for new features or bug fixes that has not been merged
+> into the `main` branch.
+
+## Pre-requisites
+
+### Dependencies
+
+- Node version 22 or higher
+- NPM version 5.1 or higher
 
 ## Command-Line Arguments
 
@@ -80,6 +87,7 @@ pnpm add git+https://github.com/josephchay/codebundle.git --save-dev
 | `--file-types`                                  | `-t`      | `py`, `ipynb`, `jsts`, `mdtxt`, `yml`, `shell`, `json`, `go`, `ini`, `db`, `bat`, `scp` | File types to process (default: all)                                                               |
 | **Operations**                                  |           |                                                                                         |                                                                                                    |
 | `--flatten`                                     | `-f`      | `True` (if no other operation specified)                                                | Flatten the directory structure                                                                    |
+| `--no-filetype-dirs`                            | `-nfd`    | `False`                                                                                 | Place all files directly in the output directory without filetype subdirectories (Flattening only) |
 | `--deflatten`                                   | `-df`     | `True` (if no other operation specified)                                                | Deflatten the directory (restore original structure)                                               |
 | `--bundle`                                      | `-b`      | `True` (if no other operation specified)                                                | Bundle files into a single text file                                                               |
 | `--minify`                                      | `-m`      | `True` (if no other operation specified)                                                | Create a minified copy of the directory while preserving structure                                 |
@@ -134,6 +142,7 @@ Here are various scenarios and how to use the tool:
 | All Operations                          | `codebundle`                                                  | Performs all operations onto the current directory into a timestamped output directory    |
 | Multiple Operations                     | `codebundle -f -df -b`                                        | Performs flatten, deflatten and bundle operations in sequence                             |
 | Process Specific Types                  | `codebundle -t py ipynb shell`                                | Process only Python, Python Notebooks, and Shell Script files from current directory      |
+| Flatten without filetype subdirectories | `codebundle -f -nfd`                                          | Flatten the directory structure with all files in a single output directory               |
 | Bundle with Minification                | `codebundle -mb`                                              | Bundle the current directory with minified code                                           |
 | Minify Python for Optimized Context     | `codebundle -mb -t py -s src`                                 | Create a minified bundle of Python files from 'src' suitable for optimized context usages |
 | Minify Directory                        | `codebundle -m`                                               | Create a minified copy of the current directory while preserving structure                |
@@ -147,6 +156,7 @@ Here are various scenarios and how to use the tool:
 | Include Only Specific Files             | `codebundle -if main.py analysis.ipynb deploy.sh`             | Processes only the specified files from the current directory                             |
 | Minify Only Specific File Types         | `codebundle -m -ie .py .js`                                   | Create a minified copy with only Python and JavaScript files (Python files get minified)  |
 | Complex Command with Shorthands         | `codebundle -t py shell -id utils -xf setup.py -i -c`         | Using multiple shorthands for a complex operation                                         |
+| Flatten All in One Directory            | `codebundle -f -nfd -s src -d flat_output`                    | Flatten src directory with all files in flat_output without filetype subdirectories       |
 | All Operations Together                 | `codebundle -f -df -b -m -mb -s src -t py -ie .py -xd tests`  | Perform all operations on Python files from src directory, excluding tests                |
 | Custom Output Paths                     | `codebundle -f -df -b -s src -d myoutput`                     | Custom destination path for all operations (creates timestamped subdirectories)           |
 | Bundle for Team Review                  | `codebundle -b -s project -ie .py .js -xd node_modules tests` | Create a bundle with only Python and JavaScript files, excluding tests and modules        |

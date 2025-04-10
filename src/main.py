@@ -50,6 +50,11 @@ def main():
         help="Flatten the directory structure (default: True if no other operation specified)"
     )
     operation_group.add_argument(
+        "--no-filetype-dirs", "-nfd",
+        action="store_true",
+        help="When flattening, place all files directly in the output directory without filetype subdirectories"
+    )
+    operation_group.add_argument(
         "--deflatten", "-df",
         action="store_true",
         help="Deflatten the directory - restore original structure (default: True if no other operation specified)"
@@ -192,6 +197,12 @@ def main():
         help="Suppress all output logs."
     )
 
+    parser.add_argument(
+        '--continue-on-error', "-coe",
+        action='store_true',
+        help="Continue processing when minification errors occur (using original content for failed files)"
+    )
+
     args = parser.parse_args()
 
     source_dir = args.src_named if args.src_named else args.src_pos
@@ -243,13 +254,17 @@ def main():
                 output_paths[operation] = flatten_dest
 
                 if not args.no_log:
-                    print("\n\n:::::::::: EXECUTING FLATTEN ::::::::::")
+                    print("\n\n:::::::::::::::::::::::::::::: EXECUTING FLATTEN ::::::::::::::::::::::::::::::")
                     print(f"Destination: {get_relative_path(flatten_dest)}\n")
 
                 for file_type in args.file_types:
                     if file_type in HANDLERS:
                         handler = HANDLERS[file_type]
-                        file_dest_dir = os.path.join(flatten_dest, file_type)
+
+                        if args.no_filetype_dirs:
+                            file_dest_dir = flatten_dest
+                        else:
+                            file_dest_dir = os.path.join(flatten_dest, file_type)
 
                         if args.include_extensions and not any(ext in args.include_extensions for ext in handler.extensions):
                             continue
@@ -285,7 +300,7 @@ def main():
                         else:
                             print("----- OVERALL SUMMARY -----")
                             print(f"No files were flattened.")
-                    print("::::::::::::::::::::::::::::::::::::::::")
+                    print("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
 
             elif operation == OPERATION_DEFLATTEN:
                 deflatten_dest = args.dest_named if args.dest_named else args.dest_pos
@@ -294,8 +309,8 @@ def main():
                 output_paths[operation] = deflatten_dest
 
                 if not args.no_log:
-                    print("\n\n:::::::::: EXECUTING DEFLATTEN ::::::::::")
-                    print(f"Destination: {get_relative_path(deflatten_dest)}\n")
+                    print("\n\n:::::::::::::::::::::::::::::: EXECUTING DEFLATTEN ::::::::::::::::::::::::::::::")
+                    print(f"Destination: {get_relative_path(deflatten_dest, timestamp_dir)}\n")
 
                 # Check if there are any files to process
                 has_files_to_process = False
@@ -348,7 +363,7 @@ def main():
                         else:
                             print("----- OVERALL SUMMARY -----")
                             print(f"No files were deflattened.")
-                    print("::::::::::::::::::::::::::::::::::::::::")
+                    print("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
 
             elif operation in [OPERATION_BUNDLE, OPERATION_MINIFY_BUNDLE]:
                 bundle_dest = args.dest_named if args.dest_named else args.dest_pos
@@ -361,12 +376,15 @@ def main():
 
                 if not args.no_log:
                     if operation == OPERATION_BUNDLE:
-                        print("\n\n:::::::::: EXECUTING BUNDLE ::::::::::")
-                        print(f"Destination: {get_relative_path(bundle_dest)}\n")
+                        print("\n\n:::::::::::::::::::::::::::::: EXECUTING BUNDLE ::::::::::::::::::::::::::::::")
+                        print(f"Destination: {get_relative_path(bundle_dest, timestamp_dir)}\n")
                     else:
-                        print("\n\n:::::::::: EXECUTING MINIFY-BUNDLE ::::::::::")
-                        print(f"Destination: {get_relative_path(minify_dest)}")
-                        print(f"Minification: {MINIFICATION_DESCRIPTION}\n")
+                        print("\n\n:::::::::::::::::::::::::::::: EXECUTING MINIFY-BUNDLE ::::::::::::::::::::::::::::::")
+                        print(f"Destination: {get_relative_path(bundle_dest, timestamp_dir)}")
+                        print(f"Minification: {MINIFICATION_DESCRIPTION}")
+                        if args.continue_on_error:
+                            print("Note: Continuing on minification errors (--continue-on-error flag is set)")
+                        print()
 
                 # Create a combined bundle of all file types
                 if args.file_types and HANDLERS:
@@ -375,18 +393,20 @@ def main():
                         if file_type in HANDLERS:
                             combined_extensions.extend(HANDLERS[file_type].extensions)
                     combined_handler = FileExtHandler(extensions=combined_extensions, exclude_dirs=DEFAULT_EXCLUDE_DIRS,
-                                                      exclude_extensions=ALL_EXCLUDE_EXTENSIONS, exclude_filenames=ALL_EXCLUDE_FILENAMES)
+                                                      exclude_extensions=ALL_EXCLUDE_EXTENSIONS,
+                                                      exclude_filenames=ALL_EXCLUDE_FILENAMES)
                     stats = combined_handler.bundle_files(
                         source_dir, bundle_dest, exclude_dirs, exclude_exts, exclude_files,
                         args.include_dirs, args.include_extensions, args.include_files,
                         args.no_log, operation == OPERATION_MINIFY_BUNDLE,
                         args.snippet, args.snippet_lines, args.snippet_start, args.snippet_context,
-                        args.search_pattern if hasattr(args, 'search_pattern') else None
+                        args.search_pattern if hasattr(args, 'search_pattern') else None,
+                        args.continue_on_error if hasattr(args, 'continue_on_error') else False
                     )
                     handler_results.append(stats)
 
                 if not args.no_log:
-                    print("::::::::::::::::::::::::::::::::::::::::")
+                    print("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
 
             elif operation == OPERATION_MINIFY:
                 minify_dest = args.dest_named if args.dest_named else args.dest_pos
@@ -395,9 +415,12 @@ def main():
                 output_paths[operation] = minify_dest
 
                 if not args.no_log:
-                    print("\n\n:::::::::: EXECUTING MINIFY ::::::::::")
-                    print(f"Destination: {get_relative_path(minify_dest)}")
-                    print(f"Minification: ({MINIFICATION_DESCRIPTION})\n")
+                    print("\n\n:::::::::::::::::::::::::::::: EXECUTING MINIFY ::::::::::::::::::::::::::::::")
+                    print(f"Destination: {get_relative_path(minify_dest, timestamp_dir)}")
+                    print(f"Minification: ({MINIFICATION_DESCRIPTION})")
+                    if args.continue_on_error:
+                        print("Note: Continuing on minification errors (--continue-on-error flag is set)")
+                    print()
 
                 processed_files = set()
                 file_type_map = {}
@@ -428,17 +451,17 @@ def main():
                         stats = handler.minify_dir(
                             source_dir, minify_dest, exclude_dirs, exclude_exts, exclude_files,
                             args.include_dirs, args.include_extensions, handler_include_files,
-                            args.clear_dest_dir, args.no_log
+                            args.clear_dest_dir, args.no_log, args.continue_on_error
                         )
                         handler_results.append(stats)
 
-                        if stats["files_copied"] == 0 and os.path.exists(
-                                os.path.join(minify_dest, file_type)) and not os.listdir(
-                                os.path.join(minify_dest, file_type)):
+                        # Clean up empty directories
+                        type_dir = os.path.join(minify_dest, file_type)
+                        if stats["files_copied"] == 0 and os.path.exists(type_dir) and not os.listdir(type_dir):
                             try:
-                                os.rmdir(os.path.join(minify_dest, file_type))
+                                os.rmdir(type_dir)
                                 if not args.no_log:
-                                    print(f"Removed empty directory: {get_relative_path(os.path.join(minify_dest, file_type))}")
+                                    print(f"Removed empty directory: {get_relative_path(type_dir)}")
                             except OSError:
                                 pass
                         if not args.no_log:
@@ -461,11 +484,11 @@ def main():
                         else:
                             print("----- OVERALL SUMMARY -----")
                             print(f"No files were minified.")
-                    print("::::::::::::::::::::::::::::::::::::::::")
+                    print("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
 
             elif operation == OPERATION_SEARCH:
                 if not args.no_log:
-                    print("\n\n:::::::::: EXECUTING SEARCH ::::::::::")
+                    print("\n\n:::::::::::::::::::::::::::::: EXECUTING SEARCH ::::::::::::::::::::::::::::::")
 
                 search_handler = Searcher(exclude_dirs=exclude_dirs, exclude_exts=exclude_exts, exclude_files=exclude_files)
                 if args.search_ext:
@@ -520,7 +543,7 @@ def main():
                     search_handler.search_duplicates(source_dir, min_lines, extensions=target_exts, silent=args.no_log)
 
                 if not args.no_log:
-                    print("::::::::::::::::::::::::::::::::::::::::")
+                    print("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
 
         summary_path = os.path.join(timestamp_dir, "summary.txt")
         with open(summary_path, 'w') as summary_file:
@@ -528,19 +551,20 @@ def main():
             summary_file.write(f"# Timestamp: {os.path.basename(timestamp_dir)}\n")
             summary_file.write(f"# Source: {os.path.abspath(source_dir)}\n")
             summary_file.write(f"# Destination: {os.path.abspath(timestamp_dir)}\n")
-
             local_timezone = datetime.datetime.now().astimezone().tzinfo
-            summary_file.write(f"# Created: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')} [{local_timezone}]\n\n")
+            summary_file.write(
+                f"# Created: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')} [{local_timezone}]\n\n")
 
             for op in operations:
                 if op in output_paths:
                     dest_path = output_paths[op]
+                    # Use get_display_path for the summary file as well
                     rel_dest_path = get_relative_path(dest_path, timestamp_dir)
                     summary_file.write(f"## {op.upper()}\n")
                     summary_file.write(f"Destination: {rel_dest_path}\n\n")
 
         if not args.no_log:
-            print(f"\nSummary of operations written to {get_relative_path(summary_path)}")
+            print(f"\nSummary of operations written to {get_relative_path(summary_path, timestamp_dir)}")
         return 0
     except ValueError as e:
         print(f"Error: {e}")
