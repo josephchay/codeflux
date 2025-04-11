@@ -34,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Processing for files passed using argument `--include-files` or `-if` now works as expected.
 - Information for original size and reduction size now being calculated and displayed for all file types.
 - New `snipping.py` file for handling snippet functionality.
+- Minification process for both `MINIFY` and `MINIFY_BUNDLE` operations now have their warnings properly displayed in the output table.
 
 ### Changed
 

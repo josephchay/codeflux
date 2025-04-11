@@ -316,12 +316,14 @@ class FileExtHandler:
         }
 
         files_info = []  # For table output
+        files_with_warnings = {}  # Track files with warnings
         start_time = time.time()
         files_found = False
 
         def is_text_markdown_file(filename):
             """Check if a file is a text or markdown file that shouldn't attempt minification."""
-            text_markdown_exts = ['.md', '.markdown', '.mdown', '.mkdn', '.mkd', '.mdwn', '.mdtxt', '.mdtext', '.txt', '.rst']
+            text_markdown_exts = ['.md', '.markdown', '.mdown', '.mkdn', '.mkd', '.mdwn', '.mdtxt', '.mdtext', '.txt',
+                                  '.rst']
             return any(filename.lower().endswith(ext) for ext in text_markdown_exts)
 
         for root, dirs, files in os.walk(source_dir):
@@ -383,7 +385,8 @@ class FileExtHandler:
                                 "size": 0,
                                 "status": f"Skipped (empty file)",
                                 "original_size": 0,
-                                "reduction": 0.0
+                                "reduction": 0.0,
+                                "warnings": ""
                             }
                             files_info.append(file_info)
                         continue
@@ -405,7 +408,8 @@ class FileExtHandler:
                                         "size": file_size,
                                         "status": f"Skipped (empty file)",
                                         "original_size": file_size,
-                                        "reduction": 0.0
+                                        "reduction": 0.0,
+                                        "warnings": ""
                                     }
                                     files_info.append(file_info)
                                 continue
@@ -415,6 +419,7 @@ class FileExtHandler:
                             stats["bytes_original"] += original_size
 
                         _, ext = os.path.splitext(file)
+                        ext_lower = ext.lower()
 
                         # Determine if this is a file type we shouldn't try to minify
                         is_text_md = is_text_markdown_file(file)
@@ -437,14 +442,32 @@ class FileExtHandler:
                                     "size": file_size,
                                     "status": f"Copied as-is",
                                     "original_size": file_size,
-                                    "reduction": 0.0
+                                    "reduction": 0.0,
+                                    "warnings": ""
                                 }
                                 files_info.append(file_info)
                             continue
 
                         # For other file types, try minification
                         try:
+                            # Check for potential warnings in Python files
+                            warning_message = None
+                            if ext_lower.endswith('.py'):
+                                # Common invalid escape sequences that trigger SyntaxWarnings
+                                invalid_escapes = {'\\s': 'invalid escape sequence \\s',
+                                                   '\\d': 'invalid escape sequence \\d',
+                                                   '\\w': 'invalid escape sequence \\w',
+                                                   '\\.': 'invalid escape sequence \\.',
+                                                   '\\-': 'invalid escape sequence \\-',
+                                                   '\\_': 'invalid escape sequence \\_'}
+                                for invalid_escape, warning_text in invalid_escapes.items():
+                                    if invalid_escape in content:
+                                        warning_message = f"SyntaxWarning: {warning_text}"
+                                        files_with_warnings[rel_file_path] = warning_message
+                                        break
+
                             minified_content = minify_code(content, ext, continue_on_error)
+
                             # Check if minification was successful (content changed)
                             if minified_content != content:
                                 # Also using byte count for minified content
@@ -479,12 +502,17 @@ class FileExtHandler:
                                     else:
                                         status = "Copied as-is"
 
+                                # Add warning indicator if we found potential syntax warnings
+                                if rel_file_path in files_with_warnings:
+                                    status += " (warn:escapes)"
+
                                 file_info = {
                                     "file": rel_file_path,
                                     "size": minified_size,
                                     "status": status,
                                     "original_size": original_size,
-                                    "reduction": reduction
+                                    "reduction": reduction,
+                                    "warnings": files_with_warnings.get(rel_file_path, "")
                                 }
                                 files_info.append(file_info)
                         except Exception as e:
@@ -503,7 +531,8 @@ class FileExtHandler:
                                         "size": file_size,
                                         "status": f"Copied as-is (error)",
                                         "original_size": file_size,
-                                        "reduction": 0.0
+                                        "reduction": 0.0,
+                                        "warnings": ""
                                     }
                                     files_info.append(file_info)
                             else:
@@ -525,7 +554,8 @@ class FileExtHandler:
                                 "size": file_size,
                                 "status": f"Copied as-is (binary)",
                                 "original_size": file_size,
-                                "reduction": 0.0
+                                "reduction": 0.0,
+                                "warnings": ""
                             }
                             files_info.append(file_info)
                 else:
@@ -541,7 +571,14 @@ class FileExtHandler:
                 print(file_table)
 
                 if stats["failed_minifications"] > 0 and continue_on_error:
-                    print(f"\nNote: {stats['failed_minifications']} file(s) could not be minified and were copied as-is.")
+                    print(
+                        f"\nNote: {stats['failed_minifications']} file(s) could not be minified and were copied as-is.")
+
+            # Display warning summary if any warnings were found
+            if files_with_warnings:
+                print(
+                    f"\nNote: {len(files_with_warnings)} Python file(s) contain patterns that may generate syntax warnings.")
+                print("These files are marked with '(warn:escapes)' in the status column.")
 
         end_time = time.time()
         duration = end_time - start_time
