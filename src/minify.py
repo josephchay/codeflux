@@ -11,15 +11,6 @@ from ruamel.yaml import YAML
 
 
 def minify_php(source, continue_on_error=False):
-    """Minify PHP code using the @cedx/php-minifier package.
-
-    Args:
-        source (str): PHP source code to minify
-        continue_on_error (bool): Whether to continue on errors
-
-    Returns:
-        str: Minified PHP code or original if minification fails
-    """
     try:
         with tempfile.NamedTemporaryFile(suffix='.php', mode='w', encoding='utf-8', delete=False) as temp_in:
             temp_in.write(source)
@@ -96,8 +87,7 @@ def minify_code(source, file_extension, continue_on_error=False):
             notebook = json.loads(source)
             if 'cells' in notebook:
                 for cell in notebook['cells']:
-                    if cell.get('cell_type') == 'code' and 'source' in cell and cell.get('language',
-                                                                                         'python') == 'python':
+                    if cell.get('cell_type') == 'code' and 'source' in cell and cell.get('language', 'python') == 'python':
                         if isinstance(cell['source'], list):
                             code = ''.join(cell['source'])
                             try:
@@ -125,12 +115,9 @@ def minify_code(source, file_extension, continue_on_error=False):
             else:
                 print(f"ERROR: Error processing notebook: {str(e)}")
                 sys.exit(1)
-
-    # JavaScript/TypeScript files
     elif any(ext_lower.endswith(ext) for ext in ['.js', '.jsx', '.ts', '.tsx']):
         try:
-            with tempfile.NamedTemporaryFile(suffix=file_extension, mode='w', encoding='utf-8',
-                                             delete=False) as temp_in:
+            with tempfile.NamedTemporaryFile(suffix=file_extension, mode='w', encoding='utf-8', delete=False) as temp_in:
                 temp_in.write(source)
                 temp_in_path = temp_in.name
             temp_out_path = temp_in_path + '.min'
@@ -182,12 +169,9 @@ def minify_code(source, file_extension, continue_on_error=False):
             else:
                 print(f"ERROR: Encoding error during JS/TS minification: {str(e)}")
                 sys.exit(1)
-
-    # CSS files
     elif any(ext_lower.endswith(ext) for ext in ['.css', '.scss', '.sass', '.less']):
         try:
-            with tempfile.NamedTemporaryFile(suffix=file_extension, mode='w', encoding='utf-8',
-                                             delete=False) as temp_in:
+            with tempfile.NamedTemporaryFile(suffix=file_extension, mode='w', encoding='utf-8', delete=False) as temp_in:
                 temp_in.write(source)
                 temp_in_path = temp_in.name
             temp_out_path = temp_in_path + '.min'
@@ -239,12 +223,9 @@ def minify_code(source, file_extension, continue_on_error=False):
             else:
                 print(f"ERROR: Encoding error during CSS minification: {str(e)}")
                 sys.exit(1)
-
-    # HTML files
     elif any(ext_lower.endswith(ext) for ext in ['.html', '.htm', '.xhtml', '.shtml']):
         try:
-            with tempfile.NamedTemporaryFile(suffix=file_extension, mode='w', encoding='utf-8',
-                                             delete=False) as temp_in:
+            with tempfile.NamedTemporaryFile(suffix=file_extension, mode='w', encoding='utf-8', delete=False) as temp_in:
                 temp_in.write(source)
                 temp_in_path = temp_in.name
             temp_out_path = temp_in_path + '.min'
@@ -296,12 +277,8 @@ def minify_code(source, file_extension, continue_on_error=False):
             else:
                 print(f"ERROR: Encoding error during HTML minification: {str(e)}")
                 sys.exit(1)
-
-    # PHP files - use the dedicated PHP minifier
     elif any(ext_lower.endswith(ext) for ext in ['.php', '.phtml', '.php5', '.php7', '.phps']):
         return minify_php(source, continue_on_error)
-
-    # JSON files
     elif any(ext_lower.endswith(ext) for ext in ['.json', '.jsonl', '.geojson', '.json5', '.ndjson']):
         try:
             parsed_json = json.loads(source)
@@ -313,8 +290,6 @@ def minify_code(source, file_extension, continue_on_error=False):
             else:
                 print("ERROR: Invalid JSON content. File will not be minified.")
                 sys.exit(1)
-
-    # YAML files
     elif any(ext_lower.endswith(ext) for ext in ['.yaml', '.yml']):
         try:
             yaml_parser = YAML(typ='safe')
@@ -322,8 +297,7 @@ def minify_code(source, file_extension, continue_on_error=False):
             flow_style = True
 
             if flow_style:
-                minified = yaml.dump(data, default_flow_style=True, width=float('inf'), allow_unicode=True,
-                                     sort_keys=False)
+                minified = yaml.dump(data, default_flow_style=True, width=float('inf'), allow_unicode=True, sort_keys=False)
                 minified = minified.strip()
                 minified = re.sub(r',\s+', ', ', minified)
                 minified = re.sub(r':\s+', ': ', minified)
@@ -332,8 +306,7 @@ def minify_code(source, file_extension, continue_on_error=False):
                 if minified.endswith('\n'):
                     minified = minified[:-1]
             else:
-                minified = yaml.dump(data, default_flow_style=False, indent=2, width=float('inf'), allow_unicode=True,
-                                     sort_keys=False)
+                minified = yaml.dump(data, default_flow_style=False, indent=2, width=float('inf'), allow_unicode=True, sort_keys=False)
                 minified = re.sub(r'^\s*#.*$', '', minified, flags=re.MULTILINE)
                 minified = re.sub(r'\n\s*\n', '\n', minified)
                 minified = re.sub(r'[ \t]+$', '', minified, flags=re.MULTILINE)
@@ -356,5 +329,4 @@ def minify_code(source, file_extension, continue_on_error=False):
                 print(f"ERROR: YAML minification failed: {str(e)}")
                 sys.exit(1)
 
-    # For any other file types or unhandled cases
     return source

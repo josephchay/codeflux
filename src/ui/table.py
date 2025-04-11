@@ -10,101 +10,130 @@ def get_table_formatter():
         return None, False
 
 
-def format_file_table(files_data, operation_type):
-    tabulate_func, has_tabulate = get_table_formatter()
-    headers = ["File", "Size (KB)", "Status"]
-    if operation_type in [OPERATION_BUNDLE, OPERATION_MINIFY_BUNDLE]:
+def format_file_table(files_info, operation_type):
+    if not files_info:
+        return "No files processed."
+
+    table_formatter, tabulate_available = get_table_formatter()
+
+    has_warnings = any("warnings" in file_info and file_info["warnings"] for file_info in files_info)
+
+    if operation_type in [OPERATION_FLATTEN, OPERATION_DEFLATTEN]:
+        headers = ["File", "Size (KB)", "Status"]
+        if has_warnings:
+            headers.append("Warnings")
+
+        rows = []
+        for file_info in files_info:
+            row = [
+                file_info["file"],
+                f"{file_info['size'] / 1024:.2f}",
+                file_info["status"]
+            ]
+            if has_warnings:
+                row.append(file_info.get("warnings", ""))
+            rows.append(row)
+    elif operation_type == OPERATION_MINIFY:
+        headers = ["File", "Size (KB)", "Status", "Original (KB)", "Reduction %"]
+        if has_warnings:
+            headers.append("Warnings")
+
+        rows = []
+        for file_info in files_info:
+            row = [
+                file_info["file"],
+                f"{file_info['size'] / 1024:.2f}",
+                file_info["status"],
+                f"{file_info['original_size'] / 1024:.2f}",
+                f"{file_info['reduction']:.2f}"
+            ]
+            if has_warnings:
+                row.append(file_info.get("warnings", ""))
+            rows.append(row)
+    elif operation_type in [OPERATION_BUNDLE, OPERATION_MINIFY_BUNDLE]:
+        headers = ["File", "Size (KB)", "Status"]
         if operation_type == OPERATION_MINIFY_BUNDLE:
             headers.extend(["Original (KB)", "Reduction %"])
-    elif operation_type == OPERATION_MINIFY:
-        headers.extend(["Original (KB)", "Reduction %"])
+        if has_warnings:
+            headers.append("Warnings")
 
-    # Clean up paths for display
-    clean_files_data = []
-    for file_info in files_data:
-        # Create a copy so we don't modify the original
-        clean_info = file_info.copy()
+        rows = []
+        for file_info in files_info:
+            row = [
+                file_info["file"],
+                f"{file_info['size'] / 1024:.2f}",
+                file_info["status"]
+            ]
 
-        # Clean up the status message to be more concise
-        status = clean_info.get("status", "")
+            if operation_type == OPERATION_MINIFY_BUNDLE and "original_size" in file_info:
+                row.extend([
+                    f"{file_info['original_size'] / 1024:.2f}",
+                    f"{file_info['reduction']:.2f}"
+                ])
 
-        # Remove the path from status messages
-        if " to " in status:
-            prefix, path = status.split(" to ", 1)
-            # Keep just the operation part, not the path
-            clean_info["status"] = prefix
+            if has_warnings:
+                row.append(file_info.get("warnings", ""))
 
-        # Further clean up specific status messages
-        if status.startswith("Copied as-is (minification failed"):
-            clean_info["status"] = "Copied as-is"
-
-        # For empty files with 100% reduction, fix the status
-        if clean_info.get("size", 0) == 0 and clean_info.get("reduction", 0) == 100:
-            clean_info["status"] = "Skipped (empty file)"
-            clean_info["reduction"] = 0.0  # Can't reduce an empty file
-
-        clean_files_data.append(clean_info)
-
-    # Generate table data
-    table_data = []
-    for file_info in clean_files_data:
-        row = [file_info.get("file", "")]
-
-        # Format size with more precision for very small files
-        size_kb = file_info.get("size", 0) / 1024
-        if size_kb < 0.01 and size_kb > 0:
-            row.append(f"{size_kb:.4f}")  # Use 4 decimal places for very small files
-        else:
-            row.append(f"{size_kb:.2f}")
-
-        status = file_info.get("status", "")
-        row.append(status)
-
-        if (operation_type in [OPERATION_MINIFY_BUNDLE, OPERATION_MINIFY]) and "original_size" in file_info:
-            orig_kb = file_info.get("original_size", 0) / 1024
-            if orig_kb < 0.01 and orig_kb > 0:
-                row.append(f"{orig_kb:.4f}")  # Use 4 decimal places for very small files
-            else:
-                row.append(f"{orig_kb:.2f}")
-
-            reduction = file_info.get("reduction", 0)
-            row.append(f"{reduction:.2f}")
-
-        table_data.append(row)
-
-    # Format using tabulate if available
-    if has_tabulate:
-        return tabulate_func(table_data, headers, tablefmt=TABULATE_FORMAT)
+            rows.append(row)
     else:
+        headers = ["File", "Size (KB)", "Status"]
+        if has_warnings:
+            headers.append("Warnings")
+
+        rows = []
+        for file_info in files_info:
+            row = [
+                file_info["file"],
+                f"{file_info['size'] / 1024:.2f}",
+                file_info["status"]
+            ]
+            if has_warnings:
+                row.append(file_info.get("warnings", ""))
+            rows.append(row)
+
+    if tabulate_available:
+        return table_formatter(rows, headers=headers, tablefmt=TABULATE_FORMAT)
+    else:
+        # Fallback to simple formatting with warnings column
         result = []
-        for file_info in clean_files_data:
-            file_path = file_info.get("file", "")
+        header_format = "| {:<30} | {:<10} | {:<20} |"
+        divider_format = "+{}+{}+{}+"
+        divider_lens = [32, 12, 22]
 
-            # Format size with more precision for very small files
-            size_kb = file_info.get("size", 0) / 1024
-            if size_kb < 0.01 and size_kb > 0:
-                size_str = f"{size_kb:.4f}"
-            else:
-                size_str = f"{size_kb:.2f}"
+        if has_warnings:
+            header_format += " {:<15} |"
+            divider_format += "{}+"
+            divider_lens.append(17)
 
-            status = file_info.get("status", "")
-            file_str = f"{file_path} (Size: {size_str} KB"
+        if operation_type == OPERATION_MINIFY or operation_type == OPERATION_MINIFY_BUNDLE:
+            header_format += " {:<15} | {:<12} |"
+            divider_format += "{}+{}+"
+            divider_lens.extend([17, 14])
 
-            if (operation_type in [OPERATION_MINIFY_BUNDLE, OPERATION_MINIFY]) and "original_size" in file_info:
-                orig_kb = file_info.get("original_size", 0) / 1024
+        # Create header
+        headers_to_use = headers[:3]
+        if has_warnings:
+            headers_to_use.append("Warnings")
+        if len(headers) > 3:
+            headers_to_use.extend(headers[3:])
 
-                # Format original size with more precision for very small files
-                if orig_kb < 0.01 and orig_kb > 0:
-                    orig_str = f"{orig_kb:.4f}"
+        divider = divider_format.format(*["-" * length for length in divider_lens])
+        result.append(divider)
+        result.append(header_format.format(*headers_to_use))
+        result.append(divider)
+
+        # Add rows
+        row_format = header_format
+        for row in rows:
+            formatted_row = []
+            for i, col in enumerate(row):
+                if i == 0:  # File name column
+                    formatted_row.append(str(col)[:28])
                 else:
-                    orig_str = f"{orig_kb:.2f}"
+                    formatted_row.append(str(col)[:divider_lens[i] - 2])
+            result.append(row_format.format(*formatted_row))
 
-                reduction = file_info.get("reduction", 0)
-                file_str += f", Original: {orig_str} KB, Reduction: {reduction:.2f}%"
-
-            file_str += f") - {status}"
-            result.append(file_str)
-
+        result.append(divider)
         return "\n".join(result)
 
 

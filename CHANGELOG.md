@@ -43,6 +43,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Renamed method `create_output_dir` to `mkdir_output`.
 - Moved minification (non-script) codes to `minify.py`. 
 - console printing output display more accurate.
+- Segregated parsing code to the `make_parser` method in `main.py`.
 
 ## [0.8.0] - 2025-04-07
 

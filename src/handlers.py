@@ -319,14 +319,11 @@ class FileExtHandler:
         start_time = time.time()
         files_found = False
 
-        # Helper function to determine if a file is a text/markdown file
         def is_text_markdown_file(filename):
             """Check if a file is a text or markdown file that shouldn't attempt minification."""
-            text_markdown_exts = ['.md', '.markdown', '.mdown', '.mkdn', '.mkd', '.mdwn', '.mdtxt', '.mdtext', '.txt',
-                                  '.rst']
+            text_markdown_exts = ['.md', '.markdown', '.mdown', '.mkdn', '.mkd', '.mdwn', '.mdtxt', '.mdtext', '.txt', '.rst']
             return any(filename.lower().endswith(ext) for ext in text_markdown_exts)
 
-        # Walk the source directory
         for root, dirs, files in os.walk(source_dir):
             stats["dirs_traversed"] += 1
 
@@ -335,7 +332,6 @@ class FileExtHandler:
             current_nesting = len(rel_path.split(os.sep)) if rel_path != '.' else 0
             stats["max_nesting_level"] = max(stats["max_nesting_level"], current_nesting)
 
-            # Process directory inclusion/exclusion
             if include_dirs:
                 # Only process specified directories
                 rel_dir_parts = rel_path.split(os.sep)
@@ -566,6 +562,8 @@ class FileExtHandler:
             exclude_files.append(output_filename)
         source_dir_parts = len(os.path.normpath(source_dir).split(os.sep))
 
+        files_with_warnings = {}
+
         stats = {
             "total_files_processed": 0,
             "dirs_traversed": 0,
@@ -581,7 +579,6 @@ class FileExtHandler:
         files_info = []  # For table output
         start_time = time.time()
 
-        # Helper function to convert paths with ___ to paths with / for display
         def format_path_for_display(path):
             if "___" in path:
                 parts = path.split("___")
@@ -654,7 +651,6 @@ class FileExtHandler:
                 else:
                     stats["skipped_files"] += 1
 
-        # If no files were found to bundle
         if not files_to_bundle:
             if not silent:
                 print(f"No files found to bundle.")
@@ -667,10 +663,8 @@ class FileExtHandler:
 
             return stats
 
-        # Sort files to group similar types together
         files_to_bundle.sort(key=lambda x: (x['extension'], x['formatted_path']))
 
-        # Calculate original size from files on disk
         total_original_bytes = 0
         for file_info in files_to_bundle:
             file_path = file_info['file_path']
@@ -688,15 +682,10 @@ class FileExtHandler:
                 extension_groups[ext] = []
             extension_groups[ext].append(file_info)
 
-        # Create output directory if needed
         os.makedirs(os.path.dirname(output_file), exist_ok=True)
 
-        # Track minified content size
         total_minified_bytes = 0
-
-        # Process files and write to bundle
         with open(output_file, 'w', encoding='utf-8') as outfile:
-            # Write header with metadata
             outfile.write(f"# {os.path.basename(source_dir)} ({len(files_to_bundle)} files)\n")
             outfile.write(f"# Created: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
 
@@ -709,8 +698,7 @@ class FileExtHandler:
             if minify:
                 outfile.write(f"# Minification: Enabled ({MINIFICATION_DESCRIPTION})\n")
                 if continue_on_error:
-                    outfile.write(
-                        f"# Note: Continuing on minification errors (original content used for failed files)\n")
+                    outfile.write(f"# Note: Continuing on minification errors (original content used for failed files)\n")
 
             # Process each extension group
             for ext, group_files in extension_groups.items():
@@ -765,9 +753,23 @@ class FileExtHandler:
                                 original_lines = len(content_lines)
                                 filtered_lines = original_lines
 
-                            # Apply minification if enabled
                             if minify:
                                 try:
+                                    warning_message = None
+                                    if file_extension.lower().endswith('.py'):
+                                        # Common invalid escape sequences that trigger SyntaxWarnings
+                                        invalid_escapes = {'\\s': 'invalid escape sequence \\s',
+                                                           '\\d': 'invalid escape sequence \\d',
+                                                           '\\w': 'invalid escape sequence \\w',
+                                                           '\\.': 'invalid escape sequence \\.',
+                                                           '\\-': 'invalid escape sequence \\-',
+                                                           '\\_': 'invalid escape sequence \\_'}
+                                        for invalid_escape, warning_text in invalid_escapes.items():
+                                            if invalid_escape in content:
+                                                warning_message = f"SyntaxWarning: {warning_text}"
+                                                files_with_warnings[display_path] = warning_message
+                                                break
+
                                     minified_content = minify_code(content, file_extension, continue_on_error)
 
                                     # If minification changed the content (was successful)
@@ -780,15 +782,14 @@ class FileExtHandler:
                                         total_minified_bytes += original_content_bytes
                                         if continue_on_error and len(content.strip()) > 0:
                                             # Only count as fail if it wasn't expected (like for markdown)
-                                            if not any(file_extension.lower().endswith(ext) for ext in
-                                                       ['.md', '.markdown', '.txt', '.rst']):
+                                            if not any(file_extension.lower().endswith(ext) for ext in ['.md', '.markdown', '.txt', '.rst']):
                                                 stats["failed_minifications"] += 1
+                                                if display_path not in files_with_warnings:  # If no warning exists yet
+                                                    files_with_warnings[display_path] = "Minification failed, using original content"
                                 except Exception as e:
                                     if continue_on_error:
-                                        # If error but continue, use original content
                                         if not silent:
-                                            print(
-                                                f"Warning: Error minifying {display_path}: {str(e)}. Using original content.")
+                                            print(f"Warning: Error minifying {display_path}: {str(e)}. Using original content.")
                                         stats["failed_minifications"] += 1
                                         total_minified_bytes += original_content_bytes
                                     else:
@@ -800,31 +801,31 @@ class FileExtHandler:
                                 # Not using minification
                                 total_minified_bytes = 0
 
-                            # Write file header to bundle
                             if is_truncated:
-                                outfile.write(
-                                    f"`{display_path}` [Extracted snippet lines: {filtered_lines}/{original_lines}]\n```\n")
+                                outfile.write(f"`{display_path}` [Extracted snippet lines: {filtered_lines}/{original_lines}]\n```\n")
                             else:
                                 outfile.write(f"`{display_path}` [total lines: {filtered_lines}]\n```\n")
-
-                            # Write content to bundle
                             outfile.write(content.rstrip())
                             outfile.write("\n```\n\n")
 
-                            # Update stats
                             stats["files_bundled"] += 1
                             content_bytes = len(content.encode('utf-8'))
                             stats["bytes_bundled"] += content_bytes
 
-                            # Record file info for display
                             if not silent:
-                                status = "Bundled"
+                                if minify:
+                                    status = "Minified & Bundled"
+                                else:
+                                    status = "Bundled"
                                 if is_truncated:
-                                    status = f"Bundled (snippet: {filtered_lines}/{original_lines} lines)"
+                                    status += f" (snippet: {filtered_lines}/{original_lines} lines)"
+
+                                # Add warning indicator for Python files with likely syntax warnings
+                                if minify and file_extension.lower().endswith('.py') and display_path in files_with_warnings:
+                                    status += " (warn:escapes)"
 
                                 if minify and stats["failed_minifications"] > 0:
-                                    if any(file_extension.lower().endswith(ext) for ext in
-                                           ['.md', '.markdown', '.txt', '.rst']):
+                                    if any(file_extension.lower().endswith(ext) for ext in ['.md', '.markdown', '.txt', '.rst']):
                                         # Don't mention failure for text/markdown files
                                         pass
                                     elif content == content:  # This is always true, keeping for structure
@@ -833,7 +834,8 @@ class FileExtHandler:
                                 file_info = {
                                     "file": display_path,
                                     "size": content_bytes,
-                                    "status": status
+                                    "status": status,
+                                    "warnings": files_with_warnings.get(display_path, "")
                                 }
 
                                 if minify:
@@ -887,8 +889,7 @@ class FileExtHandler:
             print(file_table)
 
             if minify and stats["failed_minifications"] > 0 and continue_on_error:
-                print(
-                    f"\nNote: {stats['failed_minifications']} file(s) could not be minified and were bundled with original content.")
+                print(f"\nNote: {stats['failed_minifications']} file(s) could not be minified and were bundled with original content.")
 
         # Calculate duration and print stats
         end_time = time.time()
@@ -896,6 +897,11 @@ class FileExtHandler:
 
         if not silent:
             print_stats(stats, OPERATION_BUNDLE if not minify else OPERATION_MINIFY_BUNDLE, duration)
+
+        if not silent and minify and files_with_warnings:
+            print(
+                f"\nNote: {len(files_with_warnings)} Python file(s) contain patterns that may generate syntax warnings.")
+            print("These files are marked with '(warn:escapes)' in the status column.")
 
         return stats
 

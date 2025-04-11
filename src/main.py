@@ -16,7 +16,7 @@ from ui.table import get_table_formatter
 from utils import merge_with_defaults, merge_stats, mkdir_output, format_path, get_relative_path
 
 
-def main():
+def make_parser():
     parser = argparse.ArgumentParser(description="A plugin that gives you full control and deep insight into any project's codebase structure.")
 
     src_group = parser.add_argument_group('source')
@@ -203,7 +203,11 @@ def main():
         help="Continue processing when minification errors occur (using original content for failed files)"
     )
 
-    args = parser.parse_args()
+    return parser
+
+
+def main():
+    args = make_parser().parse_args()
 
     source_dir = args.src_named if args.src_named else args.src_pos
     if not source_dir:

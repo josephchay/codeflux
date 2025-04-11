@@ -6,8 +6,8 @@ preparing for migration or backup.
 ## Overview
 
 Tired of wading through tangled directory trees just to make sense of a codebase? 
-**Codebundle** is a powerful CLI tool that brings structure, clarity, and control to any source directory. 
-It intelligently flattens or reconstructs file hierarchies, bundles and minifies code, 
+**Codebundle** is a versatile CLI tool that brings structure, clarity, and control to any source directory. 
+It intelligently flattens or reconstructs file hierarchies, bundles and minifies code, snips code chunks, 
 performs search functionalities across files, and delivers timestamped outputs. 
 With robust filtering and deep code insight features, **Codebundle** transforms messy projects into manageable, transparent systems.
 
@@ -38,7 +38,7 @@ With robust filtering and deep code insight features, **Codebundle** transforms 
 | Batch Scripts     | `.bat`, `.cmd`, `.btm`                                                      |
 | Custom Scripts    | `.scp`, `.script`                                                           |
 
-_More extensions to be added in the future._
+_More file types extensions to be added in the future._
 
 ---
 
@@ -87,21 +87,27 @@ pnpm add git+https://github.com/josephchay/codebundle.git --save-dev
 | `--file-types`                                  | `-t`      | `py`, `ipynb`, `jsts`, `mdtxt`, `yml`, `shell`, `json`, `go`, `ini`, `db`, `bat`, `scp` | File types to process (default: all)                                                               |
 | **Operations**                                  |           |                                                                                         |                                                                                                    |
 | `--flatten`                                     | `-f`      | `True` (if no other operation specified)                                                | Flatten the directory structure                                                                    |
-| `--no-filetype-dirs`                            | `-nfd`    | `False`                                                                                 | Place all files directly in the output directory without filetype subdirectories (Flattening only) |
 | `--deflatten`                                   | `-df`     | `True` (if no other operation specified)                                                | Deflatten the directory (restore original structure)                                               |
 | `--bundle`                                      | `-b`      | `True` (if no other operation specified)                                                | Bundle files into a single text file                                                               |
 | `--minify`                                      | `-m`      | `True` (if no other operation specified)                                                | Create a minified copy of the directory while preserving structure                                 |
 | `--minify-bundle`                               | `-mb`     | `True` (if no other operation specified)                                                | Minify files and bundle them into a single text file                                               |
+| **Operations Aids**                             |           |                                                                                         |                                                                                                    |
+| `--no-filetype-dirs`                            | `-nfd`    | `False`                                                                                 | Place all files directly in the output directory without filetype subdirectories (Flattening only) |
 | **Exclusion Options**                           |           |                                                                                         |                                                                                                    |
 | `--exclude-dirs`                                | `-xd`     | Various default directories                                                             | Directory names to exclude                                                                         |
 | `--exclude-extensions`                          | `-xe`     | Various default extensions                                                              | File extensions to exclude                                                                         |
 | `--exclude-files`                               | `-xf`     | Various path-based files                                                                | Specific file paths to exclude (requires full path relative to source dir, e.g. 'path/to/file.py') |
+| **Defaults Handling**                           |           |                                                                                         |                                                                                                    |
+| `--ignore-defaults`                             | `-i`      | `False`                                                                                 | Ignore all default exclusions and only use provided exclusions                                     |
 | **Inclusion Options**                           |           |                                                                                         |                                                                                                    |
 | `--include-dirs`                                | `-id`     | `None`                                                                                  | Directory names to include (only these will be processed)                                          |
 | `--include-extensions`                          | `-ie`     | `None`                                                                                  | File extensions to include (only these will be processed)                                          |
 | `--include-files`                               | `-if`     | `None`                                                                                  | Specific filenames to include (only these will be processed)                                       |
-| **Defaults Handling**                           |           |                                                                                         |                                                                                                    |
-| `--ignore-defaults`                             | `-i`      | `False`                                                                                 | Ignore all default exclusions and only use provided exclusions                                     |
+| **Snippet Options (bundle/minify-bundle only)** |           |                                                                                         |                                                                                                    |
+| `--snippet`                                     | `-sn`     | `False`                                                                                 | Enable snippet mode for bundling operations (only includes a portion of each file)                 |
+| `--snippet-lines`                               | `-snl`    | `50`                                                                                    | Maximum number of lines to include per file in snippet mode                                        |
+| `--snippet-start`                               | `-sns`    | `top`                                                                                   | Where to take the snippet from: top, middle, or bottom of the file                                 |
+| `--snippet-context`                             | `-snc`    | `5`                                                                                     | Number of context lines to include around matches when using with search-pattern                   |
 | **Search Options**                              |           |                                                                                         |                                                                                                    |
 | `--search-ext`                                  | `-se`     | `None`                                                                                  | Search for files with specific extensions                                                          |
 | `--search-pattern`                              | `-sp`     | `None`                                                                                  | Search for files containing a specific regex pattern                                               |
@@ -109,11 +115,6 @@ pnpm add git+https://github.com/josephchay/codebundle.git --save-dev
 | `--search-date`                                 | `-sd`     | `None`                                                                                  | Search for files modified between dates (YYYY-MM-DD format)                                        |
 | `--search-imports`                              | `-si`     | `None`                                                                                  | Search for files that import a specific module                                                     |
 | `--search-duplicates`                           | `-sdu`    | `None`                                                                                  | Search for duplicate code blocks (with optional minimum line threshold)                            |
-| **Snippet Options (bundle/minify-bundle only)** |           |                                                                                         |                                                                                                    |
-| `--snippet`                                     | `-sn`     | `False`                                                                                 | Enable snippet mode for bundling operations (only includes a portion of each file)                 |
-| `--snippet-lines`                               | `-snl`    | `50`                                                                                    | Maximum number of lines to include per file in snippet mode                                        |
-| `--snippet-start`                               | `-sns`    | `top`                                                                                   | Where to take the snippet from: top, middle, or bottom of the file                                 |
-| `--snippet-context`                             | `-snc`    | `5`                                                                                     | Number of context lines to include around matches when using with search-pattern                   |
 | **Other Options**                               |           |                                                                                         |                                                                                                    |
 | `--clear-dest-dir`                              | `-c`      | `False`                                                                                 | Clear the destination directory before copying files                                               |
 | `--no-log`                                      | `-nl`     | `False`                                                                                 | Disable logging output                                                                             |
@@ -129,7 +130,7 @@ pnpm add git+https://github.com/josephchay/codebundle.git --save-dev
   * `./codebundle/{timestamp}/bundled.txt` (for bundle operation)
   * `./codebundle/{timestamp}/minified/` (for minify operation)
   * `./codebundle/{timestamp}/minified_bundle.txt` (for minify-bundle operation)
-  * `./codebundle/{timestamp}/operations_summary.txt` (summary of all operations performed)
+  * `./codebundle/{timestamp}/summary.txt` (summary of all operations performed)
 
 For detailed information on default values, refer to the [constants](src/constants.py) file.
 
