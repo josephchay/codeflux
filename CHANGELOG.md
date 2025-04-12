@@ -53,6 +53,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Segregated parsing code to the `make_parser` method in `main.py`.
 - Renamed project from `Codebundle` to `Codeflux`.
 - Renamed attribute name from `--search-ext` to `--seach-extensions`.
+- Console print formatting for `--tree` visualization standardized like other operations.
 
 ## [0.8.0] - 2025-04-07
 

@@ -82,7 +82,7 @@ def make_parser():
     operation_group.add_argument(
         "--tree", "-tr",
         action="store_true",
-        help="Generate a text-based visualization of the directory structure"
+        help="Generate a text-based visualization of the source directory structure (default: True if no other operation specified)"
     )
 
     parser.add_argument(
@@ -277,10 +277,7 @@ def main():
         tree_stats = visualize_dir_tree(source_dir, tree_output_file, exclude_dirs, exclude_exts, exclude_files, print_to_console=not args.no_log)
 
         if not args.no_log:
-            print("----- OPERATION SUMMARY -----")
-            print(format_dir_tree_summary(tree_stats))
             print("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
-            print(f"\nSource directory tree visualization written to \"{get_relative_path(tree_output_file, timestamp_dir)}\"")
 
         return 0
 
@@ -629,22 +626,24 @@ def main():
 
                 if not args.no_log:
                     print("\n\n:::::::::::::::::::::::::::::: EXECUTING TREE VISUALIZATION ::::::::::::::::::::::::::::::")
-                    print(f"Destination: {get_relative_path(tree_output_file, timestamp_dir)}\n")
+                    print(f"Destination: {get_relative_path(tree_output_file, timestamp_dir)}")
 
-                tree_stats = visualize_dir_tree(source_dir, tree_output_file, exclude_dirs, exclude_exts, exclude_files, print_to_console=not args.no_log)
+                tree_stats = visualize_dir_tree(source_dir, tree_output_file, exclude_dirs, exclude_exts, exclude_files, print_to_console=not args.no_log, truncate_output=not args.no_truncate)
 
                 if not args.no_log:
-                    print("----- OPERATION SUMMARY -----")
-                    print(format_dir_tree_summary(tree_stats))
                     print("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
 
         # Generate source directory tree visualization if not already done
         if OPERATION_TREE not in operations:
             tree_output_file = os.path.join(timestamp_dir, DEFAULT_TREE_OUTPUT_PATH)
+            if not args.no_log:
+                print("\n\n:::::::::::::::::::::::::::::: GENERATING SOURCE DIRECTORY TREE ::::::::::::::::::::::::::::::")
+                print(f"Destination: {get_relative_path(tree_output_file, timestamp_dir)}")
+
             tree_stats = visualize_dir_tree(source_dir, tree_output_file, exclude_dirs, exclude_exts, exclude_files, print_to_console=not args.no_log)
 
             if not args.no_log:
-                print(f"Source directory tree visualization written to \"{get_relative_path(tree_output_file, timestamp_dir)}\"")
+                print("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
 
         # Summary of operations
         summary_path = os.path.join(timestamp_dir, "summary.txt")
