@@ -93,13 +93,50 @@ def safely_minify_python_code(code, continue_on_error=False):
             raise
 
 
-def minify_code(source, file_extension, continue_on_error=False):
-    """
-    Minify code based on file extension.
+def minify_shell_script(source, continue_on_error=False):
+    if not source or not source.strip():
+        return source, None
 
-    Returns:
-        tuple: (minified_content, warning_message)
-    """
+    try:
+        # Remove comments (lines starting with #, but preserve shebang)
+        lines = source.splitlines()
+        result = []
+
+        # Add shebang line if it exists
+        if lines and lines[0].startswith('#!'):
+            result.append(lines[0])
+            lines = lines[1:]
+
+        for line in lines:
+            # Skip comment lines
+            if line.strip().startswith('#'):
+                continue
+
+            # For lines with inline comments, keep only the code part
+            if '#' in line:
+                code_part = line.split('#', 1)[0].rstrip()
+                if code_part:  # Only add if there's actual code
+                    result.append(code_part)
+            else:
+                if line.strip():  # Skip empty lines
+                    result.append(line)
+
+        # Collapse multiple empty lines into one
+        minified = '\n'.join(result)
+        # Ensure we don't return None
+        if minified is None:
+            return source, "Shell minification produced None, using original content"
+        return minified, None
+
+    except Exception as e:
+        warning = f"Shell script minification error: {str(e)}"
+        if continue_on_error:
+            return source, warning
+        else:
+            raise RuntimeError(warning)
+
+
+def minify_code(source, file_extension, continue_on_error=False):
     if not source or not source.strip():
         return source, None
 
@@ -109,8 +146,6 @@ def minify_code(source, file_extension, continue_on_error=False):
     if any(ext_lower.endswith(ext) for ext in
            ['.md', '.markdown', '.mdown', '.mkdn', '.mkd', '.mdwn', '.mdtxt', '.mdtext', '.txt', '.rst']):
         return source, None
-
-    # Python files
     if ext_lower.endswith('.py'):
         try:
             return safely_minify_python_code(source, True)
@@ -120,8 +155,6 @@ def minify_code(source, file_extension, continue_on_error=False):
                 print(f"ERROR: {warning}")
                 sys.exit(1)
             return source, warning
-
-    # Jupyter notebooks
     elif ext_lower.endswith('.ipynb'):
         try:
             notebook = json.loads(source)
@@ -129,13 +162,11 @@ def minify_code(source, file_extension, continue_on_error=False):
 
             if 'cells' in notebook:
                 for cell_index, cell in enumerate(notebook['cells']):
-                    if cell.get('cell_type') == 'code' and 'source' in cell and cell.get('language',
-                                                                                         'python') == 'python':
+                    if cell.get('cell_type') == 'code' and 'source' in cell and cell.get('language', 'python') == 'python':
                         if isinstance(cell['source'], list):
                             code = ''.join(cell['source'])
                             try:
-                                minified_code, cell_warning = safely_minify_python_code(code,
-                                                                                        True)  # Always continue on error for cells
+                                minified_code, cell_warning = safely_minify_python_code(code, True)  # Always continue on error for cells
                                 if cell_warning:
                                     cell_num = cell_index + 1
                                     warnings.append(f"Cell #{cell_num}: {cell_warning}")
@@ -162,8 +193,6 @@ def minify_code(source, file_extension, continue_on_error=False):
             else:
                 print(f"ERROR: {warning}")
                 sys.exit(1)
-
-    # JavaScript/TypeScript
     elif any(ext_lower.endswith(ext) for ext in ['.js', '.jsx', '.ts', '.tsx']):
         try:
             with tempfile.NamedTemporaryFile(suffix=file_extension, mode='w', encoding='utf-8',
@@ -214,8 +243,6 @@ def minify_code(source, file_extension, continue_on_error=False):
             else:
                 print(f"ERROR: {warning}")
                 sys.exit(1)
-
-    # CSS files
     elif any(ext_lower.endswith(ext) for ext in ['.css', '.scss', '.sass', '.less']):
         try:
             with tempfile.NamedTemporaryFile(suffix=file_extension, mode='w', encoding='utf-8',
@@ -266,8 +293,6 @@ def minify_code(source, file_extension, continue_on_error=False):
             else:
                 print(f"ERROR: {warning}")
                 sys.exit(1)
-
-    # HTML files
     elif any(ext_lower.endswith(ext) for ext in ['.html', '.htm', '.xhtml', '.shtml']):
         try:
             with tempfile.NamedTemporaryFile(suffix=file_extension, mode='w', encoding='utf-8',
@@ -318,12 +343,8 @@ def minify_code(source, file_extension, continue_on_error=False):
             else:
                 print(f"ERROR: {warning}")
                 sys.exit(1)
-
-    # PHP files
     elif any(ext_lower.endswith(ext) for ext in ['.php', '.phtml', '.php5', '.php7', '.phps']):
         return minify_php(source, continue_on_error)
-
-    # JSON files
     elif any(ext_lower.endswith(ext) for ext in ['.json', '.jsonl', '.geojson', '.json5', '.ndjson']):
         try:
             parsed_json = json.loads(source)
@@ -335,8 +356,6 @@ def minify_code(source, file_extension, continue_on_error=False):
             else:
                 print(f"ERROR: {warning}")
                 sys.exit(1)
-
-    # YAML files
     elif any(ext_lower.endswith(ext) for ext in ['.yaml', '.yml']):
         try:
             yaml_parser = YAML(typ='safe')
@@ -377,5 +396,10 @@ def minify_code(source, file_extension, continue_on_error=False):
             else:
                 print(f"ERROR: {warning}")
                 sys.exit(1)
+    elif any(ext_lower.endswith(ext) for ext in ['.sh', '.bash', '.zsh']):
+        return minify_shell_script(source, continue_on_error)
 
+    # Return the source without modifications for any other file types
+    if source is None:
+        return "", "Source content was None"
     return source, None

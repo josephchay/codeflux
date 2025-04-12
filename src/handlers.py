@@ -465,18 +465,17 @@ class FileExtHandler:
                                         break
 
                             minified_content, minify_warning = minify_code(content, ext, continue_on_error)
-
                             if minify_warning:
                                 files_with_warnings[rel_file_path] = minify_warning
 
-                            # Check if minification was successful (content changed)
-                            if minified_content != content:
+                            # Check if minification was successful (content changed and returned value is not None)
+                            if minified_content is not None and minified_content != content:
                                 # Also using byte count for minified content
                                 minified_size = len(minified_content.encode('utf-8'))
                                 stats["bytes_minified"] += minified_size
                                 stats["files_minified"] += 1
                             else:
-                                # If content is unchanged, it might mean minification was not applicable
+                                # If content is unchanged or minified_content is None, use original size
                                 minified_size = original_size
                                 stats["bytes_minified"] += minified_size
 
