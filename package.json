@@ -1,7 +1,7 @@
 {
   "name": "codeflux",
-  "version": "0.7.0",
-  "description": "A lightweight CLI tool to flatten, deflatten, bundle, and minify codebase files.",
+  "version": "0.9.0",
+  "description": "Codeflux is a tool for organizing large codebases, consolidating scripts, optimizations, or \npreparing for migration or backup.",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"

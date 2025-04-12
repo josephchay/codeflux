@@ -3,21 +3,16 @@ import argparse
 import sys
 import datetime
 
-from constants import (
-    DEFAULT_EXCLUDE_DIRS, ALL_EXCLUDE_EXTENSIONS, ALL_EXCLUDE_FILENAMES,
-    DEFAULT_FLATTEN_OUTPUT_PATH, DEFAULT_DEFLATTEN_OUTPUT_PATH, DEFAULT_BUNDLE_OUTPUT_PATH,
-    DEFAULT_MINIFY_OUTPUT_PATH, DEFAULT_MINIFY_BUNDLE_OUTPUT_PATH,
-    OPERATION_FLATTEN, OPERATION_DEFLATTEN, OPERATION_BUNDLE, OPERATION_MINIFY, OPERATION_MINIFY_BUNDLE,
-    OPERATION_SEARCH, MINIFICATION_DESCRIPTION, OPERATION_PROPERTIES
-)
+from constants import *
 from handlers import HANDLERS, FileExtHandler
 from search import Searcher
 from ui.table import get_table_formatter
+from ui.tree import visualize_dir_tree, format_dir_tree_summary
 from utils import merge_with_defaults, merge_stats, mkdir_output, format_path, get_relative_path
 
 
 def make_parser():
-    parser = argparse.ArgumentParser(description="A plugin that gives you full control and deep insight into any project's codebase structure.")
+    parser = argparse.ArgumentParser(description="A plugin that gives you full control and deep insight into any project's codebase.")
 
     src_group = parser.add_argument_group('source')
     src_group.add_argument(
@@ -83,6 +78,11 @@ def make_parser():
         "--exclude-hash", "-xh",
         action="store_true",
         help="Exclude MD5 hash calculation from properties analysis (faster for large files)"
+    )
+    operation_group.add_argument(
+        "--tree", "-tr",
+        action="store_true",
+        help="Generate a text-based visualization of the directory structure"
     )
 
     parser.add_argument(
@@ -251,6 +251,8 @@ def main():
         operations.append(OPERATION_SEARCH)
     if args.properties:
         operations.append(OPERATION_PROPERTIES)
+    if args.tree:
+        operations.append(OPERATION_TREE)
     if not operations:
         operations = [OPERATION_FLATTEN, OPERATION_DEFLATTEN, OPERATION_MINIFY, OPERATION_BUNDLE, OPERATION_MINIFY_BUNDLE]
 
@@ -260,6 +262,28 @@ def main():
     exclude_files = merge_with_defaults(args.exclude_files, ALL_EXCLUDE_FILENAMES, args.ignore_defaults)
     if exclude_files:
         exclude_files = [path.replace('\\', '/') for path in exclude_files]
+
+    # If only tree visualization is requested, process it and return
+    if len(operations) == 1 and operations[0] == OPERATION_TREE:
+        tree_output_file = args.dest_named if args.dest_named else args.dest_pos
+        if not tree_output_file:
+            tree_output_file = os.path.join(timestamp_dir, DEFAULT_TREE_OUTPUT_PATH)
+        output_paths[OPERATION_TREE] = tree_output_file
+
+        if not args.no_log:
+            print("\n\n:::::::::::::::::::::::::::::: EXECUTING TREE VISUALIZATION ::::::::::::::::::::::::::::::")
+            print(f"Destination: {get_relative_path(tree_output_file, timestamp_dir)}\n")
+
+        tree_stats = visualize_dir_tree(source_dir, tree_output_file, exclude_dirs, exclude_exts, exclude_files, print_to_console=not args.no_log)
+
+        if not args.no_log:
+            print("----- OPERATION SUMMARY -----")
+            print(format_dir_tree_summary(tree_stats))
+            print("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
+            print(f"\nSource directory tree visualization written to \"{get_relative_path(tree_output_file, timestamp_dir)}\"")
+
+        return 0
+
     try:
         for operation in operations:
             handler_results = []
@@ -310,14 +334,13 @@ def main():
                 if not args.no_log:
                     if handler_results:
                         if merged_stats["files_copied"] > 0:
-                            print("----- OVERALL SUMMARY -----")
+                            print("----- OPERATION SUMMARY -----")
                             print(f"Total files flattened: {merged_stats['files_copied']}")
                             print(f"Total data processed: {merged_stats['bytes_copied'] / 1024:.2f} KB")
                         else:
-                            print("----- OVERALL SUMMARY -----")
+                            print("----- OPERATION SUMMARY -----")
                             print(f"No files were flattened.")
                     print("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
-
             elif operation == OPERATION_DEFLATTEN:
                 deflatten_dest = args.dest_named if args.dest_named else args.dest_pos
                 if not deflatten_dest:
@@ -372,15 +395,14 @@ def main():
                 if not args.no_log:
                     if handler_results:
                         if merged_stats["files_copied"] > 0:
-                            print("----- OVERALL SUMMARY -----")
+                            print("----- OPERATION SUMMARY -----")
                             print(f"Total files deflattened: {merged_stats['files_copied']}")
                             print(f"Total directories created: {merged_stats['dirs_created']}")
                             print(f"Total data processed: {merged_stats['bytes_copied'] / 1024:.2f} KB")
                         else:
-                            print("----- OVERALL SUMMARY -----")
+                            print("----- OPERATION SUMMARY -----")
                             print(f"No files were deflattened.")
                     print("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
-
             elif operation in [OPERATION_BUNDLE, OPERATION_MINIFY_BUNDLE]:
                 bundle_dest = args.dest_named if args.dest_named else args.dest_pos
                 if not bundle_dest:
@@ -423,7 +445,6 @@ def main():
 
                 if not args.no_log:
                     print("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
-
             elif operation == OPERATION_MINIFY:
                 minify_dest = args.dest_named if args.dest_named else args.dest_pos
                 if not minify_dest:
@@ -487,7 +508,7 @@ def main():
                 if not args.no_log:
                     if handler_results:
                         if merged_stats["files_copied"] > 0:
-                            print("----- OVERALL SUMMARY -----")
+                            print("----- OPERATION SUMMARY -----")
                             print(f"Total files minified: {merged_stats['files_minified']}")
                             print(f"Total files processed: {merged_stats['files_copied']}")
                             if merged_stats["bytes_original"] > 0 and merged_stats["bytes_minified"] > 0:
@@ -498,10 +519,9 @@ def main():
                                 print(f"Minified size: {mini_kb:.2f} KB")
                                 print(f"Overall reduction: {reduction:.2f}%")
                         else:
-                            print("----- OVERALL SUMMARY -----")
+                            print("----- OPERATION SUMMARY -----")
                             print(f"No files were minified.")
                     print("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
-
             elif operation == OPERATION_SEARCH:
                 if not args.no_log:
                     print("\n\n:::::::::::::::::::::::::::::: EXECUTING SEARCH ::::::::::::::::::::::::::::::")
@@ -560,19 +580,15 @@ def main():
 
                 if not args.no_log:
                     print("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
-
             elif operation == OPERATION_PROPERTIES:
                 if not args.no_log:
-                    print(
-                        "\n\n:::::::::::::::::::::::::::::: EXECUTING FILE PROPERTIES ANALYSIS ::::::::::::::::::::::::::::::")
+                    print("\n\n:::::::::::::::::::::::::::::: EXECUTING FILE PROPERTIES ANALYSIS ::::::::::::::::::::::::::::::")
 
                 handler_results = []
                 for file_type in args.file_types:
                     if file_type in HANDLERS:
                         handler = HANDLERS[file_type]
-
-                        if args.include_extensions and not any(
-                                ext in args.include_extensions for ext in handler.extensions):
+                        if args.include_extensions and not any(ext in args.include_extensions for ext in handler.extensions):
                             continue
 
                         if not args.no_log:
@@ -592,7 +608,7 @@ def main():
                 if not args.no_log:
                     if handler_results:
                         if merged_stats["total_files_counted"] > 0:
-                            print("----- OVERALL SUMMARY -----")
+                            print("----- OPERATION SUMMARY -----")
                             print(f"Total files analyzed: {merged_stats['total_files_counted']}")
                             total_size_mb = merged_stats['bytes_total'] / (1024 * 1024)
                             if total_size_mb < 1:
@@ -602,10 +618,35 @@ def main():
                             print(f"Text files: {merged_stats.get('text_files_count', 0)}")
                             print(f"Binary files: {merged_stats.get('binary_files_count', 0)}")
                         else:
-                            print("----- OVERALL SUMMARY -----")
+                            print("----- OPERATION SUMMARY -----")
                             print(f"No files were analyzed.")
                     print("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
+            elif operation == OPERATION_TREE:
+                tree_output_file = args.dest_named if args.dest_named else args.dest_pos
+                if not tree_output_file:
+                    tree_output_file = os.path.join(timestamp_dir, DEFAULT_TREE_OUTPUT_PATH)
+                output_paths[operation] = tree_output_file
 
+                if not args.no_log:
+                    print("\n\n:::::::::::::::::::::::::::::: EXECUTING TREE VISUALIZATION ::::::::::::::::::::::::::::::")
+                    print(f"Destination: {get_relative_path(tree_output_file, timestamp_dir)}\n")
+
+                tree_stats = visualize_dir_tree(source_dir, tree_output_file, exclude_dirs, exclude_exts, exclude_files, print_to_console=not args.no_log)
+
+                if not args.no_log:
+                    print("----- OPERATION SUMMARY -----")
+                    print(format_dir_tree_summary(tree_stats))
+                    print("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
+
+        # Generate source directory tree visualization if not already done
+        if OPERATION_TREE not in operations:
+            tree_output_file = os.path.join(timestamp_dir, DEFAULT_TREE_OUTPUT_PATH)
+            tree_stats = visualize_dir_tree(source_dir, tree_output_file, exclude_dirs, exclude_exts, exclude_files, print_to_console=not args.no_log)
+
+            if not args.no_log:
+                print(f"Source directory tree visualization written to \"{get_relative_path(tree_output_file, timestamp_dir)}\"")
+
+        # Summary of operations
         summary_path = os.path.join(timestamp_dir, "summary.txt")
         with open(summary_path, 'w') as summary_file:
             summary_file.write(f"# Codeflux Operations Summary\n")
@@ -613,19 +654,17 @@ def main():
             summary_file.write(f"# Source: {os.path.abspath(source_dir)}\n")
             summary_file.write(f"# Destination: {os.path.abspath(timestamp_dir)}\n")
             local_timezone = datetime.datetime.now().astimezone().tzinfo
-            summary_file.write(
-                f"# Created: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')} [{local_timezone}]\n\n")
+            summary_file.write(f"# Created: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')} [{local_timezone}]\n\n")
 
             for op in operations:
                 if op in output_paths:
                     dest_path = output_paths[op]
-                    # Use get_display_path for the summary file as well
                     rel_dest_path = get_relative_path(dest_path, timestamp_dir)
                     summary_file.write(f"## {op.upper()}\n")
                     summary_file.write(f"Destination: {rel_dest_path}\n\n")
 
         if not args.no_log:
-            print(f"\nSummary of operations written to {get_relative_path(summary_path, timestamp_dir)}")
+            print(f"\nSummary of operations written to \"{get_relative_path(summary_path, timestamp_dir)}\"")
         return 0
     except ValueError as e:
         print(f"Error: {e}")

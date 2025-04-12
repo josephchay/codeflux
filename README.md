@@ -1,6 +1,6 @@
 # Codeflux - Unravel Your Codebase
 
-**Codeflux** can be used for organizing large codebases, consolidating scripts, optimizations, or 
+**Codeflux** is a tool for organizing large codebases, consolidating scripts, optimizations, or 
 preparing for migration or backup.
 
 ## Overview
@@ -109,7 +109,7 @@ pnpm add git+https://github.com/josephchay/codeflux.git --save-dev
 | `--snippet-start`                               | `-sns`    | `top`                                                                                   | Where to take the snippet from: top, middle, or bottom of the file                                 |
 | `--snippet-context`                             | `-snc`    | `5`                                                                                     | Number of context lines to include around matches when using with search-pattern                   |
 | **Search Options**                              |           |                                                                                         |                                                                                                    |
-| `--search-ext`                                  | `-se`     | `None`                                                                                  | Search for files with specific extensions                                                          |
+| `--search-extensions`                           | `-se`     | `None`                                                                                  | Search for files with specific extensions                                                          |
 | `--search-pattern`                              | `-sp`     | `None`                                                                                  | Search for files containing a specific regex pattern                                               |
 | `--search-size`                                 | `-ss`     | `None`                                                                                  | Search for files within a size range (in KB, use 'none' for no limit)                              |
 | `--search-date`                                 | `-sd`     | `None`                                                                                  | Search for files modified between dates (YYYY-MM-DD format)                                        |

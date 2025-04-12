@@ -1,3 +1,5 @@
+import shutil
+
 from constants import OPERATION_BUNDLE, OPERATION_MINIFY_BUNDLE, OPERATION_FLATTEN, OPERATION_DEFLATTEN, \
     OPERATION_MINIFY, TABULATE_FORMAT, OPERATION_PROPERTIES
 
@@ -125,7 +127,21 @@ def format_file_table(files_info, operation_type):
             rows.append(row)
 
     if tabulate_available:
-        return table_formatter(rows, headers=headers, tablefmt=TABULATE_FORMAT)
+        terminal_width = shutil.get_terminal_size().columns
+        max_table_width = terminal_width - 4  # 2 characters padding on each side
+        return table_formatter(
+            rows,
+            headers=headers,
+            tablefmt=TABULATE_FORMAT,
+            maxcolwidths=[
+                int(max_table_width * 0.4),
+                int(max_table_width * 0.1),
+                int(max_table_width * 0.2),
+                int(max_table_width * 0.1),
+                int(max_table_width * 0.1),
+                int(max_table_width * 0.2)
+            ]
+        )
     else:
         # Fallback to simple formatting with warnings column
         result = []

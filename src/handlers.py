@@ -575,8 +575,7 @@ class FileExtHandler:
 
             # Display warning summary if any warnings were found
             if files_with_warnings:
-                print(
-                    f"\nNote: {len(files_with_warnings)} Python file(s) contain patterns that may generate syntax warnings.")
+                print(f"\nNote: {len(files_with_warnings)} Python file(s) contain patterns that may generate syntax warnings.")
                 print("These files are marked with '(warn:escapes)' in the status column.")
 
         end_time = time.time()
