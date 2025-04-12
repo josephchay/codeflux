@@ -183,6 +183,7 @@ def visualize_dir_tree(root_dir, output_file, exclude_dirs=None, exclude_exts=No
     tree_lines.append("")
     tree_lines.append("# Summary")
     tree_lines.extend(format_dir_tree_summary(stats).split("\n"))
+    tree_lines.append("")
     with open(output_file, 'w', encoding='utf-8') as f:
         f.write("\n".join(tree_lines))
 
@@ -227,7 +228,7 @@ def visualize_dir_tree(root_dir, output_file, exclude_dirs=None, exclude_exts=No
         # Start the recursive tree building for console output
         build_console_lines(tree, is_root=True)
 
-        print("[DIRECTORY TREE]")
+        print("\n[DIRECTORY TREE]")
 
         if truncate_output:
             max_lines = min(50, len(console_tree_lines))
