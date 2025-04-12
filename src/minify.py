@@ -33,21 +33,21 @@ def minify_php(source, continue_on_error=False):
             if os.path.exists(temp_out_path):
                 with open(temp_out_path, 'r', encoding='utf-8') as out_file:
                     minified = out_file.read()
-                return minified
+                return minified, None
             else:
+                warning = "PHP minification failed: Output file not created"
                 if continue_on_error:
-                    print("WARNING: PHP minification failed. Output file not created. Using original content.")
-                    return source
+                    return source, warning
                 else:
-                    raise RuntimeError("PHP minification failed: Output file not created")
+                    raise RuntimeError(warning)
 
         except subprocess.CalledProcessError as e:
             error_msg = e.stderr.strip() if e.stderr else "No details available"
+            warning = f"PHP minification failed: {error_msg}"
             if continue_on_error:
-                print(f"WARNING: PHP minification failed. {error_msg}. Using original content.")
-                return source
+                return source, warning
             else:
-                raise RuntimeError(f"PHP minification failed: {error_msg}")
+                raise RuntimeError(warning)
 
         finally:
             # Clean up temporary files
@@ -57,67 +57,117 @@ def minify_php(source, continue_on_error=False):
                 os.unlink(temp_out_path)
 
     except Exception as e:
+        warning = f"PHP minification exception: {str(e)}"
         if continue_on_error:
-            print(f"WARNING: PHP minification exception: {str(e)}. Using original content.")
-            return source
+            return source, warning
         else:
-            raise RuntimeError(f"PHP minification failed: {str(e)}")
+            raise RuntimeError(warning)
+
+
+def safely_minify_python_code(code, continue_on_error=False):
+    """Attempt to minify Python code with extensive error handling."""
+    if not code or not code.strip():
+        return code, None
+
+    try:
+        # Check for common issues that cause minification errors
+        # Look for invalid decimal literals like leading zeros
+        if re.search(r'\b0\d+\b', code):
+            warning = "Detected invalid decimal literals (numbers with leading zeros)"
+            return code, warning
+
+        # Try to minify the code
+        minified = python_minifier.minify(code)
+        return minified, None
+    except SyntaxError as e:
+        warning = f"Python minification syntax error: {str(e)}"
+        if continue_on_error:
+            return code, warning
+        else:
+            raise
+    except Exception as e:
+        warning = f"Python minification error: {str(e)}"
+        if continue_on_error:
+            return code, warning
+        else:
+            raise
 
 
 def minify_code(source, file_extension, continue_on_error=False):
+    """
+    Minify code based on file extension.
+
+    Returns:
+        tuple: (minified_content, warning_message)
+    """
     if not source or not source.strip():
-        return source
+        return source, None
 
     ext_lower = file_extension.lower() if file_extension else ''
 
-    if any(ext_lower.endswith(ext) for ext in ['.md', '.markdown', '.mdown', '.mkdn', '.mkd', '.mdwn', '.mdtxt', '.mdtext', '.txt', '.rst']):
-        return source
+    # Skip minification for certain file types
+    if any(ext_lower.endswith(ext) for ext in
+           ['.md', '.markdown', '.mdown', '.mkdn', '.mkd', '.mdwn', '.mdtxt', '.mdtext', '.txt', '.rst']):
+        return source, None
+
+    # Python files
     if ext_lower.endswith('.py'):
         try:
-            return python_minifier.minify(source)
+            return safely_minify_python_code(source, True)
         except Exception as e:
-            if continue_on_error:
-                print(f"WARNING: Failed to minify Python code: {str(e)}. Using original code.")
-                return source
-            else:
-                print(f"ERROR: Failed to minify Python code: {str(e)}")
+            warning = f"Failed to minify Python code: {str(e)}"
+            if not continue_on_error:
+                print(f"ERROR: {warning}")
                 sys.exit(1)
+            return source, warning
+
+    # Jupyter notebooks
     elif ext_lower.endswith('.ipynb'):
         try:
             notebook = json.loads(source)
+            warnings = []
+
             if 'cells' in notebook:
-                for cell in notebook['cells']:
-                    if cell.get('cell_type') == 'code' and 'source' in cell and cell.get('language', 'python') == 'python':
+                for cell_index, cell in enumerate(notebook['cells']):
+                    if cell.get('cell_type') == 'code' and 'source' in cell and cell.get('language',
+                                                                                         'python') == 'python':
                         if isinstance(cell['source'], list):
                             code = ''.join(cell['source'])
                             try:
-                                minified_code = python_minifier.minify(code)
+                                minified_code, cell_warning = safely_minify_python_code(code,
+                                                                                        True)  # Always continue on error for cells
+                                if cell_warning:
+                                    cell_num = cell_index + 1
+                                    warnings.append(f"Cell #{cell_num}: {cell_warning}")
                                 cell['source'] = minified_code
                             except Exception as e:
-                                if continue_on_error:
-                                    print(f"WARNING: Failed to minify a code cell: {str(e)}. Using original code.")
-                                else:
-                                    print(f"ERROR: Failed to minify a code cell: {str(e)}")
-                                    sys.exit(1)
+                                cell_num = cell_index + 1
+                                warnings.append(f"Cell #{cell_num}: {str(e)}")
+                                # Don't modify this cell's source
 
-            return json.dumps(notebook, separators=(',', ':'))
+            warning = "; ".join(warnings) if warnings else None
+            return json.dumps(notebook, separators=(',', ':')), warning
+
         except json.JSONDecodeError as e:
+            warning = f"Invalid notebook JSON format: {str(e)}"
             if continue_on_error:
-                print(f"WARNING: Invalid notebook JSON format: {str(e)}. Using original content.")
-                return source
+                return source, warning
             else:
-                print(f"ERROR: Invalid notebook JSON format: {str(e)}")
+                print(f"ERROR: {warning}")
                 sys.exit(1)
         except Exception as e:
+            warning = f"Error processing notebook: {str(e)}"
             if continue_on_error:
-                print(f"WARNING: Error processing notebook: {str(e)}. Using original content.")
-                return source
+                return source, warning
             else:
-                print(f"ERROR: Error processing notebook: {str(e)}")
+                print(f"ERROR: {warning}")
                 sys.exit(1)
+
+    # JavaScript/TypeScript
     elif any(ext_lower.endswith(ext) for ext in ['.js', '.jsx', '.ts', '.tsx']):
         try:
-            with tempfile.NamedTemporaryFile(suffix=file_extension, mode='w', encoding='utf-8', delete=False) as temp_in:
+            with tempfile.NamedTemporaryFile(suffix=file_extension, mode='w', encoding='utf-8',
+                                             delete=False) as temp_in:
                 temp_in.write(source)
                 temp_in_path = temp_in.name
             temp_out_path = temp_in_path + '.min'
@@ -135,16 +185,11 @@ def minify_code(source, file_extension, continue_on_error=False):
                 if os.path.exists(temp_out_path):
                     os.unlink(temp_out_path)
 
+                warning = f"JS/TS minification failed: {e.stderr if e.stderr else e}"
                 if continue_on_error:
-                    print(f"WARNING: JS/TS minification failed with return code {e.returncode}")
-                    if e.stderr:
-                        print(f"Details: {e.stderr}")
-                    print("Continuing with original content.")
-                    return source
+                    return source, warning
                 else:
-                    print(f"ERROR: JS/TS minification failed with return code {e.returncode}")
-                    if e.stderr:
-                        print(f"Details: {e.stderr}")
+                    print(f"ERROR: {warning}")
                     print("Operation aborted due to JS/TS minification error.")
                     sys.exit(1)
 
@@ -153,25 +198,28 @@ def minify_code(source, file_extension, continue_on_error=False):
                 with open(temp_out_path, 'r', encoding='utf-8') as out_file:
                     minified = out_file.read()
                 os.unlink(temp_out_path)
-                return minified
+                return minified, None
             else:
+                warning = "JS/TS minification failed: Output file not created"
                 if continue_on_error:
-                    print("WARNING: JS/TS minification failed. Output file not created. Using original content.")
-                    return source
+                    return source, warning
                 else:
-                    print("ERROR: JS/TS minification failed. Output file not created.")
+                    print(f"ERROR: {warning}")
                     print("Operation aborted due to JS/TS minification error.")
                     sys.exit(1)
         except (UnicodeEncodeError, UnicodeDecodeError) as e:
+            warning = f"Encoding error during JS/TS minification: {str(e)}"
             if continue_on_error:
-                print(f"WARNING: Encoding error during JS/TS minification: {str(e)}. Using original content.")
-                return source
+                return source, warning
             else:
-                print(f"ERROR: Encoding error during JS/TS minification: {str(e)}")
+                print(f"ERROR: {warning}")
                 sys.exit(1)
+
+    # CSS files
     elif any(ext_lower.endswith(ext) for ext in ['.css', '.scss', '.sass', '.less']):
         try:
-            with tempfile.NamedTemporaryFile(suffix=file_extension, mode='w', encoding='utf-8', delete=False) as temp_in:
+            with tempfile.NamedTemporaryFile(suffix=file_extension, mode='w', encoding='utf-8',
+                                             delete=False) as temp_in:
                 temp_in.write(source)
                 temp_in_path = temp_in.name
             temp_out_path = temp_in_path + '.min'
@@ -189,16 +237,11 @@ def minify_code(source, file_extension, continue_on_error=False):
                 if os.path.exists(temp_out_path):
                     os.unlink(temp_out_path)
 
+                warning = f"CSS minification failed: {e.stderr if e.stderr else e}"
                 if continue_on_error:
-                    print(f"WARNING: CSS minification failed with return code {e.returncode}")
-                    if e.stderr:
-                        print(f"Details: {e.stderr}")
-                    print("Continuing with original content.")
-                    return source
+                    return source, warning
                 else:
-                    print(f"ERROR: CSS minification failed with return code {e.returncode}")
-                    if e.stderr:
-                        print(f"Details: {e.stderr}")
+                    print(f"ERROR: {warning}")
                     print("Operation aborted due to CSS minification error.")
                     sys.exit(1)
 
@@ -207,25 +250,28 @@ def minify_code(source, file_extension, continue_on_error=False):
                 with open(temp_out_path, 'r', encoding='utf-8') as out_file:
                     minified = out_file.read()
                 os.unlink(temp_out_path)
-                return minified
+                return minified, None
             else:
+                warning = "CSS minification failed: Output file not created"
                 if continue_on_error:
-                    print("WARNING: CSS minification failed. Output file not created. Using original content.")
-                    return source
+                    return source, warning
                 else:
-                    print("ERROR: CSS minification failed. Output file not created.")
+                    print(f"ERROR: {warning}")
                     print("Operation aborted due to CSS minification error.")
                     sys.exit(1)
         except (UnicodeEncodeError, UnicodeDecodeError) as e:
+            warning = f"Encoding error during CSS minification: {str(e)}"
             if continue_on_error:
-                print(f"WARNING: Encoding error during CSS minification: {str(e)}. Using original content.")
-                return source
+                return source, warning
             else:
-                print(f"ERROR: Encoding error during CSS minification: {str(e)}")
+                print(f"ERROR: {warning}")
                 sys.exit(1)
+
+    # HTML files
     elif any(ext_lower.endswith(ext) for ext in ['.html', '.htm', '.xhtml', '.shtml']):
         try:
-            with tempfile.NamedTemporaryFile(suffix=file_extension, mode='w', encoding='utf-8', delete=False) as temp_in:
+            with tempfile.NamedTemporaryFile(suffix=file_extension, mode='w', encoding='utf-8',
+                                             delete=False) as temp_in:
                 temp_in.write(source)
                 temp_in_path = temp_in.name
             temp_out_path = temp_in_path + '.min'
@@ -243,16 +289,11 @@ def minify_code(source, file_extension, continue_on_error=False):
                 if os.path.exists(temp_out_path):
                     os.unlink(temp_out_path)
 
+                warning = f"HTML minification failed: {e.stderr if e.stderr else e}"
                 if continue_on_error:
-                    print(f"WARNING: HTML minification failed with return code {e.returncode}")
-                    if e.stderr:
-                        print(f"Details: {e.stderr}")
-                    print("Continuing with original content.")
-                    return source
+                    return source, warning
                 else:
-                    print(f"ERROR: HTML minification failed with return code {e.returncode}")
-                    if e.stderr:
-                        print(f"Details: {e.stderr}")
+                    print(f"ERROR: {warning}")
                     print("Operation aborted due to HTML minification error.")
                     sys.exit(1)
 
@@ -261,35 +302,41 @@ def minify_code(source, file_extension, continue_on_error=False):
                 with open(temp_out_path, 'r', encoding='utf-8') as out_file:
                     minified = out_file.read()
                 os.unlink(temp_out_path)
-                return minified
+                return minified, None
             else:
+                warning = "HTML minification failed: Output file not created"
                 if continue_on_error:
-                    print("WARNING: HTML minification failed. Output file not created. Using original content.")
-                    return source
+                    return source, warning
                 else:
-                    print("ERROR: HTML minification failed. Output file not created.")
+                    print(f"ERROR: {warning}")
                     print("Operation aborted due to HTML minification error.")
                     sys.exit(1)
         except (UnicodeEncodeError, UnicodeDecodeError) as e:
+            warning = f"Encoding error during HTML minification: {str(e)}"
             if continue_on_error:
-                print(f"WARNING: Encoding error during HTML minification: {str(e)}. Using original content.")
-                return source
+                return source, warning
             else:
-                print(f"ERROR: Encoding error during HTML minification: {str(e)}")
+                print(f"ERROR: {warning}")
                 sys.exit(1)
+
+    # PHP files
     elif any(ext_lower.endswith(ext) for ext in ['.php', '.phtml', '.php5', '.php7', '.phps']):
         return minify_php(source, continue_on_error)
+
+    # JSON files
     elif any(ext_lower.endswith(ext) for ext in ['.json', '.jsonl', '.geojson', '.json5', '.ndjson']):
         try:
             parsed_json = json.loads(source)
-            return json.dumps(parsed_json, separators=(',', ':'))
-        except json.JSONDecodeError:
+            return json.dumps(parsed_json, separators=(',', ':')), None
+        except json.JSONDecodeError as e:
+            warning = f"Invalid JSON content: {str(e)}"
             if continue_on_error:
-                print("WARNING: Invalid JSON content. File will not be minified. Using original content.")
-                return source
+                return source, warning
             else:
-                print("ERROR: Invalid JSON content. File will not be minified.")
+                print(f"ERROR: {warning}")
                 sys.exit(1)
+
+    # YAML files
     elif any(ext_lower.endswith(ext) for ext in ['.yaml', '.yml']):
         try:
             yaml_parser = YAML(typ='safe')
@@ -297,7 +344,8 @@ def minify_code(source, file_extension, continue_on_error=False):
             flow_style = True
 
             if flow_style:
-                minified = yaml.dump(data, default_flow_style=True, width=float('inf'), allow_unicode=True, sort_keys=False)
+                minified = yaml.dump(data, default_flow_style=True, width=float('inf'), allow_unicode=True,
+                                     sort_keys=False)
                 minified = minified.strip()
                 minified = re.sub(r',\s+', ', ', minified)
                 minified = re.sub(r':\s+', ': ', minified)
@@ -306,7 +354,8 @@ def minify_code(source, file_extension, continue_on_error=False):
                 if minified.endswith('\n'):
                     minified = minified[:-1]
             else:
-                minified = yaml.dump(data, default_flow_style=False, indent=2, width=float('inf'), allow_unicode=True, sort_keys=False)
+                minified = yaml.dump(data, default_flow_style=False, indent=2, width=float('inf'), allow_unicode=True,
+                                     sort_keys=False)
                 minified = re.sub(r'^\s*#.*$', '', minified, flags=re.MULTILINE)
                 minified = re.sub(r'\n\s*\n', '\n', minified)
                 minified = re.sub(r'[ \t]+$', '', minified, flags=re.MULTILINE)
@@ -320,13 +369,13 @@ def minify_code(source, file_extension, continue_on_error=False):
                             lines[i] = f"{prefix}{value}"
                 minified = '\n'.join(lines)
 
-            return minified.strip()
+            return minified.strip(), None
         except Exception as e:
+            warning = f"YAML minification failed: {str(e)}"
             if continue_on_error:
-                print(f"WARNING: YAML minification failed: {str(e)}. Using original content.")
-                return source
+                return source, warning
             else:
-                print(f"ERROR: YAML minification failed: {str(e)}")
+                print(f"ERROR: {warning}")
                 sys.exit(1)
 
-    return source
+    return source, None

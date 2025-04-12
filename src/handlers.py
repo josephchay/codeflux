@@ -448,9 +448,7 @@ class FileExtHandler:
                                 files_info.append(file_info)
                             continue
 
-                        # For other file types, try minification
                         try:
-                            # Check for potential warnings in Python files
                             warning_message = None
                             if ext_lower.endswith('.py'):
                                 # Common invalid escape sequences that trigger SyntaxWarnings
@@ -466,7 +464,10 @@ class FileExtHandler:
                                         files_with_warnings[rel_file_path] = warning_message
                                         break
 
-                            minified_content = minify_code(content, ext, continue_on_error)
+                            minified_content, minify_warning = minify_code(content, ext, continue_on_error)
+
+                            if minify_warning:
+                                files_with_warnings[rel_file_path] = minify_warning
 
                             # Check if minification was successful (content changed)
                             if minified_content != content:
@@ -807,7 +808,10 @@ class FileExtHandler:
                                                 files_with_warnings[display_path] = warning_message
                                                 break
 
-                                    minified_content = minify_code(content, file_extension, continue_on_error)
+                                    minified_content, minify_warning = minify_code(content, file_extension, continue_on_error)
+
+                                    if minify_warning:
+                                        files_with_warnings[display_path] = minify_warning
 
                                     # If minification changed the content (was successful)
                                     if minified_content != content:
