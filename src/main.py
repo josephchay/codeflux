@@ -4,11 +4,11 @@ import sys
 import datetime
 
 from constants import *
+from utils import merge_with_defaults, merge_stats, mkdir_output, format_path, get_relpath
 from handlers import HANDLERS, FileExtHandler
 from search import Searcher
 from ui.table import get_table_formatter
-from ui.tree import visualize_dir_tree, format_dir_tree_summary
-from utils import merge_with_defaults, merge_stats, mkdir_output, format_path, get_relative_path
+from ui.tree import visualize_dir_tree
 
 
 def make_parser():
@@ -272,7 +272,7 @@ def main():
 
         if not args.no_log:
             print("\n\n:::::::::::::::::::::::::::::: EXECUTING TREE VISUALIZATION ::::::::::::::::::::::::::::::")
-            print(f"Destination: {get_relative_path(tree_output_file, timestamp_dir)}\n")
+            print(f"Destination: {get_relpath(tree_output_file, timestamp_dir)}\n")
 
         tree_stats = visualize_dir_tree(source_dir, tree_output_file, exclude_dirs, exclude_exts, exclude_files, print_to_console=not args.no_log)
 
@@ -292,7 +292,7 @@ def main():
 
                 if not args.no_log:
                     print("\n\n:::::::::::::::::::::::::::::: EXECUTING FLATTEN ::::::::::::::::::::::::::::::")
-                    print(f"Destination: {get_relative_path(flatten_dest)}\n")
+                    print(f"Destination: {get_relpath(flatten_dest)}\n")
 
                 for file_type in args.file_types:
                     if file_type in HANDLERS:
@@ -321,7 +321,7 @@ def main():
                             try:
                                 os.rmdir(file_dest_dir)
                                 if not args.no_log:
-                                    print(f"Removed empty directory: {get_relative_path(file_dest_dir)}")
+                                    print(f"Removed empty directory: {get_relpath(file_dest_dir)}")
                             except OSError:
                                 pass
                         if not args.no_log:
@@ -346,7 +346,7 @@ def main():
 
                 if not args.no_log:
                     print("\n\n:::::::::::::::::::::::::::::: EXECUTING DEFLATTEN ::::::::::::::::::::::::::::::")
-                    print(f"Destination: {get_relative_path(deflatten_dest, timestamp_dir)}\n")
+                    print(f"Destination: {get_relpath(deflatten_dest, timestamp_dir)}\n")
 
                 # Check if there are any files to process
                 has_files_to_process = False
@@ -363,7 +363,7 @@ def main():
 
                 else:
                     if not args.no_log:
-                        print(f"Destination: {get_relative_path(deflatten_dest)}\n")
+                        print(f"Destination: {get_relpath(deflatten_dest)}\n")
 
                     for file_type in args.file_types:
                         if file_type in HANDLERS:
@@ -412,10 +412,10 @@ def main():
                 if not args.no_log:
                     if operation == OPERATION_BUNDLE:
                         print("\n\n:::::::::::::::::::::::::::::: EXECUTING BUNDLE ::::::::::::::::::::::::::::::")
-                        print(f"Destination: {get_relative_path(bundle_dest, timestamp_dir)}\n")
+                        print(f"Destination: {get_relpath(bundle_dest, timestamp_dir)}\n")
                     else:
                         print("\n\n:::::::::::::::::::::::::::::: EXECUTING MINIFY-BUNDLE ::::::::::::::::::::::::::::::")
-                        print(f"Destination: {get_relative_path(bundle_dest, timestamp_dir)}")
+                        print(f"Destination: {get_relpath(bundle_dest, timestamp_dir)}")
                         print(f"Minification: {MINIFICATION_DESCRIPTION}")
                         if args.continue_on_error:
                             print("Note: Continuing on minification errors (--continue-on-error flag is set)")
@@ -450,7 +450,7 @@ def main():
 
                 if not args.no_log:
                     print("\n\n:::::::::::::::::::::::::::::: EXECUTING MINIFY ::::::::::::::::::::::::::::::")
-                    print(f"Destination: {get_relative_path(minify_dest, timestamp_dir)}")
+                    print(f"Destination: {get_relpath(minify_dest, timestamp_dir)}")
                     print(f"Minification: ({MINIFICATION_DESCRIPTION})")
                     if args.continue_on_error:
                         print("Note: Continuing on minification errors (--continue-on-error flag is set)")
@@ -495,7 +495,7 @@ def main():
                             try:
                                 os.rmdir(type_dir)
                                 if not args.no_log:
-                                    print(f"Removed empty directory: {get_relative_path(type_dir)}")
+                                    print(f"Removed empty directory: {get_relpath(type_dir)}")
                             except OSError:
                                 pass
                         if not args.no_log:
@@ -626,7 +626,7 @@ def main():
 
                 if not args.no_log:
                     print("\n\n:::::::::::::::::::::::::::::: EXECUTING TREE VISUALIZATION ::::::::::::::::::::::::::::::")
-                    print(f"Destination: {get_relative_path(tree_output_file, timestamp_dir)}")
+                    print(f"Destination: {get_relpath(tree_output_file, timestamp_dir)}")
 
                 tree_stats = visualize_dir_tree(source_dir, tree_output_file, exclude_dirs, exclude_exts, exclude_files, print_to_console=not args.no_log, truncate_output=not args.no_truncate)
 
@@ -638,7 +638,7 @@ def main():
             tree_output_file = os.path.join(timestamp_dir, DEFAULT_TREE_OUTPUT_PATH)
             if not args.no_log:
                 print("\n\n:::::::::::::::::::::::::::::: GENERATING SOURCE DIRECTORY TREE ::::::::::::::::::::::::::::::")
-                print(f"Destination: {get_relative_path(tree_output_file, timestamp_dir)}")
+                print(f"Destination: {get_relpath(tree_output_file, timestamp_dir)}")
 
             tree_stats = visualize_dir_tree(source_dir, tree_output_file, exclude_dirs, exclude_exts, exclude_files, print_to_console=not args.no_log)
 
@@ -647,23 +647,26 @@ def main():
 
         # Summary of operations
         summary_path = os.path.join(timestamp_dir, "summary.txt")
+        raw_command = ' '.join([sys.argv[0]] + [f'"{arg}"' if ' ' in arg else arg for arg in sys.argv[1:]])
+        command = ' '.join([os.path.basename(sys.argv[0])] + sys.argv[1:])
         with open(summary_path, 'w') as summary_file:
             summary_file.write(f"# Codeflux Operations Summary\n")
             summary_file.write(f"# Timestamp: {os.path.basename(timestamp_dir)}\n")
             summary_file.write(f"# Source: {os.path.abspath(source_dir)}\n")
             summary_file.write(f"# Destination: {os.path.abspath(timestamp_dir)}\n")
             local_timezone = datetime.datetime.now().astimezone().tzinfo
-            summary_file.write(f"# Created: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')} [{local_timezone}]\n\n")
-
+            summary_file.write(f"# Created: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')} [{local_timezone}]\n")
+            summary_file.write(f"# Command (Raw): {raw_command}\n")
+            summary_file.write(f"# Command: {command}\n")
             for op in operations:
                 if op in output_paths:
                     dest_path = output_paths[op]
-                    rel_dest_path = get_relative_path(dest_path, timestamp_dir)
-                    summary_file.write(f"## {op.upper()}\n")
-                    summary_file.write(f"Destination: {rel_dest_path}\n\n")
+                    rel_dest_path = get_relpath(dest_path, timestamp_dir)
+                    summary_file.write(f"\n## {op.upper()}\n")
+                    summary_file.write(f"Destination: {rel_dest_path}\n")
 
         if not args.no_log:
-            print(f"\nSummary of operations written to \"{get_relative_path(summary_path, timestamp_dir)}\"")
+            print(f"\nSummary of operations written to \"{get_relpath(summary_path, timestamp_dir)}\"")
         return 0
     except ValueError as e:
         print(f"Error: {e}")

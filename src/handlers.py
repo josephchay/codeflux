@@ -7,7 +7,7 @@ from constants import *
 from minify import minify_code
 from snipping import apply_snippet_filter
 from ui.table import format_file_table
-from utils import get_unique_filename, print_stats, should_process_file, get_relative_path
+from utils import get_unique_filename, print_stats, should_process_file, get_relpath
 
 
 class FileExtHandler:
@@ -112,7 +112,7 @@ class FileExtHandler:
                             dest_rel_path = os.path.relpath(unique_destination_file, os.path.dirname(dest_dir))
 
                             file_info = {
-                                "file": get_relative_path(source_file, source_dir),
+                                "file": get_relpath(source_file, source_dir),
                                 "size": file_size,
                                 "status": "Flattened"
                             }
@@ -174,7 +174,7 @@ class FileExtHandler:
 
         if not os.path.exists(flattened_dir) or not os.listdir(flattened_dir):
             if not silent:
-                print(f"Source directory {get_relative_path(flattened_dir)} does not exist or is empty.")
+                print(f"Source directory {get_relpath(flattened_dir)} does not exist or is empty.")
                 print(f"No files to deflatten.")
                 print("\nNothing to do for this file type.")
 
@@ -235,7 +235,7 @@ class FileExtHandler:
             original_file = path_parts[-1]
             original_dir = os.path.join(dest_dir, *path_parts[:-1])
             if os.path.abspath(original_dir).startswith(flattened_dir):
-                print(f"Skipping to avoid overwriting source: {get_relative_path(flattened_file)}")
+                print(f"Skipping to avoid overwriting source: {get_relpath(flattened_file)}")
                 stats["skipped_files"] += 1
                 continue
 
@@ -259,7 +259,7 @@ class FileExtHandler:
 
                 if not silent:
                     file_info = {
-                        "file": get_relative_path(flattened_file),
+                        "file": get_relpath(flattened_file),
                         "size": file_size,
                         "status": "Deflattened"
                     }
@@ -1066,7 +1066,7 @@ class FileExtHandler:
 
                         # Prepare file info dictionary
                         file_info = {
-                            "file": get_relative_path(file_path, source_dir),
+                            "file": get_relpath(file_path, source_dir),
                             "size": file_size,
                             "readable_size": human_readable_size(file_size),
                             "created": datetime.datetime.fromtimestamp(file_stat.st_ctime).strftime("%Y-%m-%d %H:%M:%S"),

@@ -5,26 +5,11 @@ from ui.table import format_stats_table
 
 def visualize_dir_tree(root_dir, output_file, exclude_dirs=None, exclude_exts=None, exclude_files=None,
                        print_to_console=True, truncate_output=False):
-    """
-    Generate a text-based tree visualization of the directory structure.
-
-    Args:
-        root_dir: The root directory to visualize
-        output_file: The file to save the visualization to
-        exclude_dirs: List of directory names to exclude
-        exclude_exts: List of file extensions to exclude
-        exclude_files: List of file paths to exclude
-        print_to_console: Whether to print the tree to the console
-        truncate_output: Whether to truncate console output (for large trees)
-
-    Returns:
-        dict: Statistics about the tree
-    """
+    """Generate a text-based tree visualization of the directory structure."""
     exclude_dirs = exclude_dirs or []
     exclude_exts = exclude_exts or []
     exclude_files = exclude_files or []
 
-    # Convert root_dir to absolute path
     root_dir = os.path.abspath(root_dir)
     base_name = os.path.basename(root_dir)
 
@@ -45,12 +30,8 @@ def visualize_dir_tree(root_dir, output_file, exclude_dirs=None, exclude_exts=No
 
     # Build a complete directory tree structure
     tree = {"name": base_name, "type": "dir", "children": {}, "path": root_dir}
-
     for root, dirs, files in os.walk(root_dir):
-        # Skip excluded directories
         dirs[:] = sorted([d for d in dirs if d not in exclude_dirs])
-
-        # Calculate relative path from root
         rel_path = os.path.relpath(root, root_dir)
         depth = 0 if rel_path == '.' else len(rel_path.split(os.sep))
 
@@ -59,10 +40,8 @@ def visualize_dir_tree(root_dir, output_file, exclude_dirs=None, exclude_exts=No
 
         # Skip processing files in the root directory if we're at root level
         if depth > 0:
-            # Find/create the current node in the tree
             path_parts = rel_path.split(os.sep)
             current = tree
-
             for i, part in enumerate(path_parts):
                 if part not in current["children"]:
                     current["children"][part] = {
@@ -79,11 +58,8 @@ def visualize_dir_tree(root_dir, output_file, exclude_dirs=None, exclude_exts=No
             for file in sorted(files):
                 file_path = os.path.join(root, file)
 
-                # Skip excluded extensions
                 if any(file.lower().endswith(ext.lower()) for ext in exclude_exts):
                     continue
-
-                # Skip excluded file paths
                 rel_file_path = os.path.relpath(file_path, root_dir)
                 norm_rel_path = rel_file_path.replace('\\', '/')
                 excluded = False
@@ -98,12 +74,9 @@ def visualize_dir_tree(root_dir, output_file, exclude_dirs=None, exclude_exts=No
                 if excluded:
                     continue
 
-                # Get file size
                 try:
                     file_size = os.path.getsize(file_path)
                     stats["total_size"] += file_size
-
-                    # Format file size
                     if file_size < 1024:
                         size_str = f"{file_size} B"
                     elif file_size < 1024 * 1024:
@@ -111,7 +84,6 @@ def visualize_dir_tree(root_dir, output_file, exclude_dirs=None, exclude_exts=No
                     else:
                         size_str = f"{file_size / (1024 * 1024):.1f} MB"
 
-                    # Add file to current node
                     current["children"][file] = {
                         "name": file,
                         "type": "file",
@@ -147,12 +119,9 @@ def visualize_dir_tree(root_dir, output_file, exclude_dirs=None, exclude_exts=No
                 if excluded:
                     continue
 
-                # Get file size
                 try:
                     file_size = os.path.getsize(file_path)
                     stats["total_size"] += file_size
-
-                    # Format file size
                     if file_size < 1024:
                         size_str = f"{file_size} B"
                     elif file_size < 1024 * 1024:
@@ -160,7 +129,6 @@ def visualize_dir_tree(root_dir, output_file, exclude_dirs=None, exclude_exts=No
                     else:
                         size_str = f"{file_size / (1024 * 1024):.1f} MB"
 
-                    # Add file to the root node
                     tree["children"][file] = {
                         "name": file,
                         "type": "file",
@@ -183,7 +151,6 @@ def visualize_dir_tree(root_dir, output_file, exclude_dirs=None, exclude_exts=No
 
     # Recursively build tree lines
     def build_tree_lines(node, prefix="", is_last=True, is_root=False):
-        # Sort children: directories first, then files
         sorted_children = []
         dirs = []
         files = []
@@ -193,23 +160,13 @@ def visualize_dir_tree(root_dir, output_file, exclude_dirs=None, exclude_exts=No
                 dirs.append((name, child))
             else:
                 files.append((name, child))
-
-        # Sort directories and files by name
         dirs.sort()
         files.sort()
-
-        # Combine sorted directories and files
         sorted_children = dirs + files
 
-        # Process each child
         for i, (name, child) in enumerate(sorted_children):
-            # Determine if this is the last item at this level
             is_last_child = (i == len(sorted_children) - 1)
-
-            # Choose the connector based on whether this is the last item
             connector = "└── " if is_last_child else "├── "
-
-            # Create the line for this item
             if child["type"] == "dir":
                 tree_lines.append(f"{prefix}{connector}{name}/")
             else:
@@ -220,16 +177,12 @@ def visualize_dir_tree(root_dir, output_file, exclude_dirs=None, exclude_exts=No
                 # Extend prefix for children based on whether this was the last item
                 extended_prefix = prefix + ("    " if is_last_child else "│   ")
                 build_tree_lines(child, extended_prefix, is_last_child)
-
     # Start the recursive tree building from the root's children
     build_tree_lines(tree, is_root=True)
 
-    # Add summary
     tree_lines.append("")
     tree_lines.append("# Summary")
     tree_lines.extend(format_dir_tree_summary(stats).split("\n"))
-
-    # Write to file
     with open(output_file, 'w', encoding='utf-8') as f:
         f.write("\n".join(tree_lines))
 
@@ -259,7 +212,6 @@ def visualize_dir_tree(root_dir, output_file, exclude_dirs=None, exclude_exts=No
             dirs.sort()
             files.sort()
             sorted_children = dirs + files
-
             for i, (name, child) in enumerate(sorted_children):
                 is_last_child = (i == len(sorted_children) - 1)
                 connector = "└── " if is_last_child else "├── "
@@ -272,31 +224,22 @@ def visualize_dir_tree(root_dir, output_file, exclude_dirs=None, exclude_exts=No
                 if child["type"] == "dir":
                     extended_prefix = prefix + ("    " if is_last_child else "│   ")
                     build_console_lines(child, extended_prefix, is_last_child)
-
         # Start the recursive tree building for console output
         build_console_lines(tree, is_root=True)
 
-        # Print to console
         print("[DIRECTORY TREE]")
 
         if truncate_output:
-            # Print with a limit to avoid overwhelming the console
             max_lines = min(50, len(console_tree_lines))
             truncated = len(console_tree_lines) > max_lines
 
-            # Print tree with a limit
             for line in console_tree_lines[:max_lines]:
                 print(line)
-
-            # Add indication if truncated
             if truncated:
                 print(f"... (truncated, full tree saved to file) ...")
         else:
-            # Print the entire tree without truncation
             for line in console_tree_lines:
                 print(line)
-
-        # Create a standardized stat table similar to other operations
         print("\n[OPERATION SUMMARY]")
 
         # Format the summary data for the table output

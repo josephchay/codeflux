@@ -28,6 +28,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `--exclude-hash` argument to exclude MD5 hash calculation for files.
 - `maxcolwidths` of `tabulate` table UI to be more dynamic towards the terminal width.
 - `tree.py` for source directory tree visualization, and saving to `diretory_tree.txt` in the output directory.
+- Command used tracking for each instance - saved into `summary.txt` file in the output directory.
+- Command and Raw Command being used to perform the instance in the CLI.
 
 ### Fixed
 

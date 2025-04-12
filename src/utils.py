@@ -17,15 +17,11 @@ def get_unique_filename(destination_file):
     return unique_destination_file
 
 
-def get_relative_path(path, base_path=None, output_base=None):
-    # Default to current directory if no base_path provided
+def get_relpath(path, base_path=None, output_base=None):
     base_path = base_path or os.getcwd()
-
-    # Ensure consistent format with forward slashes
     clean_path = path.replace('\\', '/')
 
     try:
-        # Ensure paths are absolute for proper comparison
         abs_path = os.path.abspath(path)
         abs_base = os.path.abspath(base_path)
 
@@ -41,7 +37,6 @@ def get_relative_path(path, base_path=None, output_base=None):
                 # If the pattern is at the end, return an empty string or the basename
                 return os.path.basename(abs_path)
 
-        # If output_base is provided, try to make the path relative to it
         if output_base:
             try:
                 output_abs = os.path.abspath(output_base)
@@ -51,10 +46,8 @@ def get_relative_path(path, base_path=None, output_base=None):
             except ValueError:
                 pass  # Continue to other methods if this fails
 
-        # If the path is under the base_path, calculate the relative path
         if abs_path.startswith(abs_base + os.sep) or abs_path == abs_base:
             rel_path = os.path.relpath(abs_path, abs_base)
-            # Don't return '.' for matching paths
             if rel_path == '.':
                 return os.path.basename(abs_path)
             return rel_path.replace('\\', '/')
@@ -70,7 +63,7 @@ def get_relative_path(path, base_path=None, output_base=None):
 
 def format_path(path):
     abs_path = os.path.abspath(path)
-    rel_path = get_relative_path(path)
+    rel_path = get_relpath(path)
 
     if rel_path == abs_path:
         return abs_path

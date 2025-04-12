@@ -5,7 +5,7 @@ import re
 from difflib import SequenceMatcher
 
 from constants import ALL_EXTENSIONS
-from utils import get_relative_path
+from utils import get_relpath
 
 
 class Searcher:
@@ -27,7 +27,7 @@ class Searcher:
             for file in files:
                 if any(file.lower().endswith(ext) for ext in extensions):
                     file_path = os.path.join(root, file)
-                    rel_path = get_relative_path(file_path, source_dir)
+                    rel_path = get_relpath(file_path, source_dir)
                     if self.is_excluded_file(rel_path):
                         continue
 
@@ -65,7 +65,7 @@ class Searcher:
                     continue
 
                 file_path = os.path.join(root, file)
-                rel_path = get_relative_path(file_path, source_dir)
+                rel_path = get_relpath(file_path, source_dir)
                 if self.is_excluded_file(rel_path):
                     continue
                 try:
@@ -120,7 +120,7 @@ class Searcher:
                     continue
 
                 file_path = os.path.join(root, file)
-                rel_path = get_relative_path(file_path, source_dir)
+                rel_path = get_relpath(file_path, source_dir)
                 if self.is_excluded_file(rel_path):
                     continue
 
@@ -156,7 +156,7 @@ class Searcher:
                     continue
 
                 file_path = os.path.join(root, file)
-                rel_path = get_relative_path(file_path, source_dir)
+                rel_path = get_relpath(file_path, source_dir)
                 if self.is_excluded_file(rel_path):
                     continue
 
@@ -198,7 +198,7 @@ class Searcher:
                     continue
 
                 file_path = os.path.join(root, file)
-                rel_path = get_relative_path(file_path, source_dir)
+                rel_path = get_relpath(file_path, source_dir)
                 if self.is_excluded_file(rel_path):
                     continue
                 try:
@@ -256,7 +256,7 @@ class Searcher:
                     continue
 
                 file_path = os.path.join(root, file)
-                rel_path = get_relative_path(file_path, source_dir)
+                rel_path = get_relpath(file_path, source_dir)
                 if self.is_excluded_file(rel_path):
                     continue
                 try:
