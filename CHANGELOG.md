@@ -54,6 +54,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Renamed project from `Codebundle` to `Codeflux`.
 - Renamed attribute name from `--search-ext` to `--seach-extensions`.
 - Console print formatting for `--tree` visualization standardized like other operations.
+- Removed output file path from being displayed in the status columns of `flattening`, and `deflattening` operations.
 
 ## [0.8.0] - 2025-04-07
 

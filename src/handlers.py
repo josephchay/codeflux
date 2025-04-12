@@ -114,7 +114,7 @@ class FileExtHandler:
                             file_info = {
                                 "file": get_relative_path(source_file, source_dir),
                                 "size": file_size,
-                                "status": f"Flattened to {dest_rel_path}"
+                                "status": "Flattened"
                             }
                             files_info.append(file_info)
                     except Exception as e:
@@ -261,7 +261,7 @@ class FileExtHandler:
                     file_info = {
                         "file": get_relative_path(flattened_file),
                         "size": file_size,
-                        "status": f"Deflattened to {get_relative_path(unique_destination_file)}"
+                        "status": "Deflattened"
                     }
                     files_info.append(file_info)
             except Exception as e:

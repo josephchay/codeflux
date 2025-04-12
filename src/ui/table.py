@@ -17,7 +17,6 @@ def format_file_table(files_info, operation_type):
         return "No files processed."
 
     table_formatter, tabulate_available = get_table_formatter()
-
     has_warnings = any("warnings" in file_info and file_info["warnings"] for file_info in files_info)
 
     if operation_type in [OPERATION_FLATTEN, OPERATION_DEFLATTEN]:
