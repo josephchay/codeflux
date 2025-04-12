@@ -61,7 +61,6 @@ class FileExtHandler:
             current_nesting = len(os.path.relpath(root, source_dir).split(os.sep))
             stats["max_nesting_level"] = max(stats["max_nesting_level"], current_nesting)
 
-            # Process directory inclusion/exclusion
             if include_dirs:
                 # Check if any part of the current path matches the include dirs
                 rel_dir = os.path.relpath(root, source_dir)
@@ -942,6 +941,174 @@ class FileExtHandler:
             print(
                 f"\nNote: {len(files_with_warnings)} Python file(s) contain patterns that may generate syntax warnings.")
             print("These files are marked with '(warn:escapes)' in the status column.")
+
+        return stats
+
+    def properties_dir(self, source_dir, exclude_dirs=None, exclude_exts=None, exclude_files=None,
+                       include_dirs=None, include_exts=None, include_files=None, silent=False,
+                       include_hash=False, include_line_count=False):
+        import stat
+        import hashlib
+
+        source_dir = os.path.abspath(source_dir)
+        stats = {
+            "total_files_processed": 0,
+            "dirs_traversed": 0,
+            "total_files_counted": 0,
+            "bytes_total": 0,
+            "skipped_files": 0,
+            "max_nesting_level": 0,
+            "text_files_count": 0,
+            "binary_files_count": 0
+        }
+
+        files_info = []  # For table output
+        start_time = time.time()
+
+        if not silent:
+            print(f"Processing files: {', '.join(self.extensions)}...")
+            if include_exts:
+                print(f"Including only extensions: {', '.join(include_exts)}")
+            if include_dirs:
+                print(f"Including only directories: {', '.join(include_dirs)}")
+            if include_files:
+                print(f"Including only files: {', '.join(include_files)}")
+
+        def human_readable_size(size_in_bytes):
+            for unit in ['B', 'KB', 'MB', 'GB', 'TB']:
+                if size_in_bytes < 1024.0 or unit == 'TB':
+                    return f"{size_in_bytes:.2f} {unit}"
+                size_in_bytes /= 1024.0
+
+        def is_text_file(file_path):
+            try:
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    f.read(1024)  # Try to read as text
+                    return True
+            except UnicodeDecodeError:
+                return False
+
+        def count_lines(file_path):
+            try:
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    return len(f.readlines())
+            except (UnicodeDecodeError, IOError):
+                return 0
+
+        def get_file_hash(file_path):
+            try:
+                hash_md5 = hashlib.md5()
+                with open(file_path, "rb") as f:
+                    for chunk in iter(lambda: f.read(4096), b""):
+                        hash_md5.update(chunk)
+                return hash_md5.hexdigest()
+            except IOError:
+                return "Error calculating hash"
+
+        for root, dirs, files in os.walk(source_dir):
+            stats["dirs_traversed"] += 1
+
+            # Calculate nesting level
+            rel_path = os.path.relpath(root, source_dir)
+            current_nesting = len(rel_path.split(os.sep)) if rel_path != '.' else 0
+            stats["max_nesting_level"] = max(stats["max_nesting_level"], current_nesting)
+
+            if include_dirs:
+                # Only process specified directories
+                rel_dir_parts = rel_path.split(os.sep)
+                # Check if any part of the path is in include_dirs
+                if not any(part in include_dirs for part in rel_dir_parts) and rel_path != '.':
+                    dirs[:] = []  # Clear dirs to skip this branch
+                    continue
+
+            # Exclude directories
+            dirs[:] = [d for d in dirs if d not in exclude_dirs]
+
+            for file in files:
+                stats["total_files_processed"] += 1
+                file_path = os.path.join(root, file)
+
+                # Skip non-handled file types
+                if not self.handles_file(file):
+                    stats["skipped_files"] += 1
+                    continue
+
+                # Check if file should be included based on filters
+                rel_path = os.path.relpath(file_path, source_dir)
+                should_include = should_process_file(
+                    file, self.extensions, exclude_exts, exclude_files, include_exts,
+                    include_files, file_rel_path=rel_path
+                )
+
+                if should_include:
+                    try:
+                        # Get basic file stats
+                        file_stat = os.stat(file_path)
+                        file_size = file_stat.st_size
+                        stats["total_files_counted"] += 1
+                        stats["bytes_total"] += file_size
+
+                        # Check if file is text or binary
+                        is_text = is_text_file(file_path)
+                        if is_text:
+                            stats["text_files_count"] += 1
+                        else:
+                            stats["binary_files_count"] += 1
+
+                        # Get file type based on extension
+                        _, file_ext = os.path.splitext(file)
+                        file_ext = file_ext.lower()[1:] if file_ext else "unknown"
+
+                        # Get permissions
+                        try:
+                            permissions = stat.filemode(file_stat.st_mode)
+                        except:
+                            permissions = "unknown"
+
+                        # Prepare file info dictionary
+                        file_info = {
+                            "file": get_relative_path(file_path, source_dir),
+                            "size": file_size,
+                            "readable_size": human_readable_size(file_size),
+                            "created": datetime.datetime.fromtimestamp(file_stat.st_ctime).strftime("%Y-%m-%d %H:%M:%S"),
+                            "modified": datetime.datetime.fromtimestamp(file_stat.st_mtime).strftime("%Y-%m-%d %H:%M:%S"),
+                            "accessed": datetime.datetime.fromtimestamp(file_stat.st_atime).strftime("%Y-%m-%d %H:%M:%S"),
+                            "type": file_ext,
+                            "permissions": permissions,
+                            "is_text": "Text" if is_text else "Binary"
+                        }
+
+                        # Optional line count for text files
+                        if include_line_count and is_text:
+                            file_info["lines"] = count_lines(file_path)
+
+                        # Optional MD5 hash
+                        if include_hash:
+                            file_info["md5"] = get_file_hash(file_path)
+
+                        files_info.append(file_info)
+                    except Exception as e:
+                        if not silent:
+                            print(f"Error getting properties for {rel_path}: {str(e)}")
+                else:
+                    stats["skipped_files"] += 1
+
+        if not silent:
+            if stats["total_files_counted"] == 0:
+                print(f"No files found to analyze.")
+            elif files_info:
+                # Sort files by size (largest first)
+                files_info.sort(key=lambda x: x["size"], reverse=True)
+
+                print("[FILES ANALYZED]")
+                file_table = format_file_table(files_info, OPERATION_PROPERTIES)
+                print(file_table)
+
+        end_time = time.time()
+        duration = end_time - start_time
+
+        if not silent:
+            print_stats(stats, OPERATION_PROPERTIES, duration)
 
         return stats
 

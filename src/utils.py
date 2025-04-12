@@ -29,8 +29,8 @@ def get_relative_path(path, base_path=None, output_base=None):
         abs_path = os.path.abspath(path)
         abs_base = os.path.abspath(base_path)
 
-        # Try to strip out codebundle timestamp patterns first (highest priority)
-        match = re.search(r'(codebundle[/\\]\d{8}_\d{6}[/\\])', abs_path)
+        # Try to strip out codeflux timestamp patterns first (highest priority)
+        match = re.search(r'(codeflux[/\\]\d{8}_\d{6}[/\\])', abs_path)
         if match:
             # Remove the matched pattern and return the rest
             timestamp_dir = match.group(0)
@@ -180,7 +180,7 @@ def should_process_file(filename, handler_extensions, exclude_exts=None, exclude
 
 
 def mkdir_output(operation=None):
-    base_dir = os.path.join(os.getcwd(), "codebundle")
+    base_dir = os.path.join(os.getcwd(), "codeflux")
     os.makedirs(base_dir, exist_ok=True)
 
     if operation:

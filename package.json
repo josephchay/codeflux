@@ -1,5 +1,5 @@
 {
-  "name": "codebundle",
+  "name": "codeflux",
   "version": "0.7.0",
   "description": "A lightweight CLI tool to flatten, deflatten, bundle, and minify codebase files.",
   "main": "index.js",
@@ -8,7 +8,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/josephchay/codebundle.git"
+    "url": "git+https://github.com/josephchay/codeflux.git"
   },
   "keywords": [
     "bundler",
@@ -19,9 +19,9 @@
   "author": "Joseph Chay",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/josephchay/codebundle/issues"
+    "url": "https://github.com/josephchay/codeflux/issues"
   },
-  "homepage": "https://github.com/josephchay/codebundle#readme",
+  "homepage": "https://github.com/josephchay/codeflux#readme",
   "dependencies": {
     "@cedx/php-minifier": "^11.0.0",
     "csso": "^5.0.5",

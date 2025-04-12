@@ -1,5 +1,5 @@
 from constants import OPERATION_BUNDLE, OPERATION_MINIFY_BUNDLE, OPERATION_FLATTEN, OPERATION_DEFLATTEN, \
-    OPERATION_MINIFY, TABULATE_FORMAT
+    OPERATION_MINIFY, TABULATE_FORMAT, OPERATION_PROPERTIES
 
 
 def get_table_formatter():
@@ -75,6 +75,39 @@ def format_file_table(files_info, operation_type):
                 row.append(file_info.get("warnings", ""))
 
             rows.append(row)
+    elif operation_type == OPERATION_PROPERTIES:
+        headers = ["File", "Size", "Type", "Modified", "Permissions"]
+
+        # Check for optional columns
+        has_hash = any("md5" in file_info for file_info in files_info)
+        has_lines = any("lines" in file_info for file_info in files_info)
+
+        if has_hash:
+            headers.append("MD5 Hash")
+        if has_lines:
+            headers.append("Lines")
+        if has_warnings:
+            headers.append("Warnings")
+
+        rows = []
+        for file_info in files_info:
+            row = [
+                file_info["file"],
+                file_info["readable_size"],
+                file_info["type"],
+                file_info["modified"],
+                file_info["permissions"]
+            ]
+
+            # Add optional columns if present
+            if has_hash:
+                row.append(file_info.get("md5", ""))
+            if has_lines:
+                row.append(file_info.get("lines", ""))
+            if has_warnings:
+                row.append(file_info.get("warnings", ""))
+
+            rows.append(row)
     else:
         headers = ["File", "Size (KB)", "Status"]
         if has_warnings:
@@ -138,16 +171,6 @@ def format_file_table(files_info, operation_type):
 
 
 def format_stats_table(stats, operation_type, duration):
-    """Format statistics into a table for display.
-
-    Args:
-        stats: Dictionary of statistics
-        operation_type: Type of operation
-        duration: Operation duration in seconds
-
-    Returns:
-        str: Formatted table
-    """
     tabulate_func, has_tabulate = get_table_formatter()
     data = [
         ["Time taken", f"{duration:.6f} seconds"],
@@ -161,7 +184,6 @@ def format_stats_table(stats, operation_type, duration):
     if stats.get("empty_files", 0) > 0:
         data.append(["Empty files", stats.get("empty_files", 0)])
 
-    # Operation-specific stats
     if operation_type in [OPERATION_FLATTEN, OPERATION_DEFLATTEN]:
         files_copied = stats.get("files_copied", 0)
         bytes_copied = stats.get("bytes_copied", 0) / 1024  # Convert to KB
@@ -182,6 +204,19 @@ def format_stats_table(stats, operation_type, duration):
             ])
             if files_copied > 0:
                 data.append(["Average file size", f"{avg_file_size:.2f} KB"])
+
+    elif operation_type == OPERATION_PROPERTIES:
+        files_counted = stats.get("total_files_counted", 0)
+        bytes_total = stats.get("bytes_total", 0) / 1024  # Convert to KB
+        avg_file_size = bytes_total / max(files_counted, 1)
+
+        data.extend([
+            ["Files analyzed", files_counted],
+            ["Total data size", f"{bytes_total:.2f} KB"],
+        ])
+
+        if files_counted > 0:
+            data.append(["Average file size", f"{avg_file_size:.2f} KB"])
 
     elif operation_type == OPERATION_BUNDLE:
         files_bundled = stats.get("files_bundled", 0)
@@ -234,44 +269,36 @@ def format_stats_table(stats, operation_type, duration):
                 ["Size reduction", f"{reduction:.2f}%"],
             ])
 
-    elif operation_type == OPERATION_MINIFY_BUNDLE:
-        files_bundled = stats.get("files_bundled", 0)
-        bytes_bundled = stats.get("bytes_bundled", 0) / 1024  # Convert to KB
-        bytes_original = stats.get("original_size", 0) / 1024  # Convert to KB
-        bytes_minified = stats.get("minified_size", 0) / 1024  # Convert to KB
+    elif operation_type == OPERATION_PROPERTIES:
+        files_counted = stats.get("total_files_counted", 0)
+        bytes_total = stats.get("bytes_total", 0) / 1024  # Convert to KB
+        text_files = stats.get("text_files_count", 0)
+        binary_files = stats.get("binary_files_count", 0)
+
+        hr_size = ""
+        size_kb = bytes_total
+
+        if size_kb < 1024:
+            hr_size = f"{size_kb:.2f} KB"
+        elif size_kb < 1024 * 1024:
+            hr_size = f"{size_kb / 1024:.2f} MB"
+        else:
+            hr_size = f"{size_kb / (1024 * 1024):.2f} GB"
+
         data.extend([
-            ["Files bundled", files_bundled],
-            ["Data bundled", f"{bytes_bundled:.2f} KB"],
+            ["Files analyzed", files_counted],
+            ["Total data size", hr_size],
+            ["Text files", text_files],
+            ["Binary files", binary_files]
         ])
 
-        if "failed_minifications" in stats and stats["failed_minifications"] > 0:
-            data.append(["Files with failed minification", stats["failed_minifications"]])
-            if files_bundled > 0:
-                fail_percentage = (stats["failed_minifications"] / files_bundled) * 100
-                data.append(["Percentage of failed minifications", f"{fail_percentage:.1f}%"])
-
-        if "files_with_snippets" in stats and stats["files_with_snippets"] > 0:
-            data.append(["Files with snippets applied", stats["files_with_snippets"]])
-            total_files = stats.get("files_bundled", 0)
-            if total_files > 0:
-                snippet_percentage = (stats["files_with_snippets"] / total_files) * 100
-                data.append(["Percentage of files with snippets", f"{snippet_percentage:.1f}%"])
-
-        if bytes_original > 0:
-            reduction = (1 - stats.get("minified_size", 0) / max(stats.get("original_size", 1), 1)) * 100
-            data.extend([
-                ["Original size", f"{bytes_original:.2f} KB"],
-                ["Minified size", f"{bytes_minified:.2f} KB"],
-                ["Size reduction", f"{reduction:.2f}%"],
-            ])
-
-            if files_bundled > 0:
-                avg_orig_size = bytes_original / max(files_bundled, 1)
-                avg_mini_size = bytes_minified / max(files_bundled, 1)
-                data.extend([
-                    ["Average original file size", f"{avg_orig_size:.2f} KB"],
-                    ["Average minified file size", f"{avg_mini_size:.2f} KB"],
-                ])
+        if files_counted > 0:
+            avg_file_size = bytes_total / max(files_counted, 1)
+            if avg_file_size < 1024:
+                avg_hr_size = f"{avg_file_size:.2f} KB"
+            else:
+                avg_hr_size = f"{avg_file_size / 1024:.2f} MB"
+            data.append(["Average file size", avg_hr_size])
 
     files_processed = stats.get("total_files_processed", 0)
     if files_processed > 0:

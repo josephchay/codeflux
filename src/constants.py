@@ -1,6 +1,6 @@
 DEFAULT_EXCLUDE_DIRS = ["__pycache__", ".git", ".idea", ".vscode", ".venv", "venv",
-                        "node_modules", "dist", "build", ".next", "codebundle.egg-info",
-                        "codebundle"]
+                        "node_modules", "dist", "build", ".next", "codeflux.egg-info",
+                        "codeflux"]
 
 PYTHON_EXTENSIONS = [".py"]
 PYTHON_EXCLUDE_EXTENSIONS = [".pyc", ".pyo", "__init__.py"]
@@ -127,6 +127,7 @@ OPERATION_MINIFY = "minify"
 OPERATION_BUNDLE = "bundle"
 OPERATION_MINIFY_BUNDLE = "minify_bundle"
 OPERATION_SEARCH = "search"
+OPERATION_PROPERTIES = "properties"
 
 TABULATE_FORMAT = "grid"
 MINIFICATION_DESCRIPTION = "python-minifier (Python); terser (JS/TS); html-minifier (HTML); csso (CSS); php-minifier (PHP)"

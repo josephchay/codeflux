@@ -5,7 +5,7 @@ node_modules/
 .idea/
 .vscode/
 
-src/codebundle.egg-info/
+src/codeflux.egg-info/
 
 temp/
-codebundle/
+codeflux/

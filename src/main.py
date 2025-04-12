@@ -8,7 +8,7 @@ from constants import (
     DEFAULT_FLATTEN_OUTPUT_PATH, DEFAULT_DEFLATTEN_OUTPUT_PATH, DEFAULT_BUNDLE_OUTPUT_PATH,
     DEFAULT_MINIFY_OUTPUT_PATH, DEFAULT_MINIFY_BUNDLE_OUTPUT_PATH,
     OPERATION_FLATTEN, OPERATION_DEFLATTEN, OPERATION_BUNDLE, OPERATION_MINIFY, OPERATION_MINIFY_BUNDLE,
-    OPERATION_SEARCH, MINIFICATION_DESCRIPTION
+    OPERATION_SEARCH, MINIFICATION_DESCRIPTION, OPERATION_PROPERTIES
 )
 from handlers import HANDLERS, FileExtHandler
 from search import Searcher
@@ -73,6 +73,16 @@ def make_parser():
         "--minify-bundle", "-mb",
         action="store_true",
         help="Minify files and bundle them into a single document file (default: True if no other operation specified)"
+    )
+    operation_group.add_argument(
+        "--properties", "-p",
+        action="store_true",
+        help="Display detailed file properties without modifying anything"
+    )
+    operation_group.add_argument(
+        "--exclude-hash", "-xh",
+        action="store_true",
+        help="Exclude MD5 hash calculation from properties analysis (faster for large files)"
     )
 
     parser.add_argument(
@@ -239,6 +249,8 @@ def main():
         operations.append(OPERATION_MINIFY_BUNDLE)
     if args.search_ext or args.search_pattern or args.search_size:
         operations.append(OPERATION_SEARCH)
+    if args.properties:
+        operations.append(OPERATION_PROPERTIES)
     if not operations:
         operations = [OPERATION_FLATTEN, OPERATION_DEFLATTEN, OPERATION_MINIFY, OPERATION_BUNDLE, OPERATION_MINIFY_BUNDLE]
 
@@ -549,9 +561,54 @@ def main():
                 if not args.no_log:
                     print("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
 
+            elif operation == OPERATION_PROPERTIES:
+                if not args.no_log:
+                    print(
+                        "\n\n:::::::::::::::::::::::::::::: EXECUTING FILE PROPERTIES ANALYSIS ::::::::::::::::::::::::::::::")
+
+                handler_results = []
+                for file_type in args.file_types:
+                    if file_type in HANDLERS:
+                        handler = HANDLERS[file_type]
+
+                        if args.include_extensions and not any(
+                                ext in args.include_extensions for ext in handler.extensions):
+                            continue
+
+                        if not args.no_log:
+                            print(f"---------- {file_type.upper()} FILES ----------")
+
+                        stats = handler.properties_dir(
+                            source_dir, exclude_dirs, exclude_exts, exclude_files,
+                            args.include_dirs, args.include_extensions, args.include_files,
+                            args.no_log, not args.exclude_hash  # Include hash by default unless explicitly excluded
+                        )
+                        handler_results.append(stats)
+
+                        if not args.no_log:
+                            print("--------------------\n")
+
+                merged_stats = merge_stats(handler_results)
+                if not args.no_log:
+                    if handler_results:
+                        if merged_stats["total_files_counted"] > 0:
+                            print("----- OVERALL SUMMARY -----")
+                            print(f"Total files analyzed: {merged_stats['total_files_counted']}")
+                            total_size_mb = merged_stats['bytes_total'] / (1024 * 1024)
+                            if total_size_mb < 1:
+                                print(f"Total data size: {merged_stats['bytes_total'] / 1024:.2f} KB")
+                            else:
+                                print(f"Total data size: {total_size_mb:.2f} MB")
+                            print(f"Text files: {merged_stats.get('text_files_count', 0)}")
+                            print(f"Binary files: {merged_stats.get('binary_files_count', 0)}")
+                        else:
+                            print("----- OVERALL SUMMARY -----")
+                            print(f"No files were analyzed.")
+                    print("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
+
         summary_path = os.path.join(timestamp_dir, "summary.txt")
         with open(summary_path, 'w') as summary_file:
-            summary_file.write(f"# Codebundle Operations Summary\n")
+            summary_file.write(f"# Codeflux Operations Summary\n")
             summary_file.write(f"# Timestamp: {os.path.basename(timestamp_dir)}\n")
             summary_file.write(f"# Source: {os.path.abspath(source_dir)}\n")
             summary_file.write(f"# Destination: {os.path.abspath(timestamp_dir)}\n")

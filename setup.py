@@ -48,20 +48,20 @@ def check_php_availability():
 
 
 setup(
-    name="codebundle",
+    name="codeflux",
     version="0.9.0",
     description="A lightweight CLI tool to flatten, deflatten, bundle, and minify codebase files.",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
     author="Joseph Chay",
     author_email="josephemmanuelchay@gmail.com",
-    url="https://github.com/josephchay/codebundle",
+    url="https://github.com/josephchay/codeflux",
     package_dir={"": "src"},
     packages=find_packages(where="src"),
     py_modules=["main", "constants", "utils", "handlers", "minify", "snipping", "search"],
     entry_points={
         "console_scripts": [
-            "codebundle=main:main",
+            "codeflux=main:main",
         ],
     },
     install_requires=read_requirements(),
@@ -83,8 +83,8 @@ setup(
     license="MIT",
     keywords="bundler, code-management, code-backup, code-archive, code-bundle",
     project_urls={
-        "Documentation": "https://github.com/josephchay/codebundle/wiki",
-        "Source": "https://github.com/josephchay/codebundle",
-        "Tracker": "https://github.com/josephchay/codebundle/issues",
+        "Documentation": "https://github.com/josephchay/codeflux/wiki",
+        "Source": "https://github.com/josephchay/codeflux",
+        "Tracker": "https://github.com/josephchay/codeflux/issues",
     },
 )

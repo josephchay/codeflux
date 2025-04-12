@@ -24,6 +24,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Pre-requisites` section in `README.md` for required dependencies and versions.
 - `--continue-on-error` argument to continue the process even if an error occurs for a file or a part of it.
 - `--no-filetypes-dir` argument to disable file extension types subdirectories in the `flattened` output directory.
+- `--properties` to view properties of specified directory or files.
+- `--exclude-hash` argument to exclude MD5 hash calculation for files.
 
 ### Fixed
 
@@ -47,6 +49,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Moved minification (non-script) codes to `minify.py`. 
 - console printing output display more accurate.
 - Segregated parsing code to the `make_parser` method in `main.py`.
+- Renamed project from `Codebundle` to `Codeflux`.
 
 ## [0.8.0] - 2025-04-07
 
