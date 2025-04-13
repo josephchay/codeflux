@@ -1,8 +1,7 @@
 import os
 import datetime
 
-from constants import ROOT_TREE_UI_TRUNCATE_DIRS
-from ui.table import format_stats_table
+from constants import DEFAULT_EXCLUDE_DIRS, ALL_EXTENSIONS, ALL_EXCLUDE_EXTENSIONS, ALL_EXCLUDE_FILENAMES, ROOT_TREE_UI_EXCLUDE_DIRS
 
 
 def format_file_size(size_in_bytes):
@@ -616,7 +615,7 @@ def visualize_root_dir_tree(root_dir, output_file, print_to_console=True, trunca
                 is_last_child = (i == len(sorted_children) - 1)
                 connector = "└── " if is_last_child else "├── "
 
-                if child["type"] == "dir" and name in ROOT_TREE_UI_TRUNCATE_DIRS:
+                if child["type"] == "dir" and name in ROOT_TREE_UI_EXCLUDE_DIRS:
                     if show_processing_status:
                         symbol = status_symbols.get(child["status"], "?")
                         console_lines.append(f"{prefix}{connector}{name}/ {symbol}")

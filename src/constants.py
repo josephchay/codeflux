@@ -178,7 +178,7 @@ ALL_EXCLUDE_FILENAMES = (
     GROOVY_EXCLUDE_FILENAMES + HASKELL_EXCLUDE_FILENAMES + ERLANG_EXCLUDE_FILENAMES
 )
 
-ROOT_TREE_UI_TRUNCATE_DIRS = ["__pycache__", ".git", ".idea", ".vscode", ".venv", "venv", "codeflux", "node_modules",
+ROOT_TREE_UI_EXCLUDE_DIRS = ["__pycache__", ".git", ".idea", ".vscode", ".venv", "venv", "codeflux", "node_modules",
                               "codeflux.egg-info"]
 
 DEFAULT_FLATTEN_OUTPUT_PATH = "flattened"
