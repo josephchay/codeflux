@@ -35,6 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `--truncate` argument to truncate the output of the tree visualization.
 - `--root-tree` argument to visualize the root directory tree.
 - `ROOT_TREE_UI_TRUNCATE_DIRS` constant for the directories to be excluded from the root tree visualization (but maintained during printing).
+- File handling for LaTeX related file extensions.
 
 ### Fixed
 

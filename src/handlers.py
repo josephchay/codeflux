@@ -1473,6 +1473,16 @@ class ErlangHandler(FileExtHandler):
         )
 
 
+class LatexHandler(FileExtHandler):
+    def __init__(self):
+        super().__init__(
+            extensions=LATEX_EXTENSIONS,
+            exclude_dirs=DEFAULT_EXCLUDE_DIRS,
+            exclude_extensions=LATEX_EXCLUDE_EXTENSIONS,
+            exclude_filenames=LATEX_EXCLUDE_FILENAMES
+        )
+
+
 HANDLERS = {
     "py": PythonHandler(),
     "ipynb": NotebookHandler(),
@@ -1507,4 +1517,5 @@ HANDLERS = {
     "groovy": GroovyHandler(),
     "haskell": HaskellHandler(),
     "erlang": ErlangHandler(),
+    "latex": LatexHandler(),
 }

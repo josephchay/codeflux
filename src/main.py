@@ -95,10 +95,10 @@ def make_parser():
         nargs="+",
         choices=["py", "ipynb", "jsts", "html", "css", "php", "ruby", "swift", "kotlin", "java", "csharp", "shell",
                  "mdtxt", "yml", "json", "go", "ini", "db", "bat", "scp", "noext", "ps1", "docker", "xml", "r",
-                 "cpp", "rust", "scala", "perl", "lua", "groovy", "haskell", "erlang"],
+                 "cpp", "rust", "scala", "perl", "lua", "groovy", "haskell", "erlang", "latex"],
         default=["py", "ipynb", "jsts", "html", "css", "php", "ruby", "swift", "kotlin", "java", "csharp", "shell",
                  "mdtxt", "yml", "json", "go", "ini", "db", "bat", "scp", "noext", "ps1", "docker", "xml", "r",
-                 "cpp", "rust", "scala", "perl", "lua", "groovy", "haskell", "erlang"],
+                 "cpp", "rust", "scala", "perl", "lua", "groovy", "haskell", "erlang", "latex"],
         help="File types to process (default: all)"
     )
 
