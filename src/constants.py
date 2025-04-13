@@ -178,6 +178,9 @@ ALL_EXCLUDE_FILENAMES = (
     GROOVY_EXCLUDE_FILENAMES + HASKELL_EXCLUDE_FILENAMES + ERLANG_EXCLUDE_FILENAMES
 )
 
+ROOT_TREE_UI_TRUNCATE_DIRS = ["__pycache__", ".git", ".idea", ".vscode", ".venv", "venv", "codeflux", "node_modules",
+                              "codeflux.egg-info"]
+
 DEFAULT_FLATTEN_OUTPUT_PATH = "flattened"
 DEFAULT_DEFLATTEN_OUTPUT_PATH = "deflattened"
 DEFAULT_MINIFY_OUTPUT_PATH = "minified"
@@ -195,6 +198,7 @@ OPERATION_MINIFY_BUNDLE = "minify_bundle"
 OPERATION_SEARCH = "search"
 OPERATION_PROPERTIES = "properties"
 OPERATION_TREE = "tree"
+OPERATION_ROOT_TREE = "root_tree"
 
 TABULATE_FORMAT = "grid"
 MINIFICATION_DESCRIPTION = "python-minifier (Python); terser (JS/TS); html-minifier (HTML); csso (CSS); php-minifier (PHP)"

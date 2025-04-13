@@ -8,7 +8,7 @@ from utils import merge_with_defaults, merge_stats, mkdir_output, format_path, g
 from handlers import HANDLERS, FileExtHandler
 from search import Searcher
 from ui.table import get_table_formatter
-from ui.tree import visualize_dir_tree, visualize_complete_dir_tree
+from ui.tree import visualize_dir_tree, visualize_root_dir_tree
 
 
 def make_parser():
@@ -82,7 +82,12 @@ def make_parser():
     operation_group.add_argument(
         "--tree", "-tr",
         action="store_true",
-        help="Generate a text-based visualization of the source directory structure (default: True if no other operation specified)"
+        help="Generate a text-based visualization of the processed directory structure (default: True if no other operation specified)"
+    )
+    operation_group.add_argument(
+        "--root-tree", "-rtr",
+        action="store_true",
+        help="Generate a complete text-based visualization of the root directory tree (with operation status)"
     )
 
     parser.add_argument(
@@ -260,9 +265,11 @@ def main():
         operations.append(OPERATION_PROPERTIES)
     if args.tree:
         operations.append(OPERATION_TREE)
+    if args.root_tree:
+        operations.append(OPERATION_ROOT_TREE)
     if not operations:
         operations = [OPERATION_FLATTEN, OPERATION_DEFLATTEN, OPERATION_MINIFY, OPERATION_BUNDLE, OPERATION_MINIFY_BUNDLE]
-    has_operations = operations and not (len(operations) == 1 and operations[0] == OPERATION_TREE)
+    has_operations = operations and not all(op in [OPERATION_TREE, OPERATION_ROOT_TREE] for op in operations)
 
     output_paths = {}
     exclude_dirs = merge_with_defaults(args.exclude_dirs, DEFAULT_EXCLUDE_DIRS, args.ignore_defaults)
@@ -271,38 +278,45 @@ def main():
     if exclude_files:
         exclude_files = [path.replace('\\', '/') for path in exclude_files]
 
-    # If only tree visualization is requested, process it and return
-    if len(operations) == 1 and operations[0] == OPERATION_TREE:
-        tree_output_file = args.dest_named if args.dest_named else args.dest_pos
-        if not tree_output_file:
-            tree_output_file = os.path.join(timestamp_dir, DEFAULT_TREE_OUTPUT_PATH)
-        output_paths[OPERATION_TREE] = tree_output_file
+    # If only tree visualization operations are requested (tree or root-tree), process them and return
+    if len(operations) <= 2 and all(op in [OPERATION_TREE, OPERATION_ROOT_TREE] for op in operations):
+        tree_processed = False
+        processed_tree_output_file = None
+        root_tree_output_file = None
 
-        if not args.no_log:
-            print("\n\n:::::::::::::::::::::::::::::: EXECUTING TREE VISUALIZATION ::::::::::::::::::::::::::::::")
-            print(f"Destination: {get_relpath(tree_output_file, timestamp_dir)}\n")
+        # Process the processed directory tree first if requested
+        if OPERATION_TREE in operations:
+            processed_tree_output_file = args.dest_named if args.dest_named else args.dest_pos
+            if not processed_tree_output_file:
+                processed_tree_output_file = os.path.join(timestamp_dir, DEFAULT_TREE_OUTPUT_PATH)
+            output_paths[OPERATION_TREE] = processed_tree_output_file
 
-        tree_stats = visualize_dir_tree(source_dir, tree_output_file, exclude_dirs, exclude_exts, exclude_files,
-                                        print_to_console=not args.no_log, truncate_output=args.truncate)
+            if not args.no_log:
+                print("\n\n:::::::::::::::::::::::::::::: EXECUTING PROCESSED DIRECTORY TREE ::::::::::::::::::::::::::::::")
+                print(f"Destination: {get_relpath(processed_tree_output_file, timestamp_dir)}\n")
 
-        if not args.no_log:
-            print("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
+            tree_stats = visualize_dir_tree(source_dir, processed_tree_output_file, exclude_dirs, exclude_exts, exclude_files,
+                                            print_to_console=not args.no_log, truncate_output=args.truncate)
 
-        # Generate complete source directory tree
-        root_tree_output_file = os.path.join(timestamp_dir, DEFAULT_ROOT_TREE_OUTPUT_PATH)
-        if not args.no_log:
-            print("\n\n:::::::::::::::::::::::::::::: GENERATING COMPLETE DIRECTORY TREE ::::::::::::::::::::::::::::::")
-            print(f"Destination: {get_relpath(root_tree_output_file, timestamp_dir)}")
+            if not args.no_log:
+                print("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
+            tree_processed = True
 
-        # Include processing indicators only if there are operations
-        root_tree_stats = visualize_complete_dir_tree(source_dir, root_tree_output_file, show_processing_status=False,
-                                                      extensions=ALL_EXTENSIONS, exclude_dirs=exclude_dirs,
-                                                      exclude_exts=exclude_exts, exclude_files=exclude_files,
-                                                      print_to_console=not args.no_log, truncate_output=args.truncate)
+        if OPERATION_ROOT_TREE in operations:
+            root_tree_output_file = args.dest_named if args.dest_named else args.dest_pos
+            if not root_tree_output_file:
+                root_tree_output_file = os.path.join(timestamp_dir, DEFAULT_ROOT_TREE_OUTPUT_PATH)
+            output_paths[OPERATION_ROOT_TREE] = root_tree_output_file
 
-        if not args.no_log:
-            print("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
+            if not args.no_log:
+                print("\n\n:::::::::::::::::::::::::::::: GENERATING ROOT DIRECTORY TREE ::::::::::::::::::::::::::::::")
+                print(f"Destination: {get_relpath(root_tree_output_file, timestamp_dir)}\n")
 
+            root_tree_stats = visualize_root_dir_tree(source_dir, root_tree_output_file, print_to_console=not args.no_log,
+                                                      truncate_output=args.truncate)
+
+            if not args.no_log:
+                print("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
         return 0
 
     try:
@@ -649,7 +663,7 @@ def main():
                 output_paths[operation] = tree_output_file
 
                 if not args.no_log:
-                    print("\n\n:::::::::::::::::::::::::::::: EXECUTING TREE VISUALIZATION ::::::::::::::::::::::::::::::")
+                    print("\n\n:::::::::::::::::::::::::::::: EXECUTING PROCESSED DIRECTORY TREE ::::::::::::::::::::::::::::::")
                     print(f"Destination: {get_relpath(tree_output_file, timestamp_dir)}")
 
                 tree_stats = visualize_dir_tree(source_dir, tree_output_file, exclude_dirs, exclude_exts, exclude_files,
@@ -657,30 +671,45 @@ def main():
 
                 if not args.no_log:
                     print("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
+            elif operation == OPERATION_ROOT_TREE:
+                root_tree_output_file = args.dest_named if args.dest_named else args.dest_pos
+                if not root_tree_output_file:
+                    root_tree_output_file = os.path.join(timestamp_dir, DEFAULT_ROOT_TREE_OUTPUT_PATH)
+                output_paths[operation] = root_tree_output_file
 
-        # Always generate the complete source directory tree
-        root_tree_output_file = os.path.join(timestamp_dir, DEFAULT_ROOT_TREE_OUTPUT_PATH)
-        if not args.no_log:
-            print("\n\n:::::::::::::::::::::::::::::: GENERATING COMPLETE DIRECTORY TREE ::::::::::::::::::::::::::::::")
-            print(f"Destination: {get_relpath(root_tree_output_file, timestamp_dir)}")
+                if not args.no_log:
+                    print("\n\n:::::::::::::::::::::::::::::: GENERATING ROOT DIRECTORY TREE ::::::::::::::::::::::::::::::")
+                    print(f"Destination: {get_relpath(root_tree_output_file, timestamp_dir)}")
 
-        # Include processing indicators only if there are operations
-        root_tree_stats = visualize_complete_dir_tree(source_dir, root_tree_output_file, show_processing_status=has_operations,
-                                                      extensions=ALL_EXTENSIONS, exclude_dirs=exclude_dirs, exclude_exts=exclude_exts,
-                                                      exclude_files=exclude_files, print_to_console=not args.no_log,
-                                                      truncate_output=args.truncate)
-        if not args.no_log:
-            print("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
+                # Generate root directory tree with no filtering
+                root_tree_stats = visualize_root_dir_tree( source_dir, root_tree_output_file, print_to_console=not args.no_log,
+                                                           truncate_output=args.truncate, show_processing_status=has_operations)
 
-        # Generate source directory tree visualization if operations are being performed and it's not already done
+                if not args.no_log:
+                    print("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
+
+        # First generate processed directory tree visualization if operations are being performed and it's not already done
+        processed_tree_file = None
         if has_operations and OPERATION_TREE not in operations:
-            tree_output_file = os.path.join(timestamp_dir, DEFAULT_TREE_OUTPUT_PATH)
+            processed_tree_file = os.path.join(timestamp_dir, DEFAULT_TREE_OUTPUT_PATH)
             if not args.no_log:
-                print("\n\n:::::::::::::::::::::::::::::: GENERATING SOURCE DIRECTORY TREE ::::::::::::::::::::::::::::::")
-                print(f"Destination: {get_relpath(tree_output_file, timestamp_dir)}")
+                print("\n\n:::::::::::::::::::::::::::::: GENERATING PROCESSED DIRECTORY TREE ::::::::::::::::::::::::::::::")
+                print(f"Destination: {get_relpath(processed_tree_file, timestamp_dir)}")
 
-            tree_stats = visualize_dir_tree(source_dir, tree_output_file, exclude_dirs, exclude_exts, exclude_files,
+            tree_stats = visualize_dir_tree(source_dir, processed_tree_file, exclude_dirs, exclude_exts, exclude_files,
                                             print_to_console=not args.no_log, truncate_output=args.truncate)
+
+            if not args.no_log:
+                print("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
+
+        # Then generate root directory tree if not already done but operations are being performed
+        if has_operations and OPERATION_ROOT_TREE not in operations and (args.root_tree or True):
+            root_tree_file = os.path.join(timestamp_dir, DEFAULT_ROOT_TREE_OUTPUT_PATH)
+            if not args.no_log:
+                print("\n\n:::::::::::::::::::::::::::::: GENERATING ROOT DIRECTORY TREE ::::::::::::::::::::::::::::::")
+                print(f"Destination: {get_relpath(root_tree_file, timestamp_dir)}")
+
+            root_tree_stats = visualize_root_dir_tree(source_dir, root_tree_file, print_to_console=not args.no_log, truncate_output=args.truncate, show_processing_status=True)
 
             if not args.no_log:
                 print("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
@@ -699,16 +728,25 @@ def main():
             summary_file.write(f"# Command (Raw): {raw_command}\n")
             summary_file.write(f"# Command: {command}\n")
             for op in operations:
-                if op in output_paths:
+                if op not in [OPERATION_TREE, OPERATION_ROOT_TREE] and op in output_paths:
                     dest_path = output_paths[op]
                     rel_dest_path = get_relpath(dest_path, timestamp_dir)
                     summary_file.write(f"\n## {op.upper()}\n")
                     summary_file.write(f"Destination: {rel_dest_path}\n")
-            summary_file.write(f"\n## COMPLETE DIRECTORY TREE\n")
-            summary_file.write(f"Destination: {get_relpath(root_tree_output_file, timestamp_dir)}\n")
-            if has_operations:
-                summary_file.write(f"\n## SOURCE DIRECTORY TREE\n")
+            if OPERATION_TREE in operations:
+                tree_output_file = output_paths[OPERATION_TREE]
+                summary_file.write(f"\n## PROCESSED DIRECTORY TREE\n")
                 summary_file.write(f"Destination: {get_relpath(tree_output_file, timestamp_dir)}\n")
+            elif processed_tree_file:
+                summary_file.write(f"\n## PROCESSED DIRECTORY TREE\n")
+                summary_file.write(f"Destination: {get_relpath(processed_tree_file, timestamp_dir)}\n")
+            if OPERATION_ROOT_TREE in operations:
+                root_tree_output_file = output_paths[OPERATION_ROOT_TREE]
+                summary_file.write(f"\n## ROOT DIRECTORY TREE\n")
+                summary_file.write(f"Destination: {get_relpath(root_tree_output_file, timestamp_dir)}\n")
+            elif has_operations and 'root_tree_file' in locals():
+                summary_file.write(f"\n## ROOT DIRECTORY TREE\n")
+                summary_file.write(f"Destination: {get_relpath(root_tree_file, timestamp_dir)}\n")
 
         if not args.no_log:
             print(f"\nSummary of operations written to \"{get_relpath(summary_path, timestamp_dir)}\"")
