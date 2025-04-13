@@ -30,6 +30,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `tree.py` for source directory tree visualization, and saving to `diretory_tree.txt` in the output directory.
 - Command used tracking for each instance - saved into `summary.txt` file in the output directory.
 - Command and Raw Command being used to perform the instance in the CLI.
+- File handling for `noext` (no extension files), `ps1`, `docker`, `xml`, `r`, `cpp`, `rust`, `scala`, `perl`, `lua`, `groovy`, `haskell`, and `erlang` extensions.
+- Complete tree visualization from root directory (with and without operation status checking)
+- `--truncate` argument to truncate the output of the tree visualization.
 
 ### Fixed
 

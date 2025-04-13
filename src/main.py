@@ -8,7 +8,7 @@ from utils import merge_with_defaults, merge_stats, mkdir_output, format_path, g
 from handlers import HANDLERS, FileExtHandler
 from search import Searcher
 from ui.table import get_table_formatter
-from ui.tree import visualize_dir_tree
+from ui.tree import visualize_dir_tree, visualize_complete_dir_tree
 
 
 def make_parser():
@@ -89,9 +89,11 @@ def make_parser():
         "--file-types", "-t",
         nargs="+",
         choices=["py", "ipynb", "jsts", "html", "css", "php", "ruby", "swift", "kotlin", "java", "csharp", "shell",
-                 "mdtxt", "yml", "json", "go", "ini", "db", "bat", "scp"],
+                 "mdtxt", "yml", "json", "go", "ini", "db", "bat", "scp", "noext", "ps1", "docker", "xml", "r",
+                 "cpp", "rust", "scala", "perl", "lua", "groovy", "haskell", "erlang"],
         default=["py", "ipynb", "jsts", "html", "css", "php", "ruby", "swift", "kotlin", "java", "csharp", "shell",
-                 "mdtxt", "yml", "json", "go", "ini", "db", "bat", "scp"],
+                 "mdtxt", "yml", "json", "go", "ini", "db", "bat", "scp", "noext", "ps1", "docker", "xml", "r",
+                 "cpp", "rust", "scala", "perl", "lua", "groovy", "haskell", "erlang"],
         help="File types to process (default: all)"
     )
 
@@ -202,6 +204,11 @@ def make_parser():
         help="Clear the destination directory before copying (default: False)"
     )
     parser.add_argument(
+        '--truncate', "-trc",
+        action='store_true',
+        help="Truncate long tree output in console."
+    )
+    parser.add_argument(
         '--no-log', "-nl",
         action='store_true',
         help="Suppress all output logs."
@@ -255,6 +262,7 @@ def main():
         operations.append(OPERATION_TREE)
     if not operations:
         operations = [OPERATION_FLATTEN, OPERATION_DEFLATTEN, OPERATION_MINIFY, OPERATION_BUNDLE, OPERATION_MINIFY_BUNDLE]
+    has_operations = operations and not (len(operations) == 1 and operations[0] == OPERATION_TREE)
 
     output_paths = {}
     exclude_dirs = merge_with_defaults(args.exclude_dirs, DEFAULT_EXCLUDE_DIRS, args.ignore_defaults)
@@ -274,7 +282,23 @@ def main():
             print("\n\n:::::::::::::::::::::::::::::: EXECUTING TREE VISUALIZATION ::::::::::::::::::::::::::::::")
             print(f"Destination: {get_relpath(tree_output_file, timestamp_dir)}\n")
 
-        tree_stats = visualize_dir_tree(source_dir, tree_output_file, exclude_dirs, exclude_exts, exclude_files, print_to_console=not args.no_log)
+        tree_stats = visualize_dir_tree(source_dir, tree_output_file, exclude_dirs, exclude_exts, exclude_files,
+                                        print_to_console=not args.no_log, truncate_output=args.truncate)
+
+        if not args.no_log:
+            print("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
+
+        # Generate complete source directory tree
+        root_tree_output_file = os.path.join(timestamp_dir, DEFAULT_ROOT_TREE_OUTPUT_PATH)
+        if not args.no_log:
+            print("\n\n:::::::::::::::::::::::::::::: GENERATING COMPLETE DIRECTORY TREE ::::::::::::::::::::::::::::::")
+            print(f"Destination: {get_relpath(root_tree_output_file, timestamp_dir)}")
+
+        # Include processing indicators only if there are operations
+        root_tree_stats = visualize_complete_dir_tree(source_dir, root_tree_output_file, show_processing_status=False,
+                                                      extensions=ALL_EXTENSIONS, exclude_dirs=exclude_dirs,
+                                                      exclude_exts=exclude_exts, exclude_files=exclude_files,
+                                                      print_to_console=not args.no_log, truncate_output=args.truncate)
 
         if not args.no_log:
             print("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
@@ -617,7 +641,7 @@ def main():
                         else:
                             print("----- OPERATION SUMMARY -----")
                             print(f"No files were analyzed.")
-                    print("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
+                        print("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
             elif operation == OPERATION_TREE:
                 tree_output_file = args.dest_named if args.dest_named else args.dest_pos
                 if not tree_output_file:
@@ -628,19 +652,35 @@ def main():
                     print("\n\n:::::::::::::::::::::::::::::: EXECUTING TREE VISUALIZATION ::::::::::::::::::::::::::::::")
                     print(f"Destination: {get_relpath(tree_output_file, timestamp_dir)}")
 
-                tree_stats = visualize_dir_tree(source_dir, tree_output_file, exclude_dirs, exclude_exts, exclude_files, print_to_console=not args.no_log, truncate_output=not args.no_truncate)
+                tree_stats = visualize_dir_tree(source_dir, tree_output_file, exclude_dirs, exclude_exts, exclude_files,
+                                                print_to_console=not args.no_log, truncate_output=args.truncate)
 
                 if not args.no_log:
                     print("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
 
-        # Generate source directory tree visualization if not already done
-        if OPERATION_TREE not in operations:
+        # Always generate the complete source directory tree
+        root_tree_output_file = os.path.join(timestamp_dir, DEFAULT_ROOT_TREE_OUTPUT_PATH)
+        if not args.no_log:
+            print("\n\n:::::::::::::::::::::::::::::: GENERATING COMPLETE DIRECTORY TREE ::::::::::::::::::::::::::::::")
+            print(f"Destination: {get_relpath(root_tree_output_file, timestamp_dir)}")
+
+        # Include processing indicators only if there are operations
+        root_tree_stats = visualize_complete_dir_tree(source_dir, root_tree_output_file, show_processing_status=has_operations,
+                                                      extensions=ALL_EXTENSIONS, exclude_dirs=exclude_dirs, exclude_exts=exclude_exts,
+                                                      exclude_files=exclude_files, print_to_console=not args.no_log,
+                                                      truncate_output=args.truncate)
+        if not args.no_log:
+            print("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
+
+        # Generate source directory tree visualization if operations are being performed and it's not already done
+        if has_operations and OPERATION_TREE not in operations:
             tree_output_file = os.path.join(timestamp_dir, DEFAULT_TREE_OUTPUT_PATH)
             if not args.no_log:
                 print("\n\n:::::::::::::::::::::::::::::: GENERATING SOURCE DIRECTORY TREE ::::::::::::::::::::::::::::::")
                 print(f"Destination: {get_relpath(tree_output_file, timestamp_dir)}")
 
-            tree_stats = visualize_dir_tree(source_dir, tree_output_file, exclude_dirs, exclude_exts, exclude_files, print_to_console=not args.no_log)
+            tree_stats = visualize_dir_tree(source_dir, tree_output_file, exclude_dirs, exclude_exts, exclude_files,
+                                            print_to_console=not args.no_log, truncate_output=args.truncate)
 
             if not args.no_log:
                 print("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
@@ -664,6 +704,11 @@ def main():
                     rel_dest_path = get_relpath(dest_path, timestamp_dir)
                     summary_file.write(f"\n## {op.upper()}\n")
                     summary_file.write(f"Destination: {rel_dest_path}\n")
+            summary_file.write(f"\n## COMPLETE DIRECTORY TREE\n")
+            summary_file.write(f"Destination: {get_relpath(root_tree_output_file, timestamp_dir)}\n")
+            if has_operations:
+                summary_file.write(f"\n## SOURCE DIRECTORY TREE\n")
+                summary_file.write(f"Destination: {get_relpath(tree_output_file, timestamp_dir)}\n")
 
         if not args.no_log:
             print(f"\nSummary of operations written to \"{get_relpath(summary_path, timestamp_dir)}\"")

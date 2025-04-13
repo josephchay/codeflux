@@ -46,7 +46,11 @@ class FileExtHandler:
         start_time = time.time()
 
         if not silent:
-            print(f"Processing files: {', '.join(self.extensions)}...\n")
+            if self.extensions == [""]:
+                print("Processing files with no extension...\n")
+            elif self.extensions:
+                print(f"Processing files: {', '.join(self.extensions)}...\n")
+
             if include_exts:
                 print(f"Including only extensions: {', '.join(include_exts)}")
             if include_dirs:
@@ -164,7 +168,11 @@ class FileExtHandler:
         start_time = time.time()
 
         if not silent:
-            print(f"Processing files: {', '.join(self.extensions)}...")
+            if self.extensions == [""]:
+                print("Processing files with no extension...\n")
+            elif self.extensions:
+                print(f"Processing files: {', '.join(self.extensions)}...\n")
+
             if include_exts:
                 print(f"Including only extensions: {', '.join(include_exts)}")
             if include_dirs:
@@ -747,7 +755,26 @@ class FileExtHandler:
                         display_path = format_path_for_display(formatted_path)
 
                         try:
-                            # Read file content
+                            # First check if the file is a binary file
+                            is_binary = False
+                            try:
+                                with open(file_path, 'r', encoding='utf-8') as test_file:
+                                    test_file.read(1024)  # Try to read as text
+                            except UnicodeDecodeError:
+                                is_binary = True
+
+                            if is_binary:
+                                # Handle binary file - skip it with a message
+                                stats["skipped_files"] += 1
+                                if not silent:
+                                    files_info.append({
+                                        "file": display_path,
+                                        "size": os.path.getsize(file_path),
+                                        "status": "Skipped (binary file)"
+                                    })
+                                continue
+
+                            # Proceed with text file
                             with open(file_path, 'r', encoding='utf-8') as infile:
                                 content = infile.read()
                                 original_content_bytes = len(content.encode('utf-8'))
@@ -965,7 +992,11 @@ class FileExtHandler:
         start_time = time.time()
 
         if not silent:
-            print(f"Processing files: {', '.join(self.extensions)}...")
+            if self.extensions == [""]:
+                print("Processing files with no extension...\n")
+            elif self.extensions:
+                print(f"Processing files: {', '.join(self.extensions)}...\n")
+
             if include_exts:
                 print(f"Including only extensions: {', '.join(include_exts)}")
             if include_dirs:
@@ -1312,6 +1343,136 @@ class ScpHandler(FileExtHandler):
         )
 
 
+class NoExtHandler(FileExtHandler):
+    def __init__(self):
+        super().__init__(
+            extensions=NOEXT_EXTENSIONS,
+            exclude_dirs=DEFAULT_EXCLUDE_DIRS,
+            exclude_extensions=NOEXT_EXCLUDE_EXTENSIONS,
+            exclude_filenames=NOEXT_EXCLUDE_FILENAMES
+        )
+
+
+class PowerShellHandler(FileExtHandler):
+    def __init__(self):
+        super().__init__(
+            extensions=POWERSHELL_EXTENSIONS,
+            exclude_dirs=DEFAULT_EXCLUDE_DIRS,
+            exclude_extensions=POWERSHELL_EXCLUDE_EXTENSIONS,
+            exclude_filenames=POWERSHELL_EXCLUDE_FILENAMES
+        )
+
+
+class DockerHandler(FileExtHandler):
+    def __init__(self):
+        super().__init__(
+            extensions=DOCKER_EXTENSIONS,
+            exclude_dirs=DEFAULT_EXCLUDE_DIRS,
+            exclude_extensions=DOCKER_EXCLUDE_EXTENSIONS,
+            exclude_filenames=DOCKER_EXCLUDE_FILENAMES
+        )
+
+
+class XmlHandler(FileExtHandler):
+    def __init__(self):
+        super().__init__(
+            extensions=XML_EXTENSIONS,
+            exclude_dirs=DEFAULT_EXCLUDE_DIRS,
+            exclude_extensions=XML_EXCLUDE_EXTENSIONS,
+            exclude_filenames=XML_EXCLUDE_FILENAMES
+        )
+
+
+class RHandler(FileExtHandler):
+    def __init__(self):
+        super().__init__(
+            extensions=R_EXTENSIONS,
+            exclude_dirs=DEFAULT_EXCLUDE_DIRS,
+            exclude_extensions=R_EXCLUDE_EXTENSIONS,
+            exclude_filenames=R_EXCLUDE_FILENAMES
+        )
+
+
+class CppHandler(FileExtHandler):
+    def __init__(self):
+        super().__init__(
+            extensions=CPP_EXTENSIONS,
+            exclude_dirs=DEFAULT_EXCLUDE_DIRS,
+            exclude_extensions=CPP_EXCLUDE_EXTENSIONS,
+            exclude_filenames=CPP_EXCLUDE_FILENAMES
+        )
+
+
+class RustHandler(FileExtHandler):
+    def __init__(self):
+        super().__init__(
+            extensions=RUST_EXTENSIONS,
+            exclude_dirs=DEFAULT_EXCLUDE_DIRS,
+            exclude_extensions=RUST_EXCLUDE_EXTENSIONS,
+            exclude_filenames=RUST_EXCLUDE_FILENAMES
+        )
+
+
+class ScalaHandler(FileExtHandler):
+    def __init__(self):
+        super().__init__(
+            extensions=SCALA_EXTENSIONS,
+            exclude_dirs=DEFAULT_EXCLUDE_DIRS,
+            exclude_extensions=SCALA_EXCLUDE_EXTENSIONS,
+            exclude_filenames=SCALA_EXCLUDE_FILENAMES
+        )
+
+
+class PerlHandler(FileExtHandler):
+    def __init__(self):
+        super().__init__(
+            extensions=PERL_EXTENSIONS,
+            exclude_dirs=DEFAULT_EXCLUDE_DIRS,
+            exclude_extensions=PERL_EXCLUDE_EXTENSIONS,
+            exclude_filenames=PERL_EXCLUDE_FILENAMES
+        )
+
+
+class LuaHandler(FileExtHandler):
+    def __init__(self):
+        super().__init__(
+            extensions=LUA_EXTENSIONS,
+            exclude_dirs=DEFAULT_EXCLUDE_DIRS,
+            exclude_extensions=LUA_EXCLUDE_EXTENSIONS,
+            exclude_filenames=LUA_EXCLUDE_FILENAMES
+        )
+
+
+class GroovyHandler(FileExtHandler):
+    def __init__(self):
+        super().__init__(
+            extensions=GROOVY_EXTENSIONS,
+            exclude_dirs=DEFAULT_EXCLUDE_DIRS,
+            exclude_extensions=GROOVY_EXCLUDE_EXTENSIONS,
+            exclude_filenames=GROOVY_EXCLUDE_FILENAMES
+        )
+
+
+class HaskellHandler(FileExtHandler):
+    def __init__(self):
+        super().__init__(
+            extensions=HASKELL_EXTENSIONS,
+            exclude_dirs=DEFAULT_EXCLUDE_DIRS,
+            exclude_extensions=HASKELL_EXCLUDE_EXTENSIONS,
+            exclude_filenames=HASKELL_EXCLUDE_FILENAMES
+        )
+
+
+class ErlangHandler(FileExtHandler):
+    def __init__(self):
+        super().__init__(
+            extensions=ERLANG_EXTENSIONS,
+            exclude_dirs=DEFAULT_EXCLUDE_DIRS,
+            exclude_extensions=ERLANG_EXCLUDE_EXTENSIONS,
+            exclude_filenames=ERLANG_EXCLUDE_FILENAMES
+        )
+
+
 HANDLERS = {
     "py": PythonHandler(),
     "ipynb": NotebookHandler(),
@@ -1333,4 +1494,17 @@ HANDLERS = {
     "db": DatabaseHandler(),
     "bat": BatchHandler(),
     "scp": ScpHandler(),
+    "noext": NoExtHandler(),
+    "ps1": PowerShellHandler(),
+    "docker": DockerHandler(),
+    "xml": XmlHandler(),
+    "r": RHandler(),
+    "cpp": CppHandler(),
+    "rust": RustHandler(),
+    "scala": ScalaHandler(),
+    "perl": PerlHandler(),
+    "lua": LuaHandler(),
+    "groovy": GroovyHandler(),
+    "haskell": HaskellHandler(),
+    "erlang": ErlangHandler(),
 }
