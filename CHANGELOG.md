@@ -36,6 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `--root-tree` argument to visualize the root directory tree.
 - `ROOT_TREE_UI_TRUNCATE_DIRS` constant for the directories to be excluded from the root tree visualization (but maintained during printing).
 - File handling for LaTeX related file extensions.
+- `LATEX_EXCLUDE_EXTENSIONS` list of default extensions to be excluded with regex pattern (currently for numeric values after the extension name).
 
 ### Fixed
 
@@ -49,6 +50,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Minification process for both `MINIFY` and `MINIFY_BUNDLE` operations now have their warnings properly displayed in the output table.
 - Minification warnings for `.ipynb` files - warnings now display in the `Warnings` column in the output table UI.
 - Shell related scripts returning `None` instead of a string.
+- Display from the root directory (package installed directory) for the root directory tree.
 
 ### Changed
 
@@ -64,6 +66,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Console print formatting for `--tree` visualization standardized like other operations.
 - Removed output file path from being displayed in the status columns of `flattening`, and `deflattening` operations.
 - Renamed `ROOT_TREE_UI_TRUNCATE_DIRS` to `ROOT_TREE_UI_EXCLUDE_DIRS` constant.
+
+### Removed
+
+- The term `EXECUTING` from title of each operation in `main.py`.
 
 ## [0.8.0] - 2025-04-07
 

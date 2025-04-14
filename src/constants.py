@@ -137,7 +137,8 @@ ERLANG_EXCLUDE_EXTENSIONS = []
 ERLANG_EXCLUDE_FILENAMES = ["mix.exs"]
 
 LATEX_EXTENSIONS = [".tex", ".sty", ".cls", ".bib", ".bst", ".dtx", ".ltx", ".ins"]
-LATEX_EXCLUDE_EXTENSIONS = []
+LATEX_EXCLUDE_EXTENSIONS = [r"\.aux\d*", r"\.log\d*", r"\.lof\d*", r"\.lot\d*", r"\.maf\d*", r"\.mlf\d*",
+                            r"\.mlt\d*", r"\.mtc\d*", r"\.out\d*", r"\.synctex\.gz\d*", r"\.toc\d*", r"\.blg\d*"]
 LATEX_EXCLUDE_FILENAMES = ["elsarticle.cls", "acmart.cls", "IEEEtran.cls", "llncs.cls", "spconf.sty", "beamer.cls"]
 
 ALL_EXTENSIONS = (

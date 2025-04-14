@@ -157,7 +157,20 @@ def should_process_file(filename, handler_extensions, exclude_exts=None, exclude
         if not is_target_ext:
             return False
 
-    is_excluded_ext = exclude_exts and any(filename.lower().endswith(ext.lower()) for ext in exclude_exts)
+    is_excluded_ext = False
+    if exclude_exts:
+        import re
+        for ext in exclude_exts:
+            # Check if this is a regex pattern (starts with r"\" or contains special regex chars)
+            if ext.startswith(r"\.") or any(c in ext for c in ".*+?()[]{}|^$"):
+                if re.search(ext + "$", filename.lower()):
+                    is_excluded_ext = True
+                    break
+            # normal suffix check
+            elif filename.lower().endswith(ext.lower()):
+                is_excluded_ext = True
+                break
+
     is_excluded_file = False
     if exclude_files and file_rel_path:
         norm_rel_path = file_rel_path.replace('\\', '/')

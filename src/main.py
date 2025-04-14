@@ -292,7 +292,7 @@ def main():
             output_paths[OPERATION_TREE] = processed_tree_output_file
 
             if not args.no_log:
-                print("\n\n:::::::::::::::::::::::::::::: EXECUTING PROCESSED DIRECTORY TREE ::::::::::::::::::::::::::::::")
+                print("\n\n:::::::::::::::::::::::::::::: PROCESSED DIRECTORY TREE ::::::::::::::::::::::::::::::")
                 print(f"Destination: {get_relpath(processed_tree_output_file, timestamp_dir)}\n")
 
             tree_stats = visualize_dir_tree(source_dir, processed_tree_output_file, exclude_dirs, exclude_exts, exclude_files,
@@ -309,7 +309,7 @@ def main():
             output_paths[OPERATION_ROOT_TREE] = root_tree_output_file
 
             if not args.no_log:
-                print("\n\n:::::::::::::::::::::::::::::: GENERATING ROOT DIRECTORY TREE ::::::::::::::::::::::::::::::")
+                print("\n\n:::::::::::::::::::::::::::::: ROOT DIRECTORY TREE ::::::::::::::::::::::::::::::")
                 print(f"Destination: {get_relpath(root_tree_output_file, timestamp_dir)}\n")
 
             root_tree_stats = visualize_root_dir_tree(source_dir, root_tree_output_file, print_to_console=not args.no_log,
@@ -329,7 +329,7 @@ def main():
                 output_paths[operation] = flatten_dest
 
                 if not args.no_log:
-                    print("\n\n:::::::::::::::::::::::::::::: EXECUTING FLATTEN ::::::::::::::::::::::::::::::")
+                    print("\n\n:::::::::::::::::::::::::::::: FLATTEN ::::::::::::::::::::::::::::::")
                     print(f"Destination: {get_relpath(flatten_dest)}\n")
 
                 for file_type in args.file_types:
@@ -383,7 +383,7 @@ def main():
                 output_paths[operation] = deflatten_dest
 
                 if not args.no_log:
-                    print("\n\n:::::::::::::::::::::::::::::: EXECUTING DEFLATTEN ::::::::::::::::::::::::::::::")
+                    print("\n\n:::::::::::::::::::::::::::::: DEFLATTEN ::::::::::::::::::::::::::::::")
                     print(f"Destination: {get_relpath(deflatten_dest, timestamp_dir)}\n")
 
                 # Check if there are any files to process
@@ -449,10 +449,10 @@ def main():
 
                 if not args.no_log:
                     if operation == OPERATION_BUNDLE:
-                        print("\n\n:::::::::::::::::::::::::::::: EXECUTING BUNDLE ::::::::::::::::::::::::::::::")
+                        print("\n\n:::::::::::::::::::::::::::::: BUNDLE ::::::::::::::::::::::::::::::")
                         print(f"Destination: {get_relpath(bundle_dest, timestamp_dir)}\n")
                     else:
-                        print("\n\n:::::::::::::::::::::::::::::: EXECUTING MINIFY-BUNDLE ::::::::::::::::::::::::::::::")
+                        print("\n\n:::::::::::::::::::::::::::::: MINIFY-BUNDLE ::::::::::::::::::::::::::::::")
                         print(f"Destination: {get_relpath(bundle_dest, timestamp_dir)}")
                         print(f"Minification: {MINIFICATION_DESCRIPTION}")
                         if args.continue_on_error:
@@ -487,7 +487,7 @@ def main():
                 output_paths[operation] = minify_dest
 
                 if not args.no_log:
-                    print("\n\n:::::::::::::::::::::::::::::: EXECUTING MINIFY ::::::::::::::::::::::::::::::")
+                    print("\n\n:::::::::::::::::::::::::::::: MINIFY ::::::::::::::::::::::::::::::")
                     print(f"Destination: {get_relpath(minify_dest, timestamp_dir)}")
                     print(f"Minification: ({MINIFICATION_DESCRIPTION})")
                     if args.continue_on_error:
@@ -559,7 +559,7 @@ def main():
                     print("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
             elif operation == OPERATION_SEARCH:
                 if not args.no_log:
-                    print("\n\n:::::::::::::::::::::::::::::: EXECUTING SEARCH ::::::::::::::::::::::::::::::")
+                    print("\n\n:::::::::::::::::::::::::::::: SEARCH ::::::::::::::::::::::::::::::")
 
                 search_handler = Searcher(exclude_dirs=exclude_dirs, exclude_exts=exclude_exts, exclude_files=exclude_files)
                 if args.search_ext:
@@ -617,7 +617,7 @@ def main():
                     print("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
             elif operation == OPERATION_PROPERTIES:
                 if not args.no_log:
-                    print("\n\n:::::::::::::::::::::::::::::: EXECUTING FILE PROPERTIES ANALYSIS ::::::::::::::::::::::::::::::")
+                    print("\n\n:::::::::::::::::::::::::::::: FILE PROPERTIES ANALYSIS ::::::::::::::::::::::::::::::")
 
                 handler_results = []
                 for file_type in args.file_types:
@@ -663,7 +663,7 @@ def main():
                 output_paths[operation] = tree_output_file
 
                 if not args.no_log:
-                    print("\n\n:::::::::::::::::::::::::::::: EXECUTING PROCESSED DIRECTORY TREE ::::::::::::::::::::::::::::::")
+                    print("\n\n:::::::::::::::::::::::::::::: PROCESSED DIRECTORY TREE ::::::::::::::::::::::::::::::")
                     print(f"Destination: {get_relpath(tree_output_file, timestamp_dir)}")
 
                 tree_stats = visualize_dir_tree(source_dir, tree_output_file, exclude_dirs, exclude_exts, exclude_files,
@@ -678,7 +678,7 @@ def main():
                 output_paths[operation] = root_tree_output_file
 
                 if not args.no_log:
-                    print("\n\n:::::::::::::::::::::::::::::: GENERATING ROOT DIRECTORY TREE ::::::::::::::::::::::::::::::")
+                    print("\n\n:::::::::::::::::::::::::::::: ROOT DIRECTORY TREE ::::::::::::::::::::::::::::::")
                     print(f"Destination: {get_relpath(root_tree_output_file, timestamp_dir)}")
 
                 # Generate root directory tree with no filtering
@@ -693,7 +693,7 @@ def main():
         if has_operations and OPERATION_TREE not in operations:
             processed_tree_file = os.path.join(timestamp_dir, DEFAULT_TREE_OUTPUT_PATH)
             if not args.no_log:
-                print("\n\n:::::::::::::::::::::::::::::: GENERATING PROCESSED DIRECTORY TREE ::::::::::::::::::::::::::::::")
+                print("\n\n:::::::::::::::::::::::::::::: PROCESSED DIRECTORY TREE ::::::::::::::::::::::::::::::")
                 print(f"Destination: {get_relpath(processed_tree_file, timestamp_dir)}")
 
             tree_stats = visualize_dir_tree(source_dir, processed_tree_file, exclude_dirs, exclude_exts, exclude_files,
@@ -706,7 +706,7 @@ def main():
         if has_operations and OPERATION_ROOT_TREE not in operations and (args.root_tree or True):
             root_tree_file = os.path.join(timestamp_dir, DEFAULT_ROOT_TREE_OUTPUT_PATH)
             if not args.no_log:
-                print("\n\n:::::::::::::::::::::::::::::: GENERATING ROOT DIRECTORY TREE ::::::::::::::::::::::::::::::")
+                print("\n\n:::::::::::::::::::::::::::::: ROOT DIRECTORY TREE ::::::::::::::::::::::::::::::")
                 print(f"Destination: {get_relpath(root_tree_file, timestamp_dir)}")
 
             root_tree_stats = visualize_root_dir_tree(source_dir, root_tree_file, print_to_console=not args.no_log, truncate_output=args.truncate, show_processing_status=True)
