@@ -217,4 +217,4 @@ OPERATION_ROOT_TREE = "root_tree"
 
 TABULATE_FORMAT = "grid"
 MINIFICATION_DESCRIPTION = "python-minifier (Python); terser (JS/TS); html-minifier (HTML); csso (CSS); php-minifier (PHP)"
-ROOT_TREE_UI_SYMBOLS_DESCRIPTION = "; ".join(f"{k} - {v}" for k, v in ROOT_TREE_UI_STATUS_SYMBOLS.items()) + ";"
+ROOT_TREE_UI_SYMBOLS_DESCRIPTION = "; ".join(f"{v} ({k})" for k, v in ROOT_TREE_UI_STATUS_SYMBOLS.items()) + ";"

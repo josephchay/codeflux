@@ -679,13 +679,14 @@ def main():
                 output_paths[operation] = root_tree_output_file
 
                 if not args.no_log:
-                    print("\n\n:::::::::::::::::::::::::::::: ROOT DIRECTORY TREE ::::::::::::::::::::::::::::::")
+                    print("\n\n:::::::::::::::::::::::::::::: GENERATING ROOT DIRECTORY TREE ::::::::::::::::::::::::::::::")
                     print(f"Destination: {get_relpath(root_tree_output_file, timestamp_dir)}")
-                    print(f"Legend: {ROOT_TREE_UI_SYMBOLS_DESCRIPTION}")
 
-                # Generate root directory tree with no filtering
+                # Generate root directory tree with proper filtering
                 root_tree_stats = visualize_root_dir_tree(source_dir, root_tree_output_file, print_to_console=not args.no_log,
-                                                          truncate_output=args.truncate, show_processing_status=has_operations)
+                                                          truncate_output=args.truncate, show_processing_status=has_operations,
+                                                          user_exclude_dirs=exclude_dirs, user_exclude_exts=exclude_exts,
+                                                          user_exclude_files=exclude_files)
 
                 if not args.no_log:
                     print("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
@@ -708,11 +709,13 @@ def main():
         if has_operations and OPERATION_ROOT_TREE not in operations and (args.root_tree or True):
             root_tree_file = os.path.join(timestamp_dir, DEFAULT_ROOT_TREE_OUTPUT_PATH)
             if not args.no_log:
-                print("\n\n:::::::::::::::::::::::::::::: ROOT DIRECTORY TREE ::::::::::::::::::::::::::::::")
+                print("\n\n:::::::::::::::::::::::::::::: GENERATING ROOT DIRECTORY TREE ::::::::::::::::::::::::::::::")
                 print(f"Destination: {get_relpath(root_tree_file, timestamp_dir)}")
-                print(f"Legend: {ROOT_TREE_UI_SYMBOLS_DESCRIPTION}")
 
-            root_tree_stats = visualize_root_dir_tree(source_dir, root_tree_file, print_to_console=not args.no_log, truncate_output=args.truncate, show_processing_status=True)
+            root_tree_stats = visualize_root_dir_tree(source_dir, root_tree_file, print_to_console=not args.no_log,
+                                                      truncate_output=args.truncate, show_processing_status=True,
+                                                      user_exclude_dirs=exclude_dirs, user_exclude_exts=exclude_exts,
+                                                      user_exclude_files=exclude_files)
 
             if not args.no_log:
                 print("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
