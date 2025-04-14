@@ -13,43 +13,44 @@ With robust filtering and deep code insight features, **Codeflux** transforms me
 
 ### Supported File Types
 
-| Language            | Extensions                                                                  |
-|---------------------|-----------------------------------------------------------------------------|
-| Python              | `.py`                                                                       |
-| Python Notebooks    | `.ipynb`                                                                    |
-| JavaScript          | `.js`, `.jsx`                                                               |
-| TypeScript          | `.ts`, `.tsx`                                                               |
-| HTML                | `.html`, `.htm`, `.xhtml`, `.shtml`                                         |
-| CSS                 | `.css`, `.scss`, `.sass`, `.less`                                           |
-| PHP                 | `.php`, `.phtml`, `.php5`, `.php7`, `.phps`                                 |
-| Ruby                | `.rb`, `.rake`, `.gemspec`, `.erb`                                          |
-| Swift               | `.swift`                                                                    |
-| Kotlin              | `.kt`, `.kts`                                                               |
-| Java                | `.java`, `.class`, `.jar`                                                   |
-| C#                  | `.cs`, `.cshtml`, `.csx`                                                    |
-| Shell Scripts       | `.sh`, `.bash`, `.zsh`                                                      |
-| Markdown            | `.md`, `.markdown`, `.mdown`, `.mkdn`, `.mkd`, `.mdwn`, `.mdtxt`, `.mdtext` |
-| Plain Text          | `.txt`                                                                      |
-| YAML                | `.yaml`, `.yml`                                                             |
-| JSON                | `.json`, `.jsonl`, `.geojson`, `.json5`, `.ndjson`                          |
-| GO                  | `.go`, `.mod`, `.sum`, `.pb.go`, `.tmpl`, `.tpl`                            |
-| INI Configuration   | `.ini`, `.cfg`, `.conf`, `.properties`                                      |
-| Database Scripts    | `.sql`, `.ddl`, `.dml`                                                      |
-| Batch Scripts       | `.bat`, `.cmd`, `.btm`                                                      |
-| Custom Scripts      | `.scp`, `.script`                                                           |
-| No Extension        | Files without extensions (like `Makefile`, `activate`, `Dockerfile`)        |
-| PowerShell          | `.ps1`, `.psm1`, `.psd1`, `.ps1xml`                                         |
-| Docker              | `.dockerfile`, `.dockerignore`                                              |
-| XML                 | `.xml`, `.xsd`, `.xsl`, `.xslt`, `.wsdl`, `.svg`, `.pom`                    |
-| R                   | `.r`, `.rmd`, `.rds`, `.rdata`, `.rda`                                      |
-| C/C++               | `.c`, `.cpp`, `.cc`, `.cxx`, `.h`, `.hpp`, `.hxx`, `.hh`                    |
-| Rust                | `.rs`, `.rlib`                                                              |
-| Scala               | `.scala`, `.sc`                                                             |
-| Perl                | `.pl`, `.pm`, `.t`                                                          |
-| Lua                 | `.lua`                                                                      |
-| Groovy              | `.groovy`, `.gvy`, `.gy`, `.gsh`                                            |
-| Haskell             | `.hs`, `.lhs`                                                               |
-| Erlang/Elixir       | `.erl`, `.hrl`, `.ex`, `.exs`                                               |
+| Language          | Extensions                                                                  |
+|-------------------|-----------------------------------------------------------------------------|
+| Python            | `.py`                                                                       |
+| Python Notebooks  | `.ipynb`                                                                    |
+| JavaScript        | `.js`, `.jsx`                                                               |
+| TypeScript        | `.ts`, `.tsx`                                                               |
+| HTML              | `.html`, `.htm`, `.xhtml`, `.shtml`                                         |
+| CSS               | `.css`, `.scss`, `.sass`, `.less`                                           |
+| PHP               | `.php`, `.phtml`, `.php5`, `.php7`, `.phps`                                 |
+| Ruby              | `.rb`, `.rake`, `.gemspec`, `.erb`                                          |
+| Swift             | `.swift`                                                                    |
+| Kotlin            | `.kt`, `.kts`                                                               |
+| Java              | `.java`, `.class`, `.jar`                                                   |
+| C#                | `.cs`, `.cshtml`, `.csx`                                                    |
+| Shell Scripts     | `.sh`, `.bash`, `.zsh`                                                      |
+| Markdown          | `.md`, `.markdown`, `.mdown`, `.mkdn`, `.mkd`, `.mdwn`, `.mdtxt`, `.mdtext` |
+| Plain Text        | `.txt`                                                                      |
+| YAML              | `.yaml`, `.yml`                                                             |
+| JSON              | `.json`, `.jsonl`, `.geojson`, `.json5`, `.ndjson`                          |
+| GO                | `.go`, `.mod`, `.sum`, `.pb.go`, `.tmpl`, `.tpl`                            |
+| INI Configuration | `.ini`, `.cfg`, `.conf`, `.properties`                                      |
+| Database Scripts  | `.sql`, `.ddl`, `.dml`                                                      |
+| Batch Scripts     | `.bat`, `.cmd`, `.btm`                                                      |
+| Custom Scripts    | `.scp`, `.script`                                                           |
+| No Extension      | Files without extensions (like `Makefile`, `activate`, `Dockerfile`)        |
+| PowerShell        | `.ps1`, `.psm1`, `.psd1`, `.ps1xml`                                         |
+| Docker            | `.dockerfile`, `.dockerignore`                                              |
+| XML               | `.xml`, `.xsd`, `.xsl`, `.xslt`, `.wsdl`, `.svg`, `.pom`                    |
+| R                 | `.r`, `.rmd`, `.rds`, `.rdata`, `.rda`                                      |
+| C/C++             | `.c`, `.cpp`, `.cc`, `.cxx`, `.h`, `.hpp`, `.hxx`, `.hh`                    |
+| Rust              | `.rs`, `.rlib`                                                              |
+| Scala             | `.scala`, `.sc`                                                             |
+| Perl              | `.pl`, `.pm`, `.t`                                                          |
+| Lua               | `.lua`                                                                      |
+| Groovy            | `.groovy`, `.gvy`, `.gy`, `.gsh`                                            |
+| Haskell           | `.hs`, `.lhs`                                                               |
+| Erlang/Elixir     | `.erl`, `.hrl`, `.ex`, `.exs`                                               |
+| LaTeX             | `.tex`, `.sty`, `.cls`, `.bib`, `.bst`, `.dtx`, `.ltx`, `.ins`              |
 
 _More file types extensions to be added in the future._
 
@@ -106,9 +107,9 @@ pnpm add git+https://github.com/josephchay/codeflux.git --save-dev
 | `--minify-bundle`                               | `-mb`     | `True` (if no other operation specified)                                                                                                                                                                                                                               | Minify files and bundle them into a single text file                                               |
 | **Operations Aids**                             |           |                                                                                                                                                                                                                                                                        |                                                                                                    |
 | `--no-filetype-dirs` (Flattening only)          | `-nfd`    | `False`                                                                                                                                                                                                                                                                | Place all files directly in the output directory without filetype subdirectories during flattening |
+| `--tree`                                        | `-tr`     | `True`                                                                                                                                                                                                                                                                 | Generate a text-based visualization of the processed directory structure                           |
+| `--root-tree`                                   | `-rtr`    | `True`                                                                                                                                                                                                                                                                 | Generate a complete text-based visualization of the root directory tree (with operation status)    |
 | `--truncate` (Tree only)                        | `-t`      | `False`                                                                                                                                                                                                                                                                | Truncate long tree output in console                                                               |
-| `--tree`                                        | `-tr`     | `True` (if no other operation specified)                                                                                                                                                                                                                               | Generate a text-based visualization of the processed directory structure                           |
-| `--root-tree`                                   | `-rtr`    | `False`                                                                                                                                                                                                                                                                | Generate a complete text-based visualization of the root directory tree (with operation status)    |
 | **Exclusion Options**                           |           |                                                                                                                                                                                                                                                                        |                                                                                                    |
 | `--exclude-dirs`                                | `-xd`     | Various default directories                                                                                                                                                                                                                                            | Directory names to exclude                                                                         |
 | `--exclude-extensions`                          | `-xe`     | Various default extensions                                                                                                                                                                                                                                             | File extensions to exclude                                                                         |

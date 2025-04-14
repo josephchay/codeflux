@@ -2,7 +2,8 @@ import os
 import datetime
 import re
 
-from constants import DEFAULT_EXCLUDE_DIRS, ALL_EXTENSIONS, ALL_EXCLUDE_EXTENSIONS, ALL_EXCLUDE_FILENAMES, ROOT_TREE_UI_EXCLUDE_DIRS
+from constants import DEFAULT_EXCLUDE_DIRS, ALL_EXTENSIONS, ALL_EXCLUDE_EXTENSIONS, ALL_EXCLUDE_FILENAMES, \
+    ROOT_TREE_UI_EXCLUDE_DIRS, ROOT_TREE_UI_STATUS_SYMBOLS
 from utils import should_process_file
 
 
@@ -236,16 +237,6 @@ def visualize_root_dir_tree(source_dir, output_file, print_to_console=True, trun
     root_dir = os.getcwd()
     source_dir = os.path.abspath(source_dir)
     base_name = os.path.basename(root_dir)
-
-    # Define status symbols
-    status_symbols = {
-        "processed": "✓",
-        "excluded": "✗",
-        "mixed": "⧉",
-        "error": "!",
-        "unknown": "?",
-        "out_of_scope": "◯"  # For files outside source_dir
-    }
 
     # Initialize statistics
     stats = {
@@ -508,7 +499,7 @@ def visualize_root_dir_tree(source_dir, output_file, print_to_console=True, trun
         if node["type"] == "dir":
             # Directory
             if show_processing_status:
-                symbol = status_symbols.get(node["status"], "?")
+                symbol = ROOT_TREE_UI_STATUS_SYMBOLS.get(node["status"], "?")
                 lines.append(f"{prefix}{connector}{node['name']}/ {symbol}")
             else:
                 lines.append(f"{prefix}{connector}{node['name']}/")
@@ -549,7 +540,7 @@ def visualize_root_dir_tree(source_dir, output_file, print_to_console=True, trun
         else:
             # File
             if show_processing_status:
-                symbol = status_symbols.get(node["status"], "?")
+                symbol = ROOT_TREE_UI_STATUS_SYMBOLS.get(node["status"], "?")
                 lines.append(f"{prefix}{connector}{node['name']} ({node['size_str']}) {symbol}")
             else:
                 lines.append(f"{prefix}{connector}{node['name']} ({node['size_str']})")
@@ -561,13 +552,13 @@ def visualize_root_dir_tree(source_dir, output_file, print_to_console=True, trun
     tree_lines.append(f"# Source Directory: {source_dir}")
     tree_lines.append(f"# Generated: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     if show_processing_status:
-        tree_lines.append(f"# Processing Status Symbols: {status_symbols['processed']} (processed), "
-                          f"{status_symbols['excluded']} (excluded), {status_symbols['mixed']} (mixed), "
-                          f"{status_symbols['out_of_scope']} (out of scope)")
+        tree_lines.append(f"# Processing Status Symbols: {ROOT_TREE_UI_STATUS_SYMBOLS['processed']} (processed), "
+                          f"{ROOT_TREE_UI_STATUS_SYMBOLS['excluded']} (excluded), {ROOT_TREE_UI_STATUS_SYMBOLS['mixed']} (mixed), "
+                          f"{ROOT_TREE_UI_STATUS_SYMBOLS['out_of_scope']} (out of scope)")
     tree_lines.append("")
     # Add root with status
     if show_processing_status:
-        root_symbol = status_symbols.get(tree["status"], "?")
+        root_symbol = ROOT_TREE_UI_STATUS_SYMBOLS.get(tree["status"], "?")
         tree_lines.append(f"{base_name}/ {root_symbol}")
     else:
         tree_lines.append(f"{base_name}/")
@@ -617,15 +608,12 @@ def visualize_root_dir_tree(source_dir, output_file, print_to_console=True, trun
     duration = (end_time - start_time).total_seconds()
     stats['time_taken'] = duration
 
-    # Console output
     if print_to_console:
         print("\n[ROOT DIRECTORY TREE]")
 
-        # Create console lines
         console_lines = []
-
         if show_processing_status:
-            root_symbol = status_symbols.get(tree["status"], "?")
+            root_symbol = ROOT_TREE_UI_STATUS_SYMBOLS.get(tree["status"], "?")
             console_lines.append(f"{base_name}/ {root_symbol}")
         else:
             console_lines.append(f"{base_name}/")

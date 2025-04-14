@@ -311,6 +311,7 @@ def main():
             if not args.no_log:
                 print("\n\n:::::::::::::::::::::::::::::: ROOT DIRECTORY TREE ::::::::::::::::::::::::::::::")
                 print(f"Destination: {get_relpath(root_tree_output_file, timestamp_dir)}\n")
+                print(f"Legend: {ROOT_TREE_UI_SYMBOLS_DESCRIPTION}")
 
             root_tree_stats = visualize_root_dir_tree(source_dir, root_tree_output_file, print_to_console=not args.no_log,
                                                       truncate_output=args.truncate)
@@ -680,10 +681,11 @@ def main():
                 if not args.no_log:
                     print("\n\n:::::::::::::::::::::::::::::: ROOT DIRECTORY TREE ::::::::::::::::::::::::::::::")
                     print(f"Destination: {get_relpath(root_tree_output_file, timestamp_dir)}")
+                    print(f"Legend: {ROOT_TREE_UI_SYMBOLS_DESCRIPTION}")
 
                 # Generate root directory tree with no filtering
-                root_tree_stats = visualize_root_dir_tree( source_dir, root_tree_output_file, print_to_console=not args.no_log,
-                                                           truncate_output=args.truncate, show_processing_status=has_operations)
+                root_tree_stats = visualize_root_dir_tree(source_dir, root_tree_output_file, print_to_console=not args.no_log,
+                                                          truncate_output=args.truncate, show_processing_status=has_operations)
 
                 if not args.no_log:
                     print("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
@@ -708,6 +710,7 @@ def main():
             if not args.no_log:
                 print("\n\n:::::::::::::::::::::::::::::: ROOT DIRECTORY TREE ::::::::::::::::::::::::::::::")
                 print(f"Destination: {get_relpath(root_tree_file, timestamp_dir)}")
+                print(f"Legend: {ROOT_TREE_UI_SYMBOLS_DESCRIPTION}")
 
             root_tree_stats = visualize_root_dir_tree(source_dir, root_tree_file, print_to_console=not args.no_log, truncate_output=args.truncate, show_processing_status=True)
 
@@ -744,9 +747,11 @@ def main():
                 root_tree_output_file = output_paths[OPERATION_ROOT_TREE]
                 summary_file.write(f"\n## ROOT DIRECTORY TREE\n")
                 summary_file.write(f"Destination: {get_relpath(root_tree_output_file, timestamp_dir)}\n")
+                summary_file.write(f"Legend: {ROOT_TREE_UI_SYMBOLS_DESCRIPTION}")
             elif has_operations and 'root_tree_file' in locals():
                 summary_file.write(f"\n## ROOT DIRECTORY TREE\n")
                 summary_file.write(f"Destination: {get_relpath(root_tree_file, timestamp_dir)}\n")
+                summary_file.write(f"Legend: {ROOT_TREE_UI_SYMBOLS_DESCRIPTION}")
 
         if not args.no_log:
             print(f"\nSummary of operations written to \"{get_relpath(summary_path, timestamp_dir)}\"")

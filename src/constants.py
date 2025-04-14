@@ -187,6 +187,14 @@ ALL_EXCLUDE_FILENAMES = (
 
 ROOT_TREE_UI_EXCLUDE_DIRS = ["__pycache__", ".git", ".idea", ".vscode", ".venv", "venv", "codeflux", "node_modules",
                               "codeflux.egg-info"]
+ROOT_TREE_UI_STATUS_SYMBOLS = {
+    "processed": "✓",
+    "excluded": "✗",
+    "mixed": "⧉",
+    "error": "!",
+    "unknown": "?",
+    "out_of_scope": "◯"  # For files outside source_dir
+}
 
 DEFAULT_FLATTEN_OUTPUT_PATH = "flattened"
 DEFAULT_DEFLATTEN_OUTPUT_PATH = "deflattened"
@@ -209,3 +217,4 @@ OPERATION_ROOT_TREE = "root_tree"
 
 TABULATE_FORMAT = "grid"
 MINIFICATION_DESCRIPTION = "python-minifier (Python); terser (JS/TS); html-minifier (HTML); csso (CSS); php-minifier (PHP)"
+ROOT_TREE_UI_SYMBOLS_DESCRIPTION = "; ".join(f"{k} - {v}" for k, v in ROOT_TREE_UI_STATUS_SYMBOLS.items()) + ";"

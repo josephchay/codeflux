@@ -37,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `ROOT_TREE_UI_TRUNCATE_DIRS` constant for the directories to be excluded from the root tree visualization (but maintained during printing).
 - File handling for LaTeX related file extensions.
 - `LATEX_EXCLUDE_EXTENSIONS` list of default extensions to be excluded with regex pattern (currently for numeric values after the extension name).
+- `ROOT_TREE_UI_STATUS_SYMBOLS` and `ROOT_TREE_UI_SYMBOLS_DESCRIPTION` constants for the symbols used in the tree visualization.
 
 ### Fixed
 
