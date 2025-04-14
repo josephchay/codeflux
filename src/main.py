@@ -721,7 +721,7 @@ def main():
         summary_path = os.path.join(timestamp_dir, "summary.txt")
         raw_command = ' '.join([sys.argv[0]] + [f'"{arg}"' if ' ' in arg else arg for arg in sys.argv[1:]])
         command = ' '.join([os.path.basename(sys.argv[0])] + sys.argv[1:])
-        with open(summary_path, 'w') as summary_file:
+        with open(summary_path, 'w', encoding='utf-8') as summary_file:
             summary_file.write(f"# Codeflux Operations Summary\n")
             summary_file.write(f"# Timestamp: {os.path.basename(timestamp_dir)}\n")
             summary_file.write(f"# Source: {os.path.abspath(source_dir)}\n")
