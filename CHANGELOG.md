@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `src/search.py` file for search functionality.
 - New `--search-ext`, `--search-pattern`, `--search-size` arguments for file and content searching.
 - `--search-date`, `--search-imports`, `--search-duplicates` arguments for file searching.
-- Each search functionality to have the file size shown. 
+- Each search functionality to have the file size shown.
 - `get_file_snippet` method for getting file snippets.
 - New `--snippet`, `--snippet-lines`, `--snippet-start`, `--snippet-context` arguments for snippet generation for bundling and minify-bundling operations.
 - Optional table UI output display using `tabulate` library package with `grid` as `tablefmt`.
@@ -41,7 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Made sure now `--exclude-files` properly handle path-based exclusion. 
+- Made sure now `--exclude-files` properly handle path-based exclusion.
 - Duplicate shorthand argument for `--search-duplicate` and `--search-date` fixed.
 - Added missing file extension handlers for `db` and `bat` files.
 - Prevented multiple exact printing of Destination and minification information for each file type.
@@ -52,14 +52,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Minification warnings for `.ipynb` files - warnings now display in the `Warnings` column in the output table UI.
 - Shell related scripts returning `None` instead of a string.
 - Display from the root directory (package installed directory) for the root directory tree.
+- Root Directory tree display the right status symbols for folders and files.
+- Processed directory tree display only the files which are being procseed (don't display for excluded folders and files)
 
 ### Changed
 
 - Updated `bundle_files` method to include snippet generation feature.
-- Updated `print_stats` method in the `src/utils.py` file to include the new `tabulate` table UI functionality. 
+- Updated `print_stats` method in the `src/utils.py` file to include the new `tabulate` table UI functionality.
 - `minify_code` method to not return any default `source` value, and when encountering an error, it will print it and exit.
 - Renamed method `create_output_dir` to `mkdir_output`.
-- Moved minification (non-script) codes to `minify.py`. 
+- Moved minification (non-script) codes to `minify.py`.
 - console printing output display more accurate.
 - Segregated parsing code to the `make_parser` method in `main.py`.
 - Renamed project from `Codebundle` to `Codeflux`.
