@@ -1483,6 +1483,314 @@ class LatexHandler(FileExtHandler):
         )
 
 
+# Add the BibTexHandler to the HANDLERS dictionary at the end of handlers.py
+
+class BibTexHandler(FileExtHandler):
+    def __init__(self):
+        super().__init__(
+            extensions=BIBTEX_EXTENSIONS,
+            exclude_dirs=DEFAULT_EXCLUDE_DIRS,
+            exclude_extensions=BIBTEX_EXCLUDE_EXTENSIONS,
+            exclude_filenames=BIBTEX_EXCLUDE_FILENAMES
+        )
+
+    def bibdedup_dir(self, source_dir, output_file, exclude_dirs=None, exclude_exts=None, exclude_files=None,
+                     include_dirs=None, include_exts=None, include_files=None, similarity_threshold=0.9, silent=False):
+        """
+        Find similar titles across multiple .bib files.
+
+        Args:
+            source_dir: Directory containing BibTeX files
+            output_file: File to write results to
+            exclude_dirs: Directories to exclude
+            exclude_exts: Extensions to exclude
+            exclude_files: Files to exclude
+            include_dirs: Only include these directories
+            include_exts: Only include these extensions
+            include_files: Only include these files
+            similarity_threshold: Threshold for title similarity (0.0-1.0, default: 0.9)
+            silent: If True, suppress console output
+
+        Returns:
+            Dictionary with analysis statistics
+        """
+        import difflib
+        import datetime
+        import re
+        from ui.table import get_table_formatter
+
+        source_dir = os.path.abspath(source_dir)
+        stats = {
+            "total_files_processed": 0,
+            "total_entries": 0,
+            "duplicates_found": 0,
+            "files_with_duplicates": 0,
+            "dirs_traversed": 0,
+            "time_taken": 0,
+            "max_nesting_level": 0
+        }
+
+        files_info = []  # For table output
+        start_time = time.time()
+
+        # Find all .bib files in the source directory
+        bib_files = []
+        entries = {}  # Dictionary to store all BibTeX entries
+        file_entries = {}  # Dictionary to map files to their entries
+
+        for root, dirs, files in os.walk(source_dir):
+            stats["dirs_traversed"] += 1
+
+            # Calculate nesting level
+            rel_path = os.path.relpath(root, source_dir)
+            current_nesting = len(rel_path.split(os.sep)) if rel_path != '.' else 0
+            stats["max_nesting_level"] = max(stats["max_nesting_level"], current_nesting)
+
+            if include_dirs:
+                # Only process specified directories
+                rel_dir_parts = rel_path.split(os.sep)
+                # Check if any part of the path is in include_dirs
+                if not any(part in include_dirs for part in rel_dir_parts) and rel_path != '.':
+                    dirs[:] = []  # Clear dirs to skip this branch
+                    continue
+
+            # Exclude directories
+            dirs[:] = [d for d in dirs if d not in exclude_dirs]
+
+            for file in files:
+                stats["total_files_processed"] += 1
+
+                # Skip if not a BibTeX file
+                if not self.handles_file(file):
+                    continue
+
+                file_path = os.path.join(root, file)
+                rel_file_path = os.path.relpath(file_path, source_dir)
+
+                # Apply additional filters
+                should_include = should_process_file(
+                    file, self.extensions, exclude_exts, exclude_files, include_exts,
+                    include_files, file_rel_path=rel_file_path
+                )
+
+                if should_include:
+                    bib_files.append(file_path)
+
+                    # Extract entries from this BibTeX file
+                    file_entries[file_path] = {}
+                    try:
+                        with open(file_path, 'r', encoding='utf-8') as f:
+                            current_key = None
+                            for line in f:
+                                key_match = re.search(r'@\w+\{([^,]+),', line)
+                                if key_match:
+                                    current_key = key_match.group(1)
+
+                                title_match = re.search(r'^\s*title\s*=\s*["]?\s*\{(.+?)\}\s*["]?\s*,', line)
+                                if title_match and current_key:
+                                    normalized_title = title_match.group(1).strip().lower()
+                                    entries[current_key] = {
+                                        'title': normalized_title,
+                                        'file': file_path
+                                    }
+                                    file_entries[file_path][current_key] = normalized_title
+
+                        files_info.append({
+                            "file": rel_file_path,
+                            "size": os.path.getsize(file_path),
+                            "entries": len(file_entries[file_path]),
+                            "status": "Processed"
+                        })
+                    except UnicodeDecodeError:
+                        if not silent:
+                            print(f"Warning: Encoding issues with file {rel_file_path}. Skipping.")
+                        files_info.append({
+                            "file": rel_file_path,
+                            "size": os.path.getsize(file_path),
+                            "entries": 0,
+                            "status": "Error (encoding)"
+                        })
+                    except Exception as e:
+                        if not silent:
+                            print(f"Error processing {rel_file_path}: {str(e)}")
+                        files_info.append({
+                            "file": rel_file_path,
+                            "size": os.path.getsize(file_path),
+                            "entries": 0,
+                            "status": f"Error: {str(e)}"
+                        })
+
+        stats["total_entries"] = len(entries)
+
+        if not bib_files:
+            if not silent:
+                print(f"No BibTeX files found to analyze.")
+
+            end_time = time.time()
+            duration = end_time - start_time
+            stats["time_taken"] = duration
+
+            if not silent:
+                print_stats(stats, OPERATION_BIBDEDUP, duration)
+
+            return stats
+
+        # Find similar titles
+        duplicates = []
+        keys = list(entries.keys())
+        files_with_duplicates = set()
+
+        for i in range(len(keys)):
+            for j in range(i + 1, len(keys)):
+                k1, k2 = keys[i], keys[j]
+                entry1 = entries[k1]
+                entry2 = entries[k2]
+                t1, t2 = entry1['title'], entry2['title']
+
+                similarity = difflib.SequenceMatcher(None, t1, t2).ratio()
+                # Include all similarities in results
+                duplicates.append({
+                    'key1': k1,
+                    'title1': t1,
+                    'file1': entry1['file'],
+                    'key2': k2,
+                    'title2': t2,
+                    'file2': entry2['file'],
+                    'similarity': similarity
+                })
+                # Only count as "duplicates" those with similarity above threshold
+                if similarity >= similarity_threshold:
+                    files_with_duplicates.add(entry1['file'])
+                    files_with_duplicates.add(entry2['file'])
+
+        # Sort duplicates by similarity (highest first)
+        duplicates.sort(key=lambda x: x['similarity'], reverse=True)
+
+        # Only count entries above threshold for stats
+        duplicates_above_threshold = [d for d in duplicates if d['similarity'] >= similarity_threshold]
+        stats["duplicates_found"] = len(duplicates_above_threshold)
+        stats["files_with_duplicates"] = len(files_with_duplicates)
+
+        # Generate plain text report
+        report_lines = []
+        report_lines.append(f"BibTeX Duplicate Detection Report")
+        report_lines.append(f"==================================")
+        report_lines.append(f"")
+        report_lines.append(f"Source directory: {os.path.abspath(source_dir)}")
+        report_lines.append(f"Date: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        report_lines.append(f"Similarity threshold for classification: {similarity_threshold}")
+        report_lines.append(f"Files processed: {len(bib_files)}")
+        report_lines.append(f"Total BibTeX entries: {stats['total_entries']}")
+        report_lines.append(f"Potential duplicates found: {stats['duplicates_found']} (similarity >= {similarity_threshold})")
+        report_lines.append(f"Files with duplicates: {stats['files_with_duplicates']}")
+        report_lines.append(f"")
+
+        if duplicates:
+            report_lines.append("Duplicate Entries")
+            report_lines.append("----------------")
+            report_lines.append("")
+
+            for i, dup in enumerate(duplicates):
+                report_lines.append(f"Duplicate Set {i + 1} (Similarity: {dup['similarity']:.4f})")
+                report_lines.append("-" * 60)
+                report_lines.append(f"Entry 1: {dup['key1']}")
+                report_lines.append(f"File: {get_relpath(dup['file1'], source_dir)}")
+                report_lines.append(f"Title: {dup['title1']}")
+                report_lines.append("")
+                report_lines.append(f"Entry 2: {dup['key2']}")
+                report_lines.append(f"File: {get_relpath(dup['file2'], source_dir)}")
+                report_lines.append(f"Title: {dup['title2']}")
+                report_lines.append("")
+        else:
+            report_lines.append("No duplicates found.")
+
+        # List of all processed files
+        report_lines.append("\nProcessed Files")
+        report_lines.append("--------------")
+        for file_path in bib_files:
+            rel_path = get_relpath(file_path, source_dir)
+            entry_count = len(file_entries.get(file_path, {}))
+            report_lines.append(f"- {rel_path} ({entry_count} entries)")
+
+        # Write report to file
+        os.makedirs(os.path.dirname(output_file), exist_ok=True)
+        with open(output_file, 'w', encoding='utf-8') as f:
+            f.write('\n'.join(report_lines))
+
+        # Update file info with duplicate information
+        for file_info in files_info:
+            file_path = os.path.join(source_dir, file_info["file"])
+            if file_path in files_with_duplicates:
+                file_info["status"] = "Has duplicates"
+
+        if not silent:
+            # Display results
+            if files_info:
+                print("[FILES PROCESSED]")
+                from ui.table import format_file_table
+                file_table = format_file_table(files_info, OPERATION_BIBDEDUP)
+                print(file_table)
+
+            # Display duplicates
+            if duplicates:
+                print("\n[DUPLICATE ENTRIES]")
+                # Only show duplicates that meet the threshold to avoid overwhelming the user
+                display_duplicates = duplicates_above_threshold
+                table_formatter, has_tabulate = get_table_formatter()
+
+                if has_tabulate:
+                    headers = ["#", "Entry 1", "Entry 2", "Similarity", "File 1", "File 2"]
+                    rows = []
+
+                    for i, dup in enumerate(display_duplicates):
+                        title1 = dup['title1'][:40] + "..." if len(dup['title1']) > 40 else dup['title1']
+                        title2 = dup['title2'][:40] + "..." if len(dup['title2']) > 40 else dup['title2']
+
+                        rows.append([
+                            i + 1,
+                            f"{dup['key1']}\n{title1}",
+                            f"{dup['key2']}\n{title2}",
+                            f"{dup['similarity']:.4f}",
+                            get_relpath(dup['file1'], source_dir),
+                            get_relpath(dup['file2'], source_dir)
+                        ])
+
+                    if len(display_duplicates) > 0:
+                        table = table_formatter(rows, headers=headers, tablefmt="grid")
+                        print(table)
+                        print(f"\nFound {len(display_duplicates)} entries with similarity >= {similarity_threshold}")
+                        print(f"Full details in the output file: {get_relpath(output_file)}")
+                    else:
+                        print(f"No entries found with similarity >= {similarity_threshold}")
+                        print(f"All similarity scores are available in the output file: {get_relpath(output_file)}")
+                else:
+                    # Fallback without tabulate - show duplicates above threshold
+                    if len(display_duplicates) > 0:
+                        for i, dup in enumerate(display_duplicates):
+                            print(f"\n--- Duplicate {i + 1}/{len(display_duplicates)} (Similarity: {dup['similarity']:.4f}) ---")
+                            print(f"Entry 1: {dup['key1']}")
+                            print(f"Title 1: {dup['title1'][:60]}{'...' if len(dup['title1']) > 60 else ''}")
+                            print(f"File 1: {get_relpath(dup['file1'], source_dir)}")
+                            print(f"Entry 2: {dup['key2']}")
+                            print(f"Title 2: {dup['title2'][:60]}{'...' if len(dup['title2']) > 60 else ''}")
+                            print(f"File 2: {get_relpath(dup['file2'], source_dir)}")
+                        print(f"\nFound {len(display_duplicates)} entries with similarity >= {similarity_threshold}")
+                    else:
+                        print(f"No entries found with similarity >= {similarity_threshold}")
+                    print(f"Full details in the output file: {get_relpath(output_file)}")
+            else:
+                print("\nNo duplicate entries found.")
+
+        end_time = time.time()
+        duration = end_time - start_time
+        stats["time_taken"] = duration
+
+        if not silent:
+            print_stats(stats, OPERATION_BIBDEDUP, duration)
+
+        return stats
+
+
 HANDLERS = {
     "py": PythonHandler(),
     "ipynb": NotebookHandler(),
@@ -1518,4 +1826,5 @@ HANDLERS = {
     "haskell": HaskellHandler(),
     "erlang": ErlangHandler(),
     "latex": LatexHandler(),
+    "bibtex": BibTexHandler(),
 }

@@ -91,14 +91,26 @@ def make_parser():
     )
 
     parser.add_argument(
+        '--bibdedup', "-bd",
+        action='store_true',
+        help="Check for similar keys and titles across multiple `.bib` files"
+    )
+    parser.add_argument(
+        '--similarity-threshold', "-st",
+        type=float,
+        default=0.9,
+        help="Similarity threshold for BibTeX duplicate detection (0.0-1.0, default: 0.9)"
+    )
+
+    parser.add_argument(
         "--file-types", "-t",
         nargs="+",
         choices=["py", "ipynb", "jsts", "html", "css", "php", "ruby", "swift", "kotlin", "java", "csharp", "shell",
                  "mdtxt", "yml", "json", "go", "ini", "db", "bat", "scp", "noext", "ps1", "docker", "xml", "r",
-                 "cpp", "rust", "scala", "perl", "lua", "groovy", "haskell", "erlang", "latex"],
+                 "cpp", "rust", "scala", "perl", "lua", "groovy", "haskell", "erlang", "latex", "bibtex"],
         default=["py", "ipynb", "jsts", "html", "css", "php", "ruby", "swift", "kotlin", "java", "csharp", "shell",
                  "mdtxt", "yml", "json", "go", "ini", "db", "bat", "scp", "noext", "ps1", "docker", "xml", "r",
-                 "cpp", "rust", "scala", "perl", "lua", "groovy", "haskell", "erlang", "latex"],
+                 "cpp", "rust", "scala", "perl", "lua", "groovy", "haskell", "erlang", "latex", "bibtex"],
         help="File types to process (default: all)"
     )
 
@@ -267,8 +279,10 @@ def main():
         operations.append(OPERATION_TREE)
     if args.root_tree:
         operations.append(OPERATION_ROOT_TREE)
+    if args.bibdedup:
+        operations.append(OPERATION_BIBDEDUP)
     if not operations:
-        operations = [OPERATION_FLATTEN, OPERATION_DEFLATTEN, OPERATION_MINIFY, OPERATION_BUNDLE, OPERATION_MINIFY_BUNDLE]
+        operations = [OPERATION_FLATTEN, OPERATION_DEFLATTEN, OPERATION_MINIFY, OPERATION_BUNDLE, OPERATION_MINIFY_BUNDLE, OPERATION_BIBDEDUP]
     has_operations = operations and not all(op in [OPERATION_TREE, OPERATION_ROOT_TREE] for op in operations)
 
     output_paths = {}
@@ -301,7 +315,6 @@ def main():
             if not args.no_log:
                 print("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
             tree_processed = True
-
         if OPERATION_ROOT_TREE in operations:
             root_tree_output_file = args.dest_named if args.dest_named else args.dest_pos
             if not root_tree_output_file:
@@ -558,6 +571,27 @@ def main():
                             print("----- OPERATION SUMMARY -----")
                             print(f"No files were minified.")
                     print("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
+            elif operation == OPERATION_BIBDEDUP:
+                bibdedup_dest = args.dest_named if args.dest_named else args.dest_pos
+                if not bibdedup_dest:
+                    bibdedup_dest = os.path.join(timestamp_dir, DEFAULT_BIBDEDUP_OUTPUT_PATH)
+                output_paths[operation] = bibdedup_dest
+
+                if not args.no_log:
+                    print("\n\n:::::::::::::::::::::::::::::: BIBDEDUP ::::::::::::::::::::::::::::::")
+                    print(f"Destination: {get_relpath(bibdedup_dest, timestamp_dir)}")
+                    print(f"Similarity threshold: {args.similarity_threshold}\n")
+
+                # Process BibTeX files
+                handler = HANDLERS["bibtex"]
+                bibdedup_stats = handler.bibdedup_dir(
+                    source_dir, bibdedup_dest, exclude_dirs, exclude_exts, exclude_files,
+                    args.include_dirs, args.include_extensions, args.include_files,
+                    args.similarity_threshold, args.no_log
+                )
+
+                if not args.no_log:
+                    print("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
             elif operation == OPERATION_SEARCH:
                 if not args.no_log:
                     print("\n\n:::::::::::::::::::::::::::::: SEARCH ::::::::::::::::::::::::::::::")
@@ -710,8 +744,9 @@ def main():
         if has_operations and OPERATION_ROOT_TREE not in operations and (args.root_tree or True):
             root_tree_file = os.path.join(timestamp_dir, DEFAULT_ROOT_TREE_OUTPUT_PATH)
             if not args.no_log:
-                print("\n\n:::::::::::::::::::::::::::::: GENERATING ROOT DIRECTORY TREE ::::::::::::::::::::::::::::::")
+                print("\n\n:::::::::::::::::::::::::::::: ROOT DIRECTORY TREE ::::::::::::::::::::::::::::::")
                 print(f"Destination: {get_relpath(root_tree_file, timestamp_dir)}")
+                print(f"Legend: {ROOT_TREE_UI_SYMBOLS_DESCRIPTION}\n")
 
             root_tree_stats = visualize_root_dir_tree(source_dir, root_tree_file, print_to_console=not args.no_log,
                                                       truncate_output=args.truncate, show_processing_status=True,
@@ -726,34 +761,34 @@ def main():
         raw_command = ' '.join([sys.argv[0]] + [f'"{arg}"' if ' ' in arg else arg for arg in sys.argv[1:]])
         command = ' '.join([os.path.basename(sys.argv[0])] + sys.argv[1:])
         with open(summary_path, 'w', encoding='utf-8') as summary_file:
-            summary_file.write(f"# Codeflux Operations Summary\n")
-            summary_file.write(f"# Timestamp: {os.path.basename(timestamp_dir)}\n")
-            summary_file.write(f"# Source: {os.path.abspath(source_dir)}\n")
-            summary_file.write(f"# Destination: {os.path.abspath(timestamp_dir)}\n")
+            summary_file.write(f"Codeflux Operations Summary\n")
+            summary_file.write(f"Timestamp: {os.path.basename(timestamp_dir)}\n")
+            summary_file.write(f"Source: {os.path.abspath(source_dir)}\n")
+            summary_file.write(f"Destination: {os.path.abspath(timestamp_dir)}\n")
             local_timezone = datetime.datetime.now().astimezone().tzinfo
-            summary_file.write(f"# Created: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')} [{local_timezone}]\n")
-            summary_file.write(f"# Command (Raw): {raw_command}\n")
-            summary_file.write(f"# Command: {command}\n")
+            summary_file.write(f"Created: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')} [{local_timezone}]\n")
+            summary_file.write(f"Command (Raw): {raw_command}\n")
+            summary_file.write(f"Command: {command}\n")
             for op in operations:
                 if op not in [OPERATION_TREE, OPERATION_ROOT_TREE] and op in output_paths:
                     dest_path = output_paths[op]
                     rel_dest_path = get_relpath(dest_path, timestamp_dir)
-                    summary_file.write(f"\n## {op.upper()}\n")
+                    summary_file.write(f"\n{op.upper()}\n")
                     summary_file.write(f"Destination: {rel_dest_path}\n")
             if OPERATION_TREE in operations:
                 tree_output_file = output_paths[OPERATION_TREE]
-                summary_file.write(f"\n## PROCESSED DIRECTORY TREE\n")
+                summary_file.write(f"\nPROCESSED DIRECTORY TREE\n")
                 summary_file.write(f"Destination: {get_relpath(tree_output_file, timestamp_dir)}\n")
             elif processed_tree_file:
-                summary_file.write(f"\n## PROCESSED DIRECTORY TREE\n")
+                summary_file.write(f"\nPROCESSED DIRECTORY TREE\n")
                 summary_file.write(f"Destination: {get_relpath(processed_tree_file, timestamp_dir)}\n")
             if OPERATION_ROOT_TREE in operations:
                 root_tree_output_file = output_paths[OPERATION_ROOT_TREE]
-                summary_file.write(f"\n## ROOT DIRECTORY TREE\n")
+                summary_file.write(f"\nROOT DIRECTORY TREE\n")
                 summary_file.write(f"Destination: {get_relpath(root_tree_output_file, timestamp_dir)}\n")
                 summary_file.write(f"Legend: {ROOT_TREE_UI_SYMBOLS_DESCRIPTION}")
             elif has_operations and 'root_tree_file' in locals():
-                summary_file.write(f"\n## ROOT DIRECTORY TREE\n")
+                summary_file.write(f"\nROOT DIRECTORY TREE\n")
                 summary_file.write(f"Destination: {get_relpath(root_tree_file, timestamp_dir)}\n")
                 summary_file.write(f"Legend: {ROOT_TREE_UI_SYMBOLS_DESCRIPTION}")
 

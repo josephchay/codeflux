@@ -1,7 +1,7 @@
 import shutil
 
 from constants import OPERATION_BUNDLE, OPERATION_MINIFY_BUNDLE, OPERATION_FLATTEN, OPERATION_DEFLATTEN, \
-    OPERATION_MINIFY, TABULATE_FORMAT, OPERATION_PROPERTIES
+    OPERATION_MINIFY, TABULATE_FORMAT, OPERATION_PROPERTIES, OPERATION_BIBDEDUP
 
 
 def get_table_formatter():
@@ -108,6 +108,35 @@ def format_file_table(files_info, operation_type):
             if has_warnings:
                 row.append(file_info.get("warnings", ""))
 
+            rows.append(row)
+    elif operation_type == OPERATION_BIBDEDUP:
+        has_entries = any("entries" in file_info for file_info in files_info)
+        if has_entries:
+            headers = ["File", "Size (KB)", "Entries", "Status"]
+        else:
+            headers = ["File", "Size (KB)", "Status"]
+
+        if has_warnings:
+            headers.append("Warnings")
+
+        rows = []
+        for file_info in files_info:
+            if has_entries:
+                row = [
+                    file_info["file"],
+                    f"{file_info['size'] / 1024:.2f}",
+                    file_info.get("entries", 0),
+                    file_info["status"]
+                ]
+            else:
+                row = [
+                    file_info["file"],
+                    f"{file_info['size'] / 1024:.2f}",
+                    file_info["status"]
+                ]
+
+            if has_warnings:
+                row.append(file_info.get("warnings", ""))
             rows.append(row)
     else:
         headers = ["File", "Size (KB)", "Status"]
@@ -219,7 +248,6 @@ def format_stats_table(stats, operation_type, duration):
             ])
             if files_copied > 0:
                 data.append(["Average file size", f"{avg_file_size:.2f} KB"])
-
     elif operation_type == OPERATION_PROPERTIES:
         files_counted = stats.get("total_files_counted", 0)
         bytes_total = stats.get("bytes_total", 0) / 1024  # Convert to KB
@@ -232,7 +260,6 @@ def format_stats_table(stats, operation_type, duration):
 
         if files_counted > 0:
             data.append(["Average file size", f"{avg_file_size:.2f} KB"])
-
     elif operation_type == OPERATION_BUNDLE:
         files_bundled = stats.get("files_bundled", 0)
         bytes_bundled = stats.get("bytes_bundled", 0) / 1024  # Convert to KB
@@ -251,7 +278,6 @@ def format_stats_table(stats, operation_type, duration):
 
         if files_bundled > 0:
             data.append(["Average file size", f"{avg_file_size:.2f} KB"])
-
     elif operation_type == OPERATION_MINIFY:
         files_copied = stats.get("files_copied", 0)
         files_minified = stats.get("files_minified", 0)
@@ -283,7 +309,27 @@ def format_stats_table(stats, operation_type, duration):
                 ["Minified size", f"{bytes_minified:.2f} KB"],
                 ["Size reduction", f"{reduction:.2f}%"],
             ])
+    elif operation_type == OPERATION_BIBDEDUP:
+        # For BibTeX deduplication
+        bib_files_processed = stats.get("total_files_processed", 0)
+        total_entries = stats.get("total_entries", 0)
+        duplicates_found = stats.get("duplicates_found", 0)
+        files_with_duplicates = stats.get("files_with_duplicates", 0)
 
+        data.extend([
+            ["BibTeX files processed", bib_files_processed],
+            ["Total BibTeX entries", total_entries],
+            ["Potential duplicates found", duplicates_found],
+            ["Files with duplicates", files_with_duplicates]
+        ])
+
+        if total_entries > 0 and duplicates_found > 0:
+            duplicate_percentage = (duplicates_found / total_entries) * 100
+            data.append(["Percentage of duplicate entries", f"{duplicate_percentage:.2f}%"])
+
+        if bib_files_processed > 0 and files_with_duplicates > 0:
+            files_with_dupes_percentage = (files_with_duplicates / bib_files_processed) * 100
+            data.append(["Percentage of files with duplicates", f"{files_with_dupes_percentage:.2f}%"])
     elif operation_type == OPERATION_PROPERTIES:
         files_counted = stats.get("total_files_counted", 0)
         bytes_total = stats.get("bytes_total", 0) / 1024  # Convert to KB
