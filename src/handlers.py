@@ -1352,6 +1352,16 @@ class NoExtHandler(FileExtHandler):
             exclude_filenames=NOEXT_EXCLUDE_FILENAMES
         )
 
+    def handles_file(self, filename):
+        """Only handle files that have no extension at all."""
+        # Check if the filename has no dot (except for hidden files that start with dot)
+        if "." not in filename:
+            return True
+        # Special case for hidden files (which start with a dot)
+        if filename.startswith(".") and filename.count(".") == 1:
+            return True
+        return False
+
 
 class PowerShellHandler(FileExtHandler):
     def __init__(self):

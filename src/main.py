@@ -93,7 +93,7 @@ def make_parser():
     parser.add_argument(
         '--bibdedup', "-bd",
         action='store_true',
-        help="Check for similar keys and titles across multiple `.bib` files"
+        help="Check for similar titles across multiple `.bib` files"
     )
     parser.add_argument(
         '--similarity-threshold', "-st",

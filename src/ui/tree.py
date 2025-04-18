@@ -741,8 +741,7 @@ def visualize_root_dir_tree(source_dir, output_file, print_to_console=True, trun
 
                 if child.get("special", False):
                     special_connector = "├── "  # Use the same connector style
-                    tree_lines.append(
-                        f"{extended_prefix}{special_connector}[Content inside {name} directory - full tree saved to file]")
+                    tree_lines.append(f"{extended_prefix}{special_connector}[Full tree saved to file]")
                 else:
                     # Process children normally
                     build_tree_lines(child, extended_prefix, is_last_child)
@@ -837,8 +836,7 @@ def visualize_root_dir_tree(source_dir, output_file, print_to_console=True, trun
                     # Handle special directories with proper indentation
                     if child.get("special", False) or name in ROOT_TREE_UI_EXCLUDE_DIRS:
                         special_connector = "├── "  # Use a connector for consistent style
-                        console_lines.append(
-                            f"{extended_prefix}{special_connector}[Content inside {name} directory - full tree saved to file]")
+                        console_lines.append(f"{extended_prefix}{special_connector}[Full tree saved to file]")
                     else:
                         # Process children normally
                         new_path = path + [name]
@@ -911,10 +909,8 @@ def format_dir_tree_summary(stats):
         f"Total files: {stats['total_files']}",
         f"Total directories: {stats['total_dirs']}"
     ]
-
     total_size = stats["total_size"]
     total_size_str = format_file_size(total_size)
-
     summary_lines.extend([
         f"Total size: {total_size_str}",
         f"Maximum directory depth: {stats['max_depth']}"
