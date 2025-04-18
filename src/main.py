@@ -679,8 +679,9 @@ def main():
                 output_paths[operation] = root_tree_output_file
 
                 if not args.no_log:
-                    print("\n\n:::::::::::::::::::::::::::::: GENERATING ROOT DIRECTORY TREE ::::::::::::::::::::::::::::::")
+                    print("\n\n:::::::::::::::::::::::::::::: ROOT (PACKAGE INSTALLATION) DIRECTORY TREE ::::::::::::::::::::::::::::::")
                     print(f"Destination: {get_relpath(root_tree_output_file, timestamp_dir)}")
+                    print(f"Legend: {ROOT_TREE_UI_SYMBOLS_DESCRIPTION}")
 
                 # Generate root directory tree with proper filtering
                 root_tree_stats = visualize_root_dir_tree(source_dir, root_tree_output_file, print_to_console=not args.no_log,

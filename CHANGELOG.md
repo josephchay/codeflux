@@ -54,6 +54,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Display from the root directory (package installed directory) for the root directory tree.
 - Root Directory tree display the right status symbols for folders and files.
 - Processed directory tree display only the files which are being procseed (don't display for excluded folders and files)
+- Status symbols now print correctly for the root directory tree visualization.
 
 ### Changed
 

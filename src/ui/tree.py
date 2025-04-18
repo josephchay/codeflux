@@ -3,8 +3,7 @@ import datetime
 import re
 import sys
 
-from constants import DEFAULT_EXCLUDE_DIRS, ALL_EXTENSIONS, ALL_EXCLUDE_EXTENSIONS, ALL_EXCLUDE_FILENAMES, \
-    ROOT_TREE_UI_EXCLUDE_DIRS
+from constants import ALL_EXTENSIONS, ROOT_TREE_UI_EXCLUDE_DIRS, ROOT_TREE_UI_STATUS_SYMBOLS
 
 
 def format_file_size(size_in_bytes):
@@ -349,7 +348,7 @@ def visualize_root_dir_tree(source_dir, output_file, print_to_console=True, trun
 
     # Find the actual package installation directory
     source_dir_abs = os.path.abspath(source_dir)
-    
+
     # Try to find the codeflux installation directory
     try:
         # Try to get the directory from the running executable
@@ -365,41 +364,34 @@ def visualize_root_dir_tree(source_dir, output_file, print_to_console=True, trun
                 root_dir = os.getcwd()
         else:
             root_dir = os.getcwd()
-            
+
         # Look for installation indicators by walking up from the directory
         orig_root = root_dir
         while root_dir != os.path.dirname(root_dir):  # Stop at filesystem root
             # Check if this looks like a project root
             if (os.path.exists(os.path.join(root_dir, "setup.py")) or
-                os.path.exists(os.path.join(root_dir, "pyproject.toml")) or
-                os.path.exists(os.path.join(root_dir, ".git")) or
-                os.path.exists(os.path.join(root_dir, "requirements.txt")) or
-                os.path.basename(root_dir) == "codeflux"):
+                    os.path.exists(os.path.join(root_dir, "pyproject.toml")) or
+                    os.path.exists(os.path.join(root_dir, ".git")) or
+                    os.path.exists(os.path.join(root_dir, "requirements.txt")) or
+                    os.path.basename(root_dir) == "codeflux"):
                 break  # Found a likely project root
-            
+
             # Move up one directory
             root_dir = os.path.dirname(root_dir)
-            
+
         # If we ended up at filesystem root without finding indicators,
         # fall back to the original directory
         if root_dir == os.path.dirname(root_dir):
             root_dir = orig_root
-                
+
     except Exception as e:
         # Fallback to source directory if anything goes wrong
         root_dir = source_dir_abs
-    
-    # Get the basename for display
+
     base_name = os.path.basename(root_dir)
 
     # Define status symbols
-    status_symbols = {
-        "processed": "✓",
-        "excluded": "✗",
-        "mixed": "⟳",
-        "error": "!",
-        "unknown": "?"
-    }
+    status_symbols = ROOT_TREE_UI_STATUS_SYMBOLS
 
     # Initialize statistics
     stats = {
@@ -413,7 +405,9 @@ def visualize_root_dir_tree(source_dir, output_file, print_to_console=True, trun
         "processed_dirs": 0,
         "excluded_dirs": 0,
         "mixed_dirs": 0,
-        "processed_size": 0
+        "processed_size": 0,
+        "out_of_scope_files": 0,
+        "out_of_scope_dirs": 0
     }
 
     start_time = datetime.datetime.now()
@@ -422,28 +416,37 @@ def visualize_root_dir_tree(source_dir, output_file, print_to_console=True, trun
     if output_dir:
         os.makedirs(output_dir, exist_ok=True)
 
+    # Determine if path is within source directory
+    def is_in_source_dir(path):
+        try:
+            rel_path = os.path.relpath(path, source_dir_abs)
+            return not rel_path.startswith('..')
+        except ValueError:
+            # Different drives on Windows
+            return False
+
     def is_file_processed(file_path, rel_path):
         """Determine if a file would be processed based on the filtering rules."""
         # Check directory exclusion
         dir_path = os.path.dirname(rel_path)
         dir_parts = dir_path.replace('\\', '/').split('/')
-        
+
         # Check if any part of the directory path is in exclude_dirs
         if any(part in exclude_dirs for part in dir_parts):
             return False
-            
+
         # Check path-based directory exclusions
         for exclude_dir in exclude_dirs:
             if os.sep in exclude_dir or '/' in exclude_dir:  # This is a path-based exclusion
                 # Normalize paths for comparison
                 norm_exclude = exclude_dir.replace('\\', os.sep).replace('/', os.sep)
                 norm_rel_path = rel_path.replace('\\', os.sep)
-                
+
                 # Check if the exclusion path matches or is a parent of this file's path
                 if (norm_rel_path.startswith(norm_exclude + os.sep) or
-                    norm_rel_path == norm_exclude):
+                        norm_rel_path == norm_exclude):
                     return False
-            
+
         # Check file extension exclusion
         for ext in exclude_exts:
             # Check if this is a regex pattern
@@ -461,7 +464,7 @@ def visualize_root_dir_tree(source_dir, output_file, print_to_console=True, trun
         # Check file name exclusion
         file_name = os.path.basename(file_path)
         norm_rel_path = rel_path.replace('\\', '/')
-        
+
         for exclude_pattern in exclude_files:
             norm_exclude = exclude_pattern.replace('\\', '/')
             if (norm_rel_path.lower() == norm_exclude.lower() or
@@ -475,28 +478,37 @@ def visualize_root_dir_tree(source_dir, output_file, print_to_console=True, trun
     def is_dir_excluded(dir_path, rel_path):
         """Check if a directory would be excluded."""
         dir_name = os.path.basename(dir_path)
-        
+
         # Check if the directory name itself is in exclude_dirs
         if dir_name in exclude_dirs:
             return True
-            
+
         # Check if any parent directory is in exclude_dirs
         dir_parts = rel_path.split(os.sep)
         if any(part in exclude_dirs for part in dir_parts):
             return True
-            
+
         # Check path-based exclusions
         for exclude_dir in exclude_dirs:
             if os.sep in exclude_dir or '/' in exclude_dir:  # This is a path-based exclusion
                 # Normalize paths for comparison
                 norm_exclude = exclude_dir.replace('\\', os.sep).replace('/', os.sep)
                 norm_rel_path = rel_path.replace('\\', os.sep)
-                
+
                 # Check if the exclusion path matches this directory
                 if norm_rel_path == norm_exclude or norm_rel_path.startswith(norm_exclude + os.sep):
                     return True
-                
+
         return False
+
+    # Check if source_dir is a subdirectory of root_dir
+    source_is_sub_of_root = False
+    try:
+        rel_source_to_root = os.path.relpath(source_dir_abs, root_dir)
+        source_is_sub_of_root = not rel_source_to_root.startswith('..')
+    except ValueError:
+        # Different drives on Windows
+        source_is_sub_of_root = False
 
     tree = {"name": base_name, "type": "dir", "children": {}, "path": root_dir, "status": "unknown", "depth": 0}
 
@@ -504,8 +516,15 @@ def visualize_root_dir_tree(source_dir, output_file, print_to_console=True, trun
         rel_path = os.path.relpath(root, root_dir)
         depth = 0 if rel_path == '.' else len(rel_path.split(os.sep))
         stats["max_depth"] = max(stats["max_depth"], depth)
+
+        # Check if this directory is within source_dir
+        in_source = is_in_source_dir(root)
+
         if rel_path == '.':
             current = tree
+            # If source_dir is not a subdirectory of root_dir, mark tree root as mixed
+            if not source_is_sub_of_root:
+                tree["status"] = "out_of_scope"
         else:
             path_parts = rel_path.split(os.sep)
             current = tree
@@ -513,8 +532,17 @@ def visualize_root_dir_tree(source_dir, output_file, print_to_console=True, trun
                 if part not in current["children"]:
                     dir_path = os.path.join(current["path"], part)
                     rel_dir_path = os.path.relpath(dir_path, root_dir)
-                    is_excluded = is_dir_excluded(dir_path, rel_dir_path)
-                    status = "excluded" if is_excluded else "processed"
+
+                    # Check if this directory is within source_dir
+                    dir_in_source = is_in_source_dir(dir_path)
+
+                    if dir_in_source:
+                        # Only apply exclusion rules for directories within source_dir
+                        is_excluded = is_dir_excluded(dir_path, rel_dir_path)
+                        status = "excluded" if is_excluded else "processed"
+                    else:
+                        # Directories outside source_dir are marked as out_of_scope
+                        status = "out_of_scope"
 
                     # Create node
                     dir_node = {
@@ -531,8 +559,11 @@ def visualize_root_dir_tree(source_dir, output_file, print_to_console=True, trun
                     stats["total_dirs"] += 1
                     if status == "processed":
                         stats["processed_dirs"] += 1
-                    else:
+                    elif status == "excluded":
                         stats["excluded_dirs"] += 1
+                    elif status == "out_of_scope":
+                        stats["out_of_scope_dirs"] += 1
+
                     current["children"][part] = dir_node
                 current = current["children"][part]
 
@@ -541,11 +572,18 @@ def visualize_root_dir_tree(source_dir, output_file, print_to_console=True, trun
             file_path = os.path.join(root, file)
             rel_file_path = os.path.relpath(file_path, root_dir)
 
+            # Check if this file is within source_dir
+            file_in_source = is_in_source_dir(file_path)
             try:
                 file_size = os.path.getsize(file_path)
                 size_str = format_file_size(file_size)
-                is_processed = is_file_processed(file_path, rel_file_path)
-                status = "processed" if is_processed else "excluded"
+                if file_in_source:
+                    # Only apply processing rules for files within source_dir
+                    is_processed = is_file_processed(file_path, rel_file_path)
+                    status = "processed" if is_processed else "excluded"
+                else:
+                    # Files outside source_dir are marked as out_of_scope
+                    status = "out_of_scope"
 
                 # Create file node
                 file_node = {
@@ -563,8 +601,11 @@ def visualize_root_dir_tree(source_dir, output_file, print_to_console=True, trun
                 if status == "processed":
                     stats["processed_files"] += 1
                     stats["processed_size"] += file_size
-                else:
+                elif status == "excluded":
                     stats["excluded_files"] += 1
+                elif status == "out_of_scope":
+                    stats["out_of_scope_files"] += 1
+
                 current["children"][file] = file_node
 
             except (FileNotFoundError, PermissionError, OSError):
@@ -604,24 +645,42 @@ def visualize_root_dir_tree(source_dir, output_file, print_to_console=True, trun
             # Empty directory keeps its initial status
             return node["status"]
 
-        if all(status == "processed" for status in child_statuses):
+        # Check if all children have the same status
+        all_processed = all(status == "processed" for status in child_statuses)
+        all_excluded = all(status == "excluded" for status in child_statuses)
+        all_out_of_scope = all(status == "out_of_scope" for status in child_statuses)
+
+        old_status = node["status"]
+
+        if all_processed:
             node["status"] = "processed"
-        elif all(status == "excluded" for status in child_statuses):
+        elif all_excluded:
             node["status"] = "excluded"
+        elif all_out_of_scope:
+            node["status"] = "out_of_scope"
         else:
             # Mixed statuses
-            old_status = node["status"]
             node["status"] = "mixed"
 
-            # Only increment mixed_dirs if it wasn't already counted
-            if old_status != "mixed":
-                stats["mixed_dirs"] += 1
+        # Update stats if status changed
+        if old_status != node["status"]:
+            if old_status == "processed":
+                stats["processed_dirs"] -= 1
+            elif old_status == "excluded":
+                stats["excluded_dirs"] -= 1
+            elif old_status == "out_of_scope":
+                stats["out_of_scope_dirs"] -= 1
+            elif old_status == "mixed":
+                stats["mixed_dirs"] -= 1
 
-                # Adjust processed/excluded dir counts
-                if old_status == "processed":
-                    stats["processed_dirs"] -= 1
-                elif old_status == "excluded":
-                    stats["excluded_dirs"] -= 1
+            if node["status"] == "processed":
+                stats["processed_dirs"] += 1
+            elif node["status"] == "excluded":
+                stats["excluded_dirs"] += 1
+            elif node["status"] == "out_of_scope":
+                stats["out_of_scope_dirs"] += 1
+            elif node["status"] == "mixed":
+                stats["mixed_dirs"] += 1
 
         return node["status"]
 
@@ -631,19 +690,20 @@ def visualize_root_dir_tree(source_dir, output_file, print_to_console=True, trun
     # Generate tree visualization for file output
     tree_lines = []
     tree_lines.append(f"# Root Directory Tree Visualization")
-    tree_lines.append(f"# Installation Directory: {root_dir}")
+    tree_lines.append(f"# Project Root: {root_dir}")
     tree_lines.append(f"# Source Directory: {source_dir_abs}")
     tree_lines.append(f"# Generated: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
     if show_processing_status:
         tree_lines.append(f"# Processing Status Symbols: {status_symbols['processed']} (processed), "
-                          f"{status_symbols['excluded']} (excluded), {status_symbols['mixed']} (mixed)")
+                          f"{status_symbols['excluded']} (excluded), {status_symbols['mixed']} (mixed), "
+                          f"{status_symbols['out_of_scope']} (out of scope)")
 
     tree_lines.append("")
 
     # Add root with status
     if show_processing_status:
-        root_symbol = status_symbols.get(tree["status"], "?")
+        root_symbol = status_symbols.get(tree["status"], status_symbols['unknown'])
         tree_lines.append(f"{base_name}/ {root_symbol}")
     else:
         tree_lines.append(f"{base_name}/")
@@ -671,7 +731,7 @@ def visualize_root_dir_tree(source_dir, output_file, print_to_console=True, trun
 
             if child["type"] == "dir":
                 if show_processing_status:
-                    symbol = status_symbols.get(child["status"], "?")
+                    symbol = status_symbols.get(child["status"], status_symbols['unknown'])
                     tree_lines.append(f"{prefix}{connector}{name}/ {symbol}")
                 else:
                     tree_lines.append(f"{prefix}{connector}{name}/")
@@ -689,7 +749,7 @@ def visualize_root_dir_tree(source_dir, output_file, print_to_console=True, trun
             else:
                 # File node
                 if show_processing_status:
-                    symbol = status_symbols.get(child["status"], "?")
+                    symbol = status_symbols.get(child["status"], status_symbols['unknown'])
                     tree_lines.append(f"{prefix}{connector}{name} ({child['size_str']}) {symbol}")
                 else:
                     tree_lines.append(f"{prefix}{connector}{name} ({child['size_str']})")
@@ -703,11 +763,13 @@ def visualize_root_dir_tree(source_dir, output_file, print_to_console=True, trun
     if show_processing_status:
         tree_lines.append(f"  - Processed directories: {stats['processed_dirs']}")
         tree_lines.append(f"  - Excluded directories: {stats['excluded_dirs']}")
+        tree_lines.append(f"  - Out of scope directories: {stats['out_of_scope_dirs']}")
         tree_lines.append(f"  - Mixed directories: {stats['mixed_dirs']}")
     tree_lines.append(f"Total files: {stats['total_files']}")
     if show_processing_status:
         tree_lines.append(f"  - Processed files: {stats['processed_files']}")
         tree_lines.append(f"  - Excluded files: {stats['excluded_files']}")
+        tree_lines.append(f"  - Out of scope files: {stats['out_of_scope_files']}")
     total_size_str = format_file_size(stats["total_size"])
     tree_lines.append(f"Total size: {total_size_str}")
     if show_processing_status:
@@ -723,13 +785,18 @@ def visualize_root_dir_tree(source_dir, output_file, print_to_console=True, trun
     stats['time_taken'] = duration
 
     if print_to_console:
-        print("\n[ROOT DIRECTORY TREE]")
-        print(f"Installation Directory: {root_dir}")
-        print(f"Source Directory: {source_dir_abs}")
-        console_lines = []
-
+        print("\n[DIRECTORY TREE]")
         if show_processing_status:
-            root_symbol = status_symbols.get(tree["status"], "?")
+            status_description = []
+            for status_key in ['processed', 'excluded', 'mixed', 'out_of_scope']:
+                symbol = status_symbols.get(status_key, '?')
+                status_description.append(f"{symbol} ({status_key})")
+
+            print(f"Legend: {', '.join(status_description)}")
+
+        console_lines = []
+        if show_processing_status:
+            root_symbol = status_symbols.get(tree["status"], status_symbols['unknown'])
             console_lines.append(f"{base_name}/ {root_symbol}")
         else:
             console_lines.append(f"{base_name}/")
@@ -759,7 +826,7 @@ def visualize_root_dir_tree(source_dir, output_file, print_to_console=True, trun
 
                 if child["type"] == "dir":
                     if show_processing_status:
-                        symbol = status_symbols.get(child["status"], "?")
+                        symbol = status_symbols.get(child["status"], status_symbols['unknown'])
                         console_lines.append(f"{prefix}{connector}{name}/ {symbol}")
                     else:
                         console_lines.append(f"{prefix}{connector}{name}/")
@@ -779,7 +846,7 @@ def visualize_root_dir_tree(source_dir, output_file, print_to_console=True, trun
                 else:
                     # File node
                     if show_processing_status:
-                        symbol = status_symbols.get(child["status"], "?")
+                        symbol = status_symbols.get(child["status"], status_symbols['unknown'])
                         console_lines.append(f"{prefix}{connector}{name} ({child['size_str']}) {symbol}")
                     else:
                         console_lines.append(f"{prefix}{connector}{name} ({child['size_str']})")
@@ -804,6 +871,7 @@ def visualize_root_dir_tree(source_dir, output_file, print_to_console=True, trun
         if show_processing_status:
             stats_data.append(["Processed directories", stats["processed_dirs"]])
             stats_data.append(["Excluded directories", stats["excluded_dirs"]])
+            stats_data.append(["Out of scope directories", stats["out_of_scope_dirs"]])
             stats_data.append(["Mixed directories", stats["mixed_dirs"]])
         stats_data.extend([
             ["Maximum directory depth", stats["max_depth"]],
@@ -812,6 +880,7 @@ def visualize_root_dir_tree(source_dir, output_file, print_to_console=True, trun
         if show_processing_status:
             stats_data.append(["Processed files", stats["processed_files"]])
             stats_data.append(["Excluded files", stats["excluded_files"]])
+            stats_data.append(["Out of scope files", stats["out_of_scope_files"]])
         stats_data.append(["Total size", total_size_str])
         if show_processing_status:
             stats_data.append(["Processed size", processed_size_str])

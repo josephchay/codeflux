@@ -151,7 +151,7 @@ pnpm add git+https://github.com/josephchay/codeflux.git --save-dev
   * `./codeflux/{timestamp}/bundled.txt` (for bundle operation)
   * `./codeflux/{timestamp}/minified/` (for minify operation)
   * `./codeflux/{timestamp}/minified_bundle.txt` (for minify-bundle operation)
-  * `./codeflux/{timestamp}/source_directory_tree.txt` (for tree operation)
+  * `./codeflux/{timestamp}/processed_directory_tree.txt` (for tree operation)
   * `./codeflux/{timestamp}/root_directory_tree.txt` (for complete directory tree)
   * `./codeflux/{timestamp}/summary.txt` (summary of all operations performed)
 

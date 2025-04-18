@@ -201,7 +201,7 @@ DEFAULT_DEFLATTEN_OUTPUT_PATH = "deflattened"
 DEFAULT_MINIFY_OUTPUT_PATH = "minified"
 DEFAULT_BUNDLE_OUTPUT_PATH = "bundled.txt"
 DEFAULT_MINIFY_BUNDLE_OUTPUT_PATH = "minified_bundle.txt"
-DEFAULT_TREE_OUTPUT_PATH = "source_directory_tree.txt"
+DEFAULT_TREE_OUTPUT_PATH = "processed_directory_tree.txt"
 DEFAULT_ROOT_TREE_OUTPUT_PATH = "root_directory_tree.txt"
 DEFAULT_SUMMARY_OUTPUT_PATH = "summary.txt"
 
