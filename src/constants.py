@@ -222,7 +222,7 @@ DEFAULT_BIBDEDUP_OUTPUT_PATH = "bibdedup.txt"
 DEFAULT_SUMMARY_OUTPUT_PATH = "summary.txt"
 DEFAULT_ACRONYMS_OUTPUT_PATH = "acronyms.txt"
 DEFAULT_ACRONYMS_TEX_OUTPUT_PATH = "acronyms.tex"
-DEFAULT_ACRONYMS_LIST_PATH = "src/templates/acronyms.csv"
+DEFAULT_ACRONYMS_LIST_PATH = "acronyms.csv"
 
 OPERATION_FLATTEN = "flatten"
 OPERATION_DEFLATTEN = "deflatten"

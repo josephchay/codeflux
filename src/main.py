@@ -185,7 +185,7 @@ def make_parser():
         help="Replace found acronyms in the processed files"
     )
     acroscan_group.add_argument(
-        "--no-recursive-acroscan", "-nra",
+        "--no-recursive-acroscan", "-nras",
         action="store_true",
         help="Do not recursively process subdirectories for acroscan"
     )
@@ -611,15 +611,12 @@ def main():
                     print("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
             elif operation == OPERATION_ACROSCAN:
                 acroscan_dest = args.dest_named if args.dest_named else args.dest_pos
-                acronym_list_path = args.acronym_list if args.acronym_list else DEFAULT_ACRONYMS_LIST_PATH
+                acronym_list_path = args.acronym_list if args.acronym_list else f"src/templates/{DEFAULT_ACRONYMS_LIST_PATH}"
 
                 # Determine output directory path for acronyms
                 if not acroscan_dest:
-                    acroscan_dest = timestamp_dir
+                    acroscan_dest = f"{timestamp_dir}/acronyms-scanned"
                 output_paths[operation] = acroscan_dest
-
-                # Ensure the output directory exists
-                os.makedirs(acroscan_dest, exist_ok=True)
 
                 if not args.no_log:
                     print("\n\n:::::::::::::::::::::::::::::: ACROSCAN ::::::::::::::::::::::::::::::")
@@ -628,7 +625,7 @@ def main():
                     if acronym_list_path:
                         print(f"Acronym List: {get_relpath(acronym_list_path)}")
                     else:
-                        print(f"Acronym List: Using default (will search for {DEFAULT_ACRONYMS_LIST_PATH})")
+                        print(f"Acronym List: Using default (will search for src/templates/{DEFAULT_ACRONYMS_LIST_PATH})")
                     print(f"LaTeX Mode: {'Yes' if args.latex_mode else 'No'}")
                     print(f"Replace Acronyms: {'Yes' if args.replace_acronyms else 'No'}")
                     print(f"Find Potential Acronyms: {'Yes' if args.find_potential else 'No'}")
@@ -636,10 +633,8 @@ def main():
 
                 # Determine if we're processing a directory or a single file
                 if os.path.isdir(source_dir):
-                    # Process each file type
                     handler_results = []
 
-                    # Initialize combined statistics
                     combined_stats = {
                         "total_files_processed": 0,
                         "files_with_acronyms": 0,
@@ -670,7 +665,7 @@ def main():
                             try:
                                 stats = handler.acroscan_dir(
                                     source_dir,
-                                    output_dir=acroscan_dest,  # Pass the directory part of acroscan_dest
+                                    output_dir=acroscan_dest,
                                     acronym_list_path=acronym_list_path,
                                     exclude_dirs=exclude_dirs,
                                     exclude_exts=exclude_exts,
@@ -748,8 +743,7 @@ def main():
                                     for acronym in sorted(combined_stats["unique_acronyms_found"]):
                                         if acronym in combined_stats["all_found_acronyms"]:
                                             info = combined_stats["all_found_acronyms"][acronym]
-                                            f.write(
-                                                f"- {acronym}: {info['definition']} (found {info['count']} times in {len(info['files'])} files)\n")
+                                            f.write(f"- {acronym}: {info['definition']} (found {info['count']} times in {len(info['files'])} files)\n")
 
                                     # Group by file
                                     f.write("\n## Files with Acronyms\n\n")

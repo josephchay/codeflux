@@ -41,6 +41,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Operation for checking for similar keys and titles across multiple `.bib` files.
 - `PyPDF2`, `python-docx`, `docx2txt` packages to `requirements.txt`,
 - Acronyms and actual word scanner.
+- Default sample `acronym.csv` template under `src/templates` directory.
+- New `helpers` directory for helper functions.
 
 ### Fixed
 
@@ -74,6 +76,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Console print formatting for `--tree` visualization standardized like other operations.
 - Removed output file path from being displayed in the status columns of `flattening`, and `deflattening` operations.
 - Renamed `ROOT_TREE_UI_TRUNCATE_DIRS` to `ROOT_TREE_UI_EXCLUDE_DIRS` constant.
+- Updated `status` column default output value for "success".
 
 ### Removed
 
