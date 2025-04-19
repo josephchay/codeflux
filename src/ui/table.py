@@ -1,7 +1,7 @@
 import shutil
 
 from constants import OPERATION_BUNDLE, OPERATION_MINIFY_BUNDLE, OPERATION_FLATTEN, OPERATION_DEFLATTEN, \
-    OPERATION_MINIFY, TABULATE_FORMAT, OPERATION_PROPERTIES, OPERATION_BIBDEDUP
+    OPERATION_MINIFY, TABULATE_FORMAT, OPERATION_PROPERTIES, OPERATION_BIBDEDUP, OPERATION_ACROSCAN
 
 
 def get_table_formatter():
@@ -75,6 +75,19 @@ def format_file_table(files_info, operation_type):
             if has_warnings:
                 row.append(file_info.get("warnings", ""))
 
+            rows.append(row)
+    elif operation_type == OPERATION_ACROSCAN:
+        headers = ["File", "Size (KB)", "Acronyms Found", "Acronyms Replaced", "Status"]
+
+        rows = []
+        for file_info in files_info:
+            row = [
+                file_info["file"],
+                f"{file_info['size'] / 1024:.2f}",
+                file_info.get("acronyms_found", 0),
+                file_info.get("acronyms_replaced", 0),
+                file_info["status"]
+            ]
             rows.append(row)
     elif operation_type == OPERATION_PROPERTIES:
         headers = ["File", "Size", "Type", "Modified", "Permissions"]
@@ -309,6 +322,26 @@ def format_stats_table(stats, operation_type, duration):
                 ["Minified size", f"{bytes_minified:.2f} KB"],
                 ["Size reduction", f"{reduction:.2f}%"],
             ])
+    elif operation_type == OPERATION_ACROSCAN:
+        files_processed = stats.get("total_files_processed", 0)
+        files_scanned = stats.get("files_scanned", 0)
+        files_with_acronyms = stats.get("files_with_acronyms", 0)
+        total_acronyms_replaced = stats.get("total_acronyms_replaced", 0)
+        unique_acronyms = len(stats.get("unique_acronyms_found", []))
+        potential_acronyms = len(stats.get("potential_acronyms_found", []))
+
+        data.extend([
+            ["Files processed", files_processed],
+            ["Files scanned", files_scanned],
+            ["Files with acronyms", files_with_acronyms],
+        ])
+
+        if total_acronyms_replaced > 0:
+            data.append(["Acronyms replaced", total_acronyms_replaced])
+        if unique_acronyms > 0:
+            data.append(["Unique acronyms found", unique_acronyms])
+        if potential_acronyms > 0:
+            data.append(["Potential unknown acronyms", potential_acronyms])
     elif operation_type == OPERATION_BIBDEDUP:
         # For BibTeX deduplication
         bib_files_processed = stats.get("total_files_processed", 0)

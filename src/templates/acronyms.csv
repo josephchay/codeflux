@@ -1,0 +1,39 @@
+ANN,Artificial Neural Network
+RNN,Recurrent Neural Network
+LSTM,Long Short-Term Memory
+GAN,Generative Adversarial Network
+VQ-VAE,Vector Quantized Variational Autoencoder
+LDM,Latent Diffusion Model
+DPM,Diffusion Probabilistic Model
+DiT,Diffusion Transformer
+DDPM,Denoising Diffusion Probabilistic Model
+DDIM,Denoising Diffusion Implicit Model
+SDE,Stochastic Differential Equation
+DMAE,Diffusion Magnitude-Autoencoding
+TCLD,Text-Conditioned Latent Diffusion
+MusicLM,Music Language Model
+MusicGen,Music Generation model
+MusicLDM,Music Latent Diffusion Model
+AudioLDM,Audio Latent Diffusion Model
+MusicVAE,Music Variational Autoencoder
+Moûsai,Text-to-music generation model with long-context latent diffusion
+RMSSinger,Realistic-Music-Score based singing voice synthesis
+MOS,Mean Opinion Score
+MUSHRA,Multiple Stimuli with Hidden Reference and Anchor
+FAD,Fréchet Audio Distance
+KL,Kullback-Leibler
+T2M-QLT,Text-to-Music Quality
+T2M-ALI,Text-to-Music Alignment
+REMI,REvamped MIDI-derived events
+MuMIDI,MUlti-track MIDI representation
+SVS,Singing Voice Synthesis
+DSP,Digital Signal Processing
+CFG,Classifier-Free Guidance
+VIB,Variational Information Bottleneck
+HMM,Hidden Markov Model
+CSP,Constraint Satisfaction Problem
+LM,Language Model
+NLP,Natural Language Processing
+BERT,Bidirectional Encoder Representations from Transformers
+GTTM,Generative Theory of Tonal Music
+IFS,Iterated Function System

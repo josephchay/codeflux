@@ -64,7 +64,6 @@ def get_relpath(path, base_path=None, output_base=None):
 def format_path(path):
     abs_path = os.path.abspath(path)
     rel_path = get_relpath(path)
-
     if rel_path == abs_path:
         return abs_path
     return f"{rel_path} ({abs_path})"
@@ -79,7 +78,6 @@ def print_stats(stats, operation_type, duration, show_full=True):
 def merge_with_defaults(user_values, defaults, ignore_defaults=False):
     if user_values is None:
         return [] if ignore_defaults else defaults
-
     if ignore_defaults:
         return user_values
 
