@@ -17,8 +17,7 @@ def minify_php(source, continue_on_error=False):
             temp_in_path = temp_in.name
 
         temp_out_path = temp_in_path + '.min'
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        minify_script = os.path.join(script_dir, 'scripts', 'php_minify.js')
+        minify_script = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'scripts', 'minify', 'php_minify.js')
 
         try:
             # Run the minifier script which uses @cedx/php-minifier
@@ -200,8 +199,7 @@ def minify_code(source, file_extension, continue_on_error=False):
                 temp_in.write(source)
                 temp_in_path = temp_in.name
             temp_out_path = temp_in_path + '.min'
-            script_dir = os.path.dirname(os.path.abspath(__file__))
-            minify_script = os.path.join(script_dir, 'scripts', 'jsts_minify.js')
+            minify_script = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'scripts', 'minify', 'jsts_minify.js')
             try:
                 result = subprocess.run(
                     ['node', minify_script, temp_in_path, temp_out_path],
@@ -250,8 +248,7 @@ def minify_code(source, file_extension, continue_on_error=False):
                 temp_in.write(source)
                 temp_in_path = temp_in.name
             temp_out_path = temp_in_path + '.min'
-            script_dir = os.path.dirname(os.path.abspath(__file__))
-            minify_script = os.path.join(script_dir, 'scripts', 'css_minify.js')
+            minify_script = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'scripts', 'minify', 'css_minify.js')
             try:
                 result = subprocess.run(
                     ['node', minify_script, temp_in_path, temp_out_path],
@@ -300,8 +297,7 @@ def minify_code(source, file_extension, continue_on_error=False):
                 temp_in.write(source)
                 temp_in_path = temp_in.name
             temp_out_path = temp_in_path + '.min'
-            script_dir = os.path.dirname(os.path.abspath(__file__))
-            minify_script = os.path.join(script_dir, 'scripts', 'html_minify.js')
+            minify_script = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'scripts', 'minify', 'html_minify.js')
             try:
                 result = subprocess.run(
                     ['node', minify_script, temp_in_path, temp_out_path],

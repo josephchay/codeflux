@@ -323,8 +323,8 @@ def main():
 
             if not args.no_log:
                 print("\n\n:::::::::::::::::::::::::::::: ROOT DIRECTORY TREE ::::::::::::::::::::::::::::::")
-                print(f"Destination: {get_relpath(root_tree_output_file, timestamp_dir)}\n")
-                print(f"Legend: {ROOT_TREE_UI_SYMBOLS_DESCRIPTION}")
+                print(f"Destination: {get_relpath(root_tree_output_file, timestamp_dir)}")
+                print(f"Legend: {ROOT_TREE_UI_SYMBOLS_DESCRIPTION}\n")
 
             root_tree_stats = visualize_root_dir_tree(source_dir, root_tree_output_file, print_to_console=not args.no_log,
                                                       truncate_output=args.truncate)
@@ -699,7 +699,7 @@ def main():
 
                 if not args.no_log:
                     print("\n\n:::::::::::::::::::::::::::::: PROCESSED DIRECTORY TREE ::::::::::::::::::::::::::::::")
-                    print(f"Destination: {get_relpath(tree_output_file, timestamp_dir)}")
+                    print(f"Destination: {get_relpath(tree_output_file, timestamp_dir)}\n")
 
                 tree_stats = visualize_dir_tree(source_dir, tree_output_file, exclude_dirs, exclude_exts, exclude_files,
                                                 print_to_console=not args.no_log, truncate_output=args.truncate)
@@ -715,7 +715,7 @@ def main():
                 if not args.no_log:
                     print("\n\n:::::::::::::::::::::::::::::: ROOT (PACKAGE INSTALLATION) DIRECTORY TREE ::::::::::::::::::::::::::::::")
                     print(f"Destination: {get_relpath(root_tree_output_file, timestamp_dir)}")
-                    print(f"Legend: {ROOT_TREE_UI_SYMBOLS_DESCRIPTION}")
+                    print(f"Legend: {ROOT_TREE_UI_SYMBOLS_DESCRIPTION}\n")
 
                 # Generate root directory tree with proper filtering
                 root_tree_stats = visualize_root_dir_tree(source_dir, root_tree_output_file, print_to_console=not args.no_log,
@@ -732,7 +732,7 @@ def main():
             processed_tree_file = os.path.join(timestamp_dir, DEFAULT_TREE_OUTPUT_PATH)
             if not args.no_log:
                 print("\n\n:::::::::::::::::::::::::::::: PROCESSED DIRECTORY TREE ::::::::::::::::::::::::::::::")
-                print(f"Destination: {get_relpath(processed_tree_file, timestamp_dir)}")
+                print(f"Destination: {get_relpath(processed_tree_file, timestamp_dir)}\n")
 
             tree_stats = visualize_dir_tree(source_dir, processed_tree_file, exclude_dirs, exclude_exts, exclude_files,
                                             print_to_console=not args.no_log, truncate_output=args.truncate)

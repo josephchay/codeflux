@@ -71,7 +71,7 @@ setup(
     },
     package_data={
         '': ['package.json'],
-        'src': ['scripts/jsts_minify.js', 'scripts/html_minify.js', 'scripts/css_minify.js', 'scripts/php_minify.js'],
+        'src': ['scripts/minify/jsts_minify.js', 'scripts/minify/html_minify.js', 'scripts/minify/css_minify.js', 'scripts/minify/php_minify.js'],
     },
     include_package_data=True,
     classifiers=[
