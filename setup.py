@@ -70,8 +70,7 @@ setup(
         'install': PostInstallCommand,
     },
     package_data={
-        '': ['templates/*.csv'],
-        'src': ['scripts/minify/*.js'],
+        'src': ['scripts/minify/*.js', 'templates/*.csv'],
     },
     include_package_data=True,
     classifiers=[

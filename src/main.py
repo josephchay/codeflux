@@ -614,7 +614,7 @@ def main():
                     print("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
             elif operation == OPERATION_ACROSCAN:
                 acroscan_dest = args.dest_named if args.dest_named else args.dest_pos
-                acronym_list_path = args.acronym_list if args.acronym_list else os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'templates', DEFAULT_ACRONYMS_LIST_PATH)
+                acronym_list_path = args.acronym_list if args.acronym_list else os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates', DEFAULT_ACRONYMS_LIST_PATH)
                 if not acroscan_dest:
                     acroscan_dest = f"{timestamp_dir}/acronyms"
                 output_paths[operation] = acroscan_dest
