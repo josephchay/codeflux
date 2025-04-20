@@ -1,5 +1,9 @@
 include README.md
 include requirements.txt
 include package.json
-include src/scripts/jsts_minify.js
+include src/scripts/minify/jsts_minify.js
+include src/scripts/minify/css_minify.js
+include src/scripts/minify/html_minify.js
+include src/scripts/minify/php_minify.js
 include LICENSE.txt
+include src/templates/*.csv

@@ -72,6 +72,7 @@ setup(
     package_data={
         '': ['package.json'],
         'src': ['scripts/minify/jsts_minify.js', 'scripts/minify/html_minify.js', 'scripts/minify/css_minify.js', 'scripts/minify/php_minify.js'],
+        'codeflux': ['templates/*.csv'],
     },
     include_package_data=True,
     classifiers=[

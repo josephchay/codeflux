@@ -626,10 +626,7 @@ def main():
                     print("\n\n:::::::::::::::::::::::::::::: ACROSCAN ::::::::::::::::::::::::::::::")
                     print(f"Source: {get_relpath(source_dir)}")
                     print(f"Destination: {get_relpath(acroscan_dest)}")
-                    if acronym_list_path:
-                        print(f"Acronym List: {get_relpath(acronym_list_path)}")
-                    else:
-                        print(f"Acronym List: Using default (will search for src/templates/{DEFAULT_ACRONYMS_LIST_PATH})")
+                    print(f"Acronym List: {get_relpath(acronym_list_path)}")
                     print(f"LaTeX Mode: {'Yes' if args.latex_mode else 'No'}")
                     print(f"Replace Acronyms: {'Yes' if args.replace_acronyms else 'No'}")
                     print(f"Find Potential Acronyms: {'Yes' if args.find_potential else 'No'}")
