@@ -614,11 +614,8 @@ def main():
                     print("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
             elif operation == OPERATION_ACROSCAN:
                 acroscan_dest = args.dest_named if args.dest_named else args.dest_pos
-                acronym_list_path = args.acronym_list if args.acronym_list else f"src/templates/{DEFAULT_ACRONYMS_LIST_PATH}"
-
-                # Determine output directory path for acronyms
+                acronym_list_path = args.acronym_list if args.acronym_list else os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates', DEFAULT_ACRONYMS_LIST_PATH)
                 if not acroscan_dest:
-                    # Use a dedicated 'acronyms' directory inside the timestamp directory
                     acroscan_dest = f"{timestamp_dir}/acronyms"
                 output_paths[operation] = acroscan_dest
 
@@ -632,9 +629,7 @@ def main():
                     print(f"Find Potential Acronyms: {'Yes' if args.find_potential else 'No'}")
                     print(f"Recursive: {'No' if args.no_recursive_acroscan else 'Yes'}\n")
 
-                # Create base output directory
                 os.makedirs(acroscan_dest, exist_ok=True)
-                
                 if acronym_list_path and os.path.exists(acronym_list_path):
                     try:
                         direct_tex_path = os.path.join(acroscan_dest, DEFAULT_ACRONYMS_TRANSLATED_OUTPUT_PATH)
