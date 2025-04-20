@@ -81,6 +81,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 - The term `EXECUTING` from title of each operation in `main.py`.
+- Unused `acroscan` methods in both `PDFHandler` and `DOCXHandler` classes in `handlers.py` file.
+- Quotation marks around `Notes` column in `acronyms.csv`.
 
 ## [0.8.0] - 2025-04-07
 

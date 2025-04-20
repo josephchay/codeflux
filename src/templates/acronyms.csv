@@ -1,40 +1,40 @@
-Acronym,Full Form,Context,Notes
+Acronym,Definition,Context,Notes
 ANN,Artificial Neural Network,Neural network architecture,
-RNN,Recurrent Neural Network,Sequential data processing,"Used in time-series, audio, and NLP"
-LSTM,Long Short-Term Memory,RNN variant,"Handles long-range dependencies"
-GAN,Generative Adversarial Network,Generative modeling,"Consists of Generator and Discriminator"
-VQ-VAE,Vector Quantized Variational Autoencoder,Autoencoder variant,"Combines quantization with VAE"
-LDM,Latent Diffusion Model,Diffusion models,"Generates data in latent space"
+RNN,Recurrent Neural Network,Sequential data processing,Used in time-series, audio, and NLP
+LSTM,Long Short-Term Memory,RNN variant,Handles long-range dependencies
+GAN,Generative Adversarial Network,Generative modeling,Consists of Generator and Discriminator
+VQ-VAE,Vector Quantized Variational Autoencoder,Autoencoder variant,Combines quantization with VAE
+LDM,Latent Diffusion Model,Diffusion models,Generates data in latent space
 DPM,Diffusion Probabilistic Model,Diffusion models,
-DiT,Diffusion Transformer,Diffusion models,"Applies transformers to diffusion processes"
-DDPM,Denoising Diffusion Probabilistic Model,Diffusion models,"Baseline model for generative diffusion"
-DDIM,Denoising Diffusion Implicit Model,Diffusion models,"Improves inference speed"
-SDE,Stochastic Differential Equation,Mathematics / Diffusion modeling,"Defines continuous-time diffusion"
+DiT,Diffusion Transformer,Diffusion models,Applies transformers to diffusion processes
+DDPM,Denoising Diffusion Probabilistic Model,Diffusion models,Baseline model for generative diffusion
+DDIM,Denoising Diffusion Implicit Model,Diffusion models,Improves inference speed
+SDE,Stochastic Differential Equation,Mathematics / Diffusion modeling,Defines continuous-time diffusion
 DMAE,Diffusion Magnitude-Autoencoding,Diffusion models,
-TCLD,Text-Conditioned Latent Diffusion,Text-to-music,"Used in Moûsai"
-MusicLM,Music Language Model,Music generation,"Proposed by Google Research"
-MusicGen,Music Generation model,Music generation,"By Meta AI"
+TCLD,Text-Conditioned Latent Diffusion,Text-to-music,Used in Moûsai
+MusicLM,Music Language Model,Music generation,Proposed by Google Research
+MusicGen,Music Generation model,Music generation,By Meta AI
 MusicLDM,Music Latent Diffusion Model,Music generation,
 AudioLDM,Audio Latent Diffusion Model,Audio synthesis,
-MusicVAE,Music Variational Autoencoder,Music generation,"Captures musical structure"
-Moûsai,Text-to-music generation model with long-context latent diffusion,Text-to-music,"Supports long input prompts"
-RMSSinger,Realistic-Music-Score based singing voice synthesis,Voice synthesis,"Focused on expressive singing"
-MOS,Mean Opinion Score,Evaluation metric,"Subjective audio quality measure"
-MUSHRA,Multiple Stimuli with Hidden Reference and Anchor,Evaluation metric,"Used for perceptual audio quality"
-FAD,Fréchet Audio Distance,Evaluation metric,"Measures similarity between real and generated audio"
-KL,Kullback-Leibler,Probability/Information theory,"Measures divergence between two distributions"
+MusicVAE,Music Variational Autoencoder,Music generation,Captures musical structure
+Moûsai,Text-to-music generation model with long-context latent diffusion,Text-to-music,Supports long input prompts
+RMSSinger,Realistic-Music-Score based singing voice synthesis,Voice synthesis,Focused on expressive singing
+MOS,Mean Opinion Score,Evaluation metric,Subjective audio quality measure
+MUSHRA,Multiple Stimuli with Hidden Reference and Anchor,Evaluation metric,Used for perceptual audio quality
+FAD,Fréchet Audio Distance,Evaluation metric,Measures similarity between real and generated audio
+KL,Kullback-Leibler,Probability/Information theory,Measures divergence between two distributions
 T2M-QLT,Text-to-Music Quality,Evaluation metric,
 T2M-ALI,Text-to-Music Alignment,Evaluation metric,
-REMI,REvamped MIDI-derived events,Music representation,"Event-based representation used in transformers"
-MuMIDI,MUlti-track MIDI representation,Music representation,"Allows modeling of polyphonic multi-instrument music"
+REMI,REvamped MIDI-derived events,Music representation,Event-based representation used in transformers
+MuMIDI,MUlti-track MIDI representation,Music representation,Allows modeling of polyphonic multi-instrument music
 SVS,Singing Voice Synthesis,Voice synthesis,
-DSP,Digital Signal Processing,Signal processing,"Foundation for audio and music analysis"
-CFG,Classifier-Free Guidance,Sampling guidance,"Improves conditional generation"
-VIB,Variational Information Bottleneck,Regularization technique,"Balances compression and relevance"
-HMM,Hidden Markov Model,Sequential modeling,"Classical model for speech/music/NLP"
-CSP,Constraint Satisfaction Problem,Optimization,"Used in symbolic composition"
+DSP,Digital Signal Processing,Signal processing,Foundation for audio and music analysis
+CFG,Classifier-Free Guidance,Sampling guidance,Improves conditional generation
+VIB,Variational Information Bottleneck,Regularization technique,Balances compression and relevance
+HMM,Hidden Markov Model,Sequential modeling,Classical model for speech/music/NLP
+CSP,Constraint Satisfaction Problem,Optimization,Used in symbolic composition
 LM,Language Model,NLP/Generative modeling,
-NLP,Natural Language Processing,Text modeling,"Used for conditioning in text-to-music"
-BERT,Bidirectional Encoder Representations from Transformers,NLP,"Pretrained transformer model"
-GTTM,Generative Theory of Tonal Music,Music theory,"Formal grammar-based tonal theory"
-IFS,Iterated Function System,Mathematical modeling,"Fractal-based generative structure"
+NLP,Natural Language Processing,Text modeling,Used for conditioning in text-to-music
+BERT,Bidirectional Encoder Representations from Transformers,NLP,Pretrained transformer model
+GTTM,Generative Theory of Tonal Music,Music theory,Formal grammar-based tonal theory
+IFS,Iterated Function System,Mathematical modeling,Fractal-based generative structure
