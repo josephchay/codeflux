@@ -1,20 +1,20 @@
-# Codeflux - Unravel Your Codebase
+# CodeFlux - Unravel Your Codebase
 
-**Codeflux** is a tool for organizing large codebases, consolidating scripts, optimizations, or
+**CodeFlux** is a tool for organizing large codebases, consolidating scripts, optimizations, or
 preparing for migration or backup.
 
 ## Overview
 
 Tired of wading through tangled directory trees just to make sense of a codebase?
-**Codeflux** is a versatile CLI tool that brings structure, clarity, and control to any source directory.
+**CodeFlux** is a versatile CLI tool that brings structure, clarity, and control to any source directory.
 It intelligently flattens or reconstructs file hierarchies, bundles and minifies code, snips code chunks,
 performs search functionalities across files, and delivers timestamped outputs.
-With robust filtering and deep code insight features, **Codeflux** transforms messy projects into manageable, transparent systems.
+With robust filtering and deep code insight features, **CodeFlux** transforms messy projects into manageable, transparent systems.
 
 ### Supported File Types
 
 | Language          | Extensions                                                                  |
-|-------------------|-----------------------------------------------------------------------------|
+| ----------------- | --------------------------------------------------------------------------- |
 | Python            | `.py`                                                                       |
 | Python Notebooks  | `.ipynb`                                                                    |
 | JavaScript        | `.js`, `.jsx`                                                               |
@@ -73,11 +73,15 @@ pip install git+https://github.com/josephchay/codeflux.git
 ```bash
 npm install --save-dev git+https://github.com/josephchay/codeflux.git
 ```
+
 or
+
 ```bash
 yarn add git+https://github.com/josephchay/codeflux.git --dev
 ```
+
 or
+
 ```bash
 pnpm add git+https://github.com/josephchay/codeflux.git --save-dev
 ```
@@ -96,7 +100,7 @@ pnpm add git+https://github.com/josephchay/codeflux.git --save-dev
 ## Command-Line Arguments
 
 | Argument                                        | Shorthand | Default                                                                                                                                                                                                                                                                          | Description                                                                                        |
-|-------------------------------------------------|-----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------|
+| ----------------------------------------------- | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
 | `[src]`                                         | `-s`      | Current directory                                                                                                                                                                                                                                                                | Source directory containing the files to flatten                                                   |
 | `[dest]`                                        | `-d`      | Based on operation (see below)                                                                                                                                                                                                                                                   | Destination directory/file where files will be copied                                              |
 | `--file-types`                                  | `-t`      | `py`, `ipynb`, `jsts`, `html`, `css`, `php`, `ruby`, `swift`, `kotlin`, `java`, `csharp`, `shell`, `mdtxt`, `yml`, `json`, `go`, `ini`, `db`, `bat`, `scp`, `noext`, `ps1`, `docker`, `xml`, `r`, `cpp`, `rust`, `scala`, `perl`, `lua`, `groovy`, `haskell`, `erlang`, `bibtex` | File types to process (default: all)                                                               |
@@ -166,7 +170,7 @@ For detailed information on default values, refer to the [constants](src/constan
 Here are various scenarios and how to use the tool:
 
 | Scenario                                  | Command                                                     | Description                                                                               |
-|-------------------------------------------|-------------------------------------------------------------|-------------------------------------------------------------------------------------------|
+| ----------------------------------------- | ----------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
 | All Operations                            | `codeflux`                                                  | Performs all operations onto the current directory into a timestamped output directory    |
 | Multiple Operations                       | `codeflux -f -df -b`                                        | Performs flatten, deflatten and bundle operations in sequence                             |
 | Process Specific Types                    | `codeflux -t py ipynb shell`                                | Process only Python, Python Notebooks, and Shell Script files from current directory      |
@@ -254,5 +258,6 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE.txt) f
 ## Support
 
 Need help? Have a question? Feel free to reach out:
-* **Email**: [josephemmanuelchay@gmail.com](mailto:josephemmanuelchay@gmail.com)
-* **GitHub Issues**: [Issues](https://github.com/josephchay/codeflux/issues)
+
+- **Email**: [josephemmanuelchay@gmail.com](mailto:josephemmanuelchay@gmail.com)
+- **GitHub Issues**: [Issues](https://github.com/josephchay/codeflux/issues)

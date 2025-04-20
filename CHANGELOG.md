@@ -43,6 +43,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Acronyms and actual word scanner.
 - Default sample `acronym.csv` template under `src/templates` directory.
 - New `helpers` directory for helper functions.
+- `DEFAULT_ACRONYMS_LIST_PATH` file path using the right relative path to the package (CodeFlux) module.
 
 ### Fixed
 
@@ -77,6 +78,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Removed output file path from being displayed in the status columns of `flattening`, and `deflattening` operations.
 - Renamed `ROOT_TREE_UI_TRUNCATE_DIRS` to `ROOT_TREE_UI_EXCLUDE_DIRS` constant.
 - Updated `status` column default output value for "success".
+- Moved `src/templates` to `templates` (root) directory.
 
 ### Removed
 
