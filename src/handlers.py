@@ -1306,67 +1306,49 @@ class FileExtHandler:
         # Generate LaTeX acronym files for found acronyms if needed
         if output_dir and found_any_acronyms:
             # Generate consolidated files
-            try:
-                # Create text report of found acronyms
-                acronyms_txt_path = os.path.join(output_dir, DEFAULT_ACRONYMS_FOUND_OUTPUT_PATH)
-                with open(acronyms_txt_path, 'w', encoding='utf-8') as f:
-                    f.write(f"# Acronyms found in {os.path.basename(source_dir)}\n\n")
+            acronyms_txt_path = os.path.join(output_dir, DEFAULT_ACRONYMS_FOUND_OUTPUT_PATH)
+            with open(acronyms_txt_path, 'w', encoding='utf-8') as f:
+                f.write(f"# Acronyms found in {os.path.basename(source_dir)}\n\n")
 
-                    if stats["unique_acronyms_found"]:
-                        f.write("## Known Acronyms\n\n")
-                        for acronym in sorted(stats["all_found_acronyms"].keys()):
+                if stats["unique_acronyms_found"]:
+                    f.write("## Known Acronyms\n\n")
+                    for acronym in sorted(stats["all_found_acronyms"].keys()):
+                        info = stats["all_found_acronyms"][acronym]
+                        f.write(f"- {acronym}: {info['definition']} (found {info['count']} times in {len(info['files'])} files)\n")
+
+                    f.write("\n## Files with Acronyms\n\n")
+                    file_acronyms = {}
+                    for acronym, info in stats["all_found_acronyms"].items():
+                        for file_path in info["files"]:
+                            if file_path not in file_acronyms:
+                                file_acronyms[file_path] = []
+                            file_acronyms[file_path].append(acronym)
+
+                    for file_path in sorted(file_acronyms.keys()):
+                        f.write(f"### {file_path}\n")
+                        for acronym in sorted(file_acronyms[file_path]):
                             info = stats["all_found_acronyms"][acronym]
-                            f.write(f"- {acronym}: {info['definition']} (found {info['count']} times in {len(info['files'])} files)\n")
+                            f.write(f"- {acronym}: {info['definition']}\n")
+                        f.write("\n")
+                else:
+                    f.write("No known acronyms found.\n")
 
-                        # Group by file
-                        f.write("\n## Files with Acronyms\n\n")
-                        file_acronyms = {}
-                        for acronym, info in stats["all_found_acronyms"].items():
-                            for file_path in info["files"]:
-                                if file_path not in file_acronyms:
-                                    file_acronyms[file_path] = []
-                                file_acronyms[file_path].append(acronym)
+                if find_potential and stats["potential_acronyms_found"]:
+                    f.write("\n## Potential Unknown Acronyms\n\n")
+                    for acronym in sorted(stats["potential_acronyms_found"]):
+                        f.write(f"- {acronym}\n")
 
-                        for file_path in sorted(file_acronyms.keys()):
-                            f.write(f"### {file_path}\n")
-                            for acronym in sorted(file_acronyms[file_path]):
-                                info = stats["all_found_acronyms"][acronym]
-                                f.write(f"- {acronym}: {info['definition']}\n")
-                            f.write("\n")
-                    else:
-                        f.write("No known acronyms found.\n")
-
-                    if find_potential and stats["potential_acronyms_found"]:
-                        f.write("\n## Potential Unknown Acronyms\n\n")
-                        for acronym in sorted(stats["potential_acronyms_found"]):
-                            f.write(f"- {acronym}\n")
-            except Exception as e:
-                if not silent:
-                    print(f"Error writing consolidated acronyms list: {e}")
-
-            # Generate LaTeX acronyms file with \newacronym format if LaTeX mode is enabled
             if latex_mode and stats["unique_acronyms_found"]:
-                try:
-                    acronyms_tex_path = os.path.join(output_dir, DEFAULT_ACRONYMS_FOUND_TEX_OUTPUT_PATH)
-                    with open(acronyms_tex_path, 'w', encoding='utf-8') as f:
-                        f.write("% Acronyms found by CodeFlux\n")
-                        for acronym in sorted(stats["all_found_acronyms"].keys()):
-                            info = stats["all_found_acronyms"][acronym]
-                            definition = info["definition"]
-                            definition = definition.replace("_", "\\_").replace("&", "\\&").replace("#", "\\#")                          
-                            sanitized_acronym = re.sub(r'[^a-zA-Z0-9]', '', acronym).lower()
-                            f.write(f"\\newacronym{{{sanitized_acronym}}}{{{acronym}}}{{{definition}}}\n")
-                except Exception as e:
-                    if not silent:
-                        print(f"Error writing LaTeX acronyms file: {e}")
-
-            if latex_mode and acronym_list_path:
-                try:
-                    direct_tex_path = os.path.join(output_dir, DEFAULT_ACRONYMS_TRANSLATED_OUTPUT_PATH)
-                    success = make_acronyms_tex_from_csv(acronym_list_path, direct_tex_path)
-                except Exception as e:
-                    if not silent:
-                        print(f"Error generating direct LaTeX acronyms file: {e}")
+                acronyms_tex_path = os.path.join(output_dir, DEFAULT_ACRONYMS_FOUND_TEX_OUTPUT_PATH)
+                with open(acronyms_tex_path, 'w', encoding='utf-8') as f:
+                    f.write("% Acronyms found by CodeFlux\n")
+                    
+                    for acronym in sorted(stats["all_found_acronyms"].keys()):
+                        info = stats["all_found_acronyms"][acronym]
+                        definition = info["definition"]
+                        definition = definition.replace("_", "\\_").replace("&", "\\&").replace("#", "\\#")
+                        sanitized_acronym = re.sub(r'[^a-zA-Z0-9]', '', acronym).lower()
+                        f.write(f"\\newacronym{{{sanitized_acronym}}}{{{acronym}}}{{{definition}}}\n")
 
         return stats
 
@@ -2127,7 +2109,6 @@ class BibTexHandler(FileExtHandler):
             # Display results
             if files_info:
                 print("[FILES PROCESSED]")
-                from ui.table import format_file_table
                 file_table = format_file_table(files_info, OPERATION_BIBDEDUP)
                 print(file_table)
 

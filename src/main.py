@@ -2,6 +2,7 @@ import os
 import argparse
 import sys
 import datetime
+import re
 
 from constants import *
 from helpers.latex import make_acronyms_tex_from_csv, load_acronyms_csv
@@ -666,138 +667,121 @@ def main():
                             if not args.no_log:
                                 print(f"----- {file_type.upper()} FILES -----")
 
-                            try:
-                                stats = handler.acroscan_dir(
-                                    source_dir,
-                                    output_dir=acroscan_dest,
-                                    acronym_list_path=acronym_list_path,
-                                    exclude_dirs=exclude_dirs,
-                                    exclude_exts=exclude_exts,
-                                    exclude_files=exclude_files,
-                                    include_dirs=args.include_dirs,
-                                    include_exts=args.include_extensions,
-                                    include_files=args.include_files,
-                                    find_potential=args.find_potential,
-                                    replace_acronyms=args.replace_acronyms,
-                                    latex_mode=args.latex_mode,
-                                    clear_dest_dir=args.clear_dest_dir,
-                                    recursive=not args.no_recursive_acroscan,
-                                    silent=args.no_log
+                            stats = handler.acroscan_dir(
+                                source_dir,
+                                output_dir=acroscan_dest,
+                                acronym_list_path=acronym_list_path,
+                                exclude_dirs=exclude_dirs,
+                                exclude_exts=exclude_exts,
+                                exclude_files=exclude_files,
+                                include_dirs=args.include_dirs,
+                                include_exts=args.include_extensions,
+                                include_files=args.include_files,
+                                find_potential=args.find_potential,
+                                replace_acronyms=args.replace_acronyms,
+                                latex_mode=args.latex_mode,
+                                clear_dest_dir=args.clear_dest_dir,
+                                recursive=not args.no_recursive_acroscan,
+                                silent=args.no_log
+                            )
+
+                            all_handler_results.append(stats)
+                            
+                            # Collect all acronyms from this handler
+                            if "unique_acronyms_found" in stats:
+                                acronyms_list = stats["unique_acronyms_found"]
+                                if isinstance(acronyms_list, list):
+                                    all_unique_acronyms.update(acronyms_list)
+                                else:
+                                    all_unique_acronyms.update(set(acronyms_list))
+                            
+                            # Collect all potential acronyms
+                            if "potential_acronyms_found" in stats:
+                                potential_list = stats["potential_acronyms_found"]
+                                if isinstance(potential_list, list):
+                                    all_potential_acronyms.update(potential_list)
+                                else:
+                                    all_potential_acronyms.update(set(potential_list))
+                            
+                            # Collect detailed info for each acronym
+                            for acronym, info in stats.get("all_found_acronyms", {}).items():
+                                if acronym not in all_acronyms_details:
+                                    all_acronyms_details[acronym] = {
+                                        "definition": info["definition"],
+                                        "count": 0,
+                                        "files": []
+                                    }
+                                all_acronyms_details[acronym]["count"] += info["count"]
+                                all_acronyms_details[acronym]["files"].extend(info["files"])
+                            
+                            # Aggregate key statistics
+                            for key in ["total_files_processed", "files_with_acronyms", 
+                                        "total_acronyms_replaced", "skipped_files", 
+                                        "files_scanned", "dirs_traversed"]:
+                                if key in stats:
+                                    combined_stats[key] += stats[key]
+                                    
+                            if "max_nesting_level" in stats:
+                                combined_stats["max_nesting_level"] = max(
+                                    combined_stats.get("max_nesting_level", 0),
+                                    stats["max_nesting_level"]
                                 )
-
-                                all_handler_results.append(stats)
-                                
-                                # Collect all acronyms from this handler
-                                if "unique_acronyms_found" in stats:
-                                    acronyms_list = stats["unique_acronyms_found"]
-                                    if isinstance(acronyms_list, list):
-                                        all_unique_acronyms.update(acronyms_list)
-                                    else:
-                                        all_unique_acronyms.update(set(acronyms_list))
-                                
-                                # Collect all potential acronyms
-                                if "potential_acronyms_found" in stats:
-                                    potential_list = stats["potential_acronyms_found"]
-                                    if isinstance(potential_list, list):
-                                        all_potential_acronyms.update(potential_list)
-                                    else:
-                                        all_potential_acronyms.update(set(potential_list))
-                                
-                                # Collect detailed info for each acronym
-                                for acronym, info in stats.get("all_found_acronyms", {}).items():
-                                    if acronym not in all_acronyms_details:
-                                        all_acronyms_details[acronym] = {
-                                            "definition": info["definition"],
-                                            "count": 0,
-                                            "files": []
-                                        }
-                                    all_acronyms_details[acronym]["count"] += info["count"]
-                                    all_acronyms_details[acronym]["files"].extend(info["files"])
-                                
-                                # Aggregate key statistics
-                                for key in ["total_files_processed", "files_with_acronyms", 
-                                            "total_acronyms_replaced", "skipped_files", 
-                                            "files_scanned", "dirs_traversed"]:
-                                    if key in stats:
-                                        combined_stats[key] += stats[key]
-                                        
-                                if "max_nesting_level" in stats:
-                                    combined_stats["max_nesting_level"] = max(
-                                        combined_stats.get("max_nesting_level", 0),
-                                        stats["max_nesting_level"]
-                                    )
-
-                            except Exception as e:
-                                if not args.no_log:
-                                    print(f"Error processing {file_type} files: {str(e)}")
 
                             if not args.no_log:
                                 print("--------------------\n")
                     
                     # Generate consolidated output files from ALL handler results
                     if all_unique_acronyms or all_potential_acronyms:
-                        try:
-                            acronyms_txt_path = os.path.join(acroscan_dest, DEFAULT_ACRONYMS_FOUND_OUTPUT_PATH)
-                            with open(acronyms_txt_path, 'w', encoding='utf-8') as f:
-                                f.write(f"# Acronyms found in {os.path.basename(source_dir)}\n\n")
+                        acronyms_txt_path = os.path.join(acroscan_dest, DEFAULT_ACRONYMS_FOUND_OUTPUT_PATH)
+                        with open(acronyms_txt_path, 'w', encoding='utf-8') as f:
+                            f.write(f"# Acronyms found in {os.path.basename(source_dir)}\n\n")
 
-                                if all_unique_acronyms:
-                                    f.write("## Known Acronyms\n\n")
-                                    for acronym in sorted(all_unique_acronyms):
-                                        if acronym in all_acronyms_details:
-                                            info = all_acronyms_details[acronym]
-                                            f.write(f"- {acronym}: {info['definition']} (found {info['count']} times in {len(info['files'])} files)\n")
+                            if all_unique_acronyms:
+                                f.write("## Known Acronyms\n\n")
+                                for acronym in sorted(all_unique_acronyms):
+                                    if acronym in all_acronyms_details:
+                                        info = all_acronyms_details[acronym]
+                                        f.write(f"- {acronym}: {info['definition']} (found {info['count']} times in {len(info['files'])} files)\n")
 
-                                    # Group by file
-                                    f.write("\n## Files with Acronyms\n\n")
-                                    file_acronyms = {}
-                                    for acronym, info in all_acronyms_details.items():
-                                        for file_path in info["files"]:
-                                            if file_path not in file_acronyms:
-                                                file_acronyms[file_path] = []
-                                            file_acronyms[file_path].append(acronym)
+                                # Group by file
+                                f.write("\n## Files with Acronyms\n\n")
+                                file_acronyms = {}
+                                for acronym, info in all_acronyms_details.items():
+                                    for file_path in info["files"]:
+                                        if file_path not in file_acronyms:
+                                            file_acronyms[file_path] = []
+                                        file_acronyms[file_path].append(acronym)
 
-                                    for file_path in sorted(file_acronyms.keys()):
-                                        f.write(f"### {file_path}\n")
-                                        for acronym in sorted(file_acronyms[file_path]):
-                                            info = all_acronyms_details[acronym]
-                                            f.write(f"- {acronym}: {info['definition']}\n")
-                                        f.write("\n")
-                                else:
-                                    f.write("No known acronyms found.\n")
+                                for file_path in sorted(file_acronyms.keys()):
+                                    f.write(f"### {file_path}\n")
+                                    for acronym in sorted(file_acronyms[file_path]):
+                                        info = all_acronyms_details[acronym]
+                                        f.write(f"- {acronym}: {info['definition']}\n")
+                                    f.write("\n")
+                            else:
+                                f.write("No known acronyms found.\n")
 
-                                if args.find_potential and all_potential_acronyms:
-                                    f.write("\n## Potential Unknown Acronyms\n\n")
-                                    for acronym in sorted(all_potential_acronyms):
-                                        f.write(f"- {acronym}\n")
+                            if args.find_potential and all_potential_acronyms:
+                                f.write("\n## Potential Unknown Acronyms\n\n")
+                                for acronym in sorted(all_potential_acronyms):
+                                    f.write(f"- {acronym}\n")
 
-                            if not args.no_log:
-                                print(f"\nGenerated consolidated acronyms list: {acronyms_txt_path}")
-                        except Exception as e:
-                            if not args.no_log:
-                                print(f"Error writing consolidated acronyms list: {e}")
+                        if not args.no_log:
+                            print(f"\nGenerated consolidated acronyms list: {acronyms_txt_path}")
 
                         if args.latex_mode and all_unique_acronyms:
-                            try:
-                                acronyms_tex_path = os.path.join(acroscan_dest, DEFAULT_ACRONYMS_FOUND_TEX_OUTPUT_PATH)
-                                with open(acronyms_tex_path, 'w', encoding='utf-8') as f:
-                                    f.write("% Acronyms found by CodeFlux\n")
-                                    for acronym in sorted(all_unique_acronyms):
-                                        if acronym in all_acronyms_details:
-                                            info = all_acronyms_details[acronym]
-                                            # Escape special LaTeX characters in the definition
-                                            definition = info["definition"]
-                                            definition = definition.replace("_", "\\_").replace("&", "\\&").replace("#", "\\#")
-                                            # Use the new \newacronym format
-                                            f.write(f"\\newacronym{{{acronym}}}{{{acronym}}}{{{definition}}}\n")
+                            acronyms_tex_path = os.path.join(acroscan_dest, DEFAULT_ACRONYMS_FOUND_TEX_OUTPUT_PATH)
+                            with open(acronyms_tex_path, 'w', encoding='utf-8') as f:
+                                f.write("% Acronyms found by CodeFlux\n")
+                                
+                                for acronym in sorted(all_unique_acronyms):
+                                    if acronym in all_acronyms_details:
+                                        info = all_acronyms_details[acronym]
+                                        definition = info["definition"]
+                                        definition = definition.replace("_", "\\_").replace("&", "\\&").replace("#", "\\#")
+                                        sanitized_acronym = re.sub(r'[^a-zA-Z0-9]', '', acronym).lower()
+                                        f.write(f"\\newacronym{{{sanitized_acronym}}}{{{acronym}}}{{{definition}}}\n")
 
-                                if not args.no_log:
-                                    print(f"\nGenerated consolidated LaTeX acronyms file: {acronyms_tex_path}")
-                            except Exception as e:
-                                if not args.no_log:
-                                    print(f"Error writing LaTeX acronyms file: {e}")
-                                    
-                    # Show final operation summary
                     if not args.no_log:
                         print("----- OPERATION SUMMARY -----")
                         print(f"Total files processed: {combined_stats['total_files_processed']}")
@@ -825,118 +809,96 @@ def main():
                             break
 
                     if handler and hasattr(handler, 'acroscan'):
-                        try:
-                            # Set up the single file output directory
-                            single_file_output_dir = os.path.join(acroscan_dest, "single_file")
-                            os.makedirs(single_file_output_dir, exist_ok=True)
+                        # Set up the single file output directory
+                        single_file_output_dir = os.path.join(acroscan_dest, "single_file")
+                        os.makedirs(single_file_output_dir, exist_ok=True)
 
-                            # Get acronyms from CSV
-                            acronyms = load_acronyms_csv(acronym_list_path, args.no_log)
+                        acronyms = load_acronyms_csv(acronym_list_path, args.no_log)
+                        scan_result = handler.acroscan(
+                            file_path,
+                            acronyms,
+                            output_file=None,
+                            find_potential=args.find_potential,
+                            replace_acronyms=False,
+                            latex_mode=args.latex_mode,
+                            silent=True,
+                            consolidate_output=True
+                        )
+                        
+                        has_acronyms = bool(scan_result["found_acronyms"])
+                        output_file = None
+                        
+                        # Only set up output file if there are acronyms and we want to replace them
+                        if has_acronyms and args.replace_acronyms:
+                            converted_dir = os.path.join(single_file_output_dir, "converted")
+                            os.makedirs(converted_dir, exist_ok=True)
+                            output_file = os.path.join(converted_dir, os.path.basename(file_path))
+                            os.makedirs(os.path.dirname(output_file), exist_ok=True)
                             
-                            # Scan to determine if file has any acronyms
-                            scan_result = handler.acroscan(
-                                file_path,
-                                acronyms,
-                                output_file=None,
-                                find_potential=args.find_potential,
-                                replace_acronyms=False,
-                                latex_mode=args.latex_mode,
-                                silent=True,
-                                consolidate_output=True
-                            )
-                            
-                            has_acronyms = bool(scan_result["found_acronyms"])
-                            output_file = None
-                            
-                            # Only set up output file if there are acronyms and we want to replace them
-                            if has_acronyms and args.replace_acronyms:
-                                converted_dir = os.path.join(single_file_output_dir, "converted")
-                                os.makedirs(converted_dir, exist_ok=True)
-                                output_file = os.path.join(converted_dir, os.path.basename(file_path))
-                                os.makedirs(os.path.dirname(output_file), exist_ok=True)
-                                
-                            # Process the file with acronym replacement if needed
-                            result = handler.acroscan(
-                                file_path,
-                                acronyms,
-                                output_file=output_file,
-                                find_potential=args.find_potential,
-                                replace_acronyms=args.replace_acronyms,
-                                latex_mode=args.latex_mode,
-                                silent=args.no_log,
-                                consolidate_output=True
-                            )
-                            
-                            # Generate output files based on scan results
-                            if result["found_acronyms"] or (args.find_potential and result["potential_acronyms"]):
-                                try:
-                                    # Generate acronym list files specific to this file
-                                    if args.latex_mode:
-                                        # Generate LaTeX acronyms file with the new format
-                                        acronyms_tex_path = os.path.join(single_file_output_dir, DEFAULT_ACRONYMS_FOUND_TEX_OUTPUT_PATH)
-                                        with open(acronyms_tex_path, 'w', encoding='utf-8') as f:
-                                            f.write("% Acronyms found by CodeFlux\n")
-                                            for acronym, info in sorted(result["found_acronyms"].items()):
-                                                definition = info["definition"]
-                                                definition = definition.replace("_", "\\_").replace("&", "\\&").replace("#", "\\#")
-                                                # Use the new \newacronym format
-                                                f.write(f"\\newacronym{{{acronym}}}{{{acronym}}}{{{definition}}}\n")
+                        # Process the file with acronym replacement if needed
+                        result = handler.acroscan(
+                            file_path,
+                            acronyms,
+                            output_file=output_file,
+                            find_potential=args.find_potential,
+                            replace_acronyms=args.replace_acronyms,
+                            latex_mode=args.latex_mode,
+                            silent=args.no_log,
+                            consolidate_output=True
+                        )
 
-                                        if not args.no_log:
-                                            print(f"Generated LaTeX acronyms file: {acronyms_tex_path}")
-                                    
-                                    # Always generate text report
-                                    acronyms_txt_path = os.path.join(single_file_output_dir, DEFAULT_ACRONYMS_FOUND_OUTPUT_PATH)
-                                    with open(acronyms_txt_path, 'w', encoding='utf-8') as f:
-                                        f.write(f"# Acronyms found in {os.path.basename(file_path)}\n\n")
-                                        if result["found_acronyms"]:
-                                            f.write("## Known Acronyms\n\n")
-                                            for acronym, info in sorted(result["found_acronyms"].items()):
-                                                f.write(f"- {acronym}: {info['definition']} (found {info['count']} times)\n")
-                                        else:
-                                            f.write("No known acronyms found.\n")
-
-                                        if args.find_potential and result["potential_acronyms"]:
-                                            f.write("\n## Potential Unknown Acronyms\n\n")
-                                            for acronym in sorted(result["potential_acronyms"]):
-                                                f.write(f"- {acronym}\n")
-
-                                    if not args.no_log:
-                                        print(f"Generated acronyms list: {acronyms_txt_path}")
-                                except Exception as e:
-                                    if not args.no_log:
-                                        print(f"Error writing output file: {e}")
-                            try:
-                                direct_tex_path = os.path.join(single_file_output_dir, DEFAULT_ACRONYMS_TRANSLATED_OUTPUT_PATH)
-                                success = make_acronyms_tex_from_csv(acronym_list_path, direct_tex_path)
-
-                                if success and not args.no_log:
-                                    print(f"Generated direct LaTeX acronyms file from CSV: {direct_tex_path}")
-                            except Exception as e:
-                                if not args.no_log:
-                                    print(f"Error generating direct LaTeX acronyms file: {e}")
-                            
-                            # Show scan results
-                            if not args.no_log:
-                                print("\n[SCAN RESULTS]")
-                                print(f"File: {get_relpath(file_path)}")
-                                if args.replace_acronyms and has_acronyms:
-                                    print(f"Output: {get_relpath(output_file)}")
-                                    print(f"Acronyms Replaced: {result.get('replaced', 0)}")
-                                print(f"Unique Acronyms Found: {len(result['found_acronyms'])}")
-
-                                if result["found_acronyms"]:
-                                    print("\nAcronyms Found:")
+                        if result["found_acronyms"] or (args.find_potential and result["potential_acronyms"]):
+                            if args.latex_mode:
+                                acronyms_tex_path = os.path.join(single_file_output_dir, DEFAULT_ACRONYMS_FOUND_TEX_OUTPUT_PATH)
+                                with open(acronyms_tex_path, 'w', encoding='utf-8') as f:
+                                    f.write("% Acronyms found by CodeFlux\n")
                                     for acronym, info in sorted(result["found_acronyms"].items()):
-                                        print(f"  - {acronym}: {info['definition']} (found {info['count']} times)")
+                                        definition = info["definition"]
+                                        definition = definition.replace("_", "\\_").replace("&", "\\&").replace("#", "\\#")
+                                        sanitized_acronym = re.sub(r'[^a-zA-Z0-9]', '', acronym).lower()
+                                        f.write(f"\\newacronym{{{sanitized_acronym}}}{{{acronym}}}{{{definition}}}\n")
+                            
+                            acronyms_txt_path = os.path.join(single_file_output_dir, DEFAULT_ACRONYMS_FOUND_OUTPUT_PATH)
+                            with open(acronyms_txt_path, 'w', encoding='utf-8') as f:
+                                f.write(f"# Acronyms found in {os.path.basename(file_path)}\n\n")
+                                if result["found_acronyms"]:
+                                    f.write("## Known Acronyms\n\n")
+                                    for acronym, info in sorted(result["found_acronyms"].items()):
+                                        f.write(f"- {acronym}: {info['definition']} (found {info['count']} times)\n")
+                                else:
+                                    f.write("No known acronyms found.\n")
 
                                 if args.find_potential and result["potential_acronyms"]:
-                                    print("\nPotential Unknown Acronyms:")
+                                    f.write("\n## Potential Unknown Acronyms\n\n")
                                     for acronym in sorted(result["potential_acronyms"]):
-                                        print(f"  - {acronym}")
-                        except Exception as e:
+                                        f.write(f"- {acronym}\n")
+
                             if not args.no_log:
-                                print(f"Error processing file: {str(e)}")
+                                print(f"Generated acronyms list: {acronyms_txt_path}")
+                        direct_tex_path = os.path.join(single_file_output_dir, DEFAULT_ACRONYMS_TRANSLATED_OUTPUT_PATH)
+                        success = make_acronyms_tex_from_csv(acronym_list_path, direct_tex_path)
+
+                        if success and not args.no_log:
+                            print(f"Generated direct LaTeX acronyms file from CSV: {direct_tex_path}")
+                        
+                        # Show scan results
+                        if not args.no_log:
+                            print("\n[SCAN RESULTS]")
+                            print(f"File: {get_relpath(file_path)}")
+                            if args.replace_acronyms and has_acronyms:
+                                print(f"Output: {get_relpath(output_file)}")
+                                print(f"Acronyms Replaced: {result.get('replaced', 0)}")
+                            print(f"Unique Acronyms Found: {len(result['found_acronyms'])}")
+
+                            if result["found_acronyms"]:
+                                print("\nAcronyms Found:")
+                                for acronym, info in sorted(result["found_acronyms"].items()):
+                                    print(f"  - {acronym}: {info['definition']} (found {info['count']} times)")
+
+                            if args.find_potential and result["potential_acronyms"]:
+                                print("\nPotential Unknown Acronyms:")
+                                for acronym in sorted(result["potential_acronyms"]):
+                                    print(f"  - {acronym}")
                     else:
                         if not args.no_log:
                             print(f"No handler available for file type: {filename}")

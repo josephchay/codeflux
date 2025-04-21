@@ -64,6 +64,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `NOEXT` files now only truly handle files that have no extension - initially handling all kinds of file extensions.
 - Acronym properly replaces found acronym values with the actual (lowercase) acronym identifier in `.tex` instead of the display value.
 - Acronyms properly get converted and incldued in to the output file `acronyms_from_csv.tex`.
+- Acronym identities properly display with all lowercase and without hyphen in generated `acronyms_found.tex` file instead of the display value.
 
 ### Changed
 
