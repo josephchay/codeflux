@@ -45,7 +45,7 @@ def load_acronyms_csv(path, silent=False):
     return acronyms
 
 
-def make_acronyms_tex_from_csv(csv_path, output_tex_path, use_acronym_package=True):
+def make_acronyms_tex_from_csv(csv_path, output_tex_path):
     os.makedirs(os.path.dirname(output_tex_path), exist_ok=True)
 
     acronyms = []
@@ -70,33 +70,11 @@ def make_acronyms_tex_from_csv(csv_path, output_tex_path, use_acronym_package=Tr
     
     acronyms.sort(key=lambda x: x[0])
     with open(output_tex_path, 'w', encoding='utf-8') as f:
-        if use_acronym_package:
-            # Use acronym package format
-            f.write("% Acronyms converted from CSV by CodeFlux\n")
-            f.write("% Usage:\n")
-            f.write("%   \\ac{ACRONYM}  - Automatic: first use full form, then short form\n")
-            f.write("%   \\acf{ACRONYM} - Force full form: \"definition (ACRONYM)\"\n")
-            f.write("%   \\acs{ACRONYM} - Force short form: \"ACRONYM\"\n")
-            f.write("%   \\acl{ACRONYM} - Force long form: \"definition\"\n\n")
-            
-            f.write("\\begin{acronym}\n")
-            for acronym, definition in acronyms:
-                # For acronym package, escape special characters
-                definition = definition.replace("_", "\\_").replace("&", "\\&").replace("#", "\\#")
-                # With acronym package, we use the actual acronym as the key
-                f.write(f"    \\acro{{{acronym}}}{{{definition}}}\n")
-            f.write("\\end{acronym}\n")
-        else:
-            # Use glossaries package format
-            f.write("% Acronyms converted from CSV by CodeFlux\n")
-            f.write("% Usage:\n")
-            f.write("%   \\ac{acronym}  - Automatic: first use full form, then short form\n")
-            f.write("%   \\acf{acronym} - Force full form: \"definition (ACRONYM)\"\n")
-            f.write("%   \\acs{acronym} - Force short form: \"ACRONYM\"\n")
-            f.write("%   \\acl{acronym} - Force long form: \"definition\"\n\n")
-            
-            for acronym, definition in acronyms:
-                definition = definition.replace("_", "\\_").replace("&", "\\&").replace("#", "\\#")
-                sanitized_acronym = re.sub(r'[^a-zA-Z0-9]', '', acronym).lower()
-                f.write(f"\\newacronym{{{sanitized_acronym}}}{{{acronym}}}{{{definition}}}\n")
+        # Use glossaries package format
+        f.write("% Acronyms converted from CSV by CodeFlux\n")
+        for acronym, definition in acronyms:
+            definition = definition.replace("_", "\\_").replace("&", "\\&").replace("#", "\\#")
+            sanitized_acronym = re.sub(r'[^a-zA-Z0-9]', '', acronym).lower()
+            f.write(f"\\newacronym{{{sanitized_acronym}}}{{{acronym}}}{{{definition}}}\n")
+
     return True

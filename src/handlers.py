@@ -971,7 +971,7 @@ class FileExtHandler:
 
     def acroscan(self, file_path, acronyms, output_file=None,
                 find_potential=False, replace_acronyms=True, latex_mode=False, silent=False,
-                consolidate_output=True, use_acronym_package=True):
+                consolidate_output=True):
         # Initialize result dictionary
         result = {
             "found_acronyms": {},
@@ -980,15 +980,9 @@ class FileExtHandler:
             "replaced": 0
         }
 
-        try:
-            with open(file_path, 'r', encoding='utf-8') as f:
-                content = f.read()
-        except Exception as e:
-            if not silent:
-                print(f"Error reading file: {e}")
-            return result
+        with open(file_path, 'r', encoding='utf-8') as f:
+            content = f.read()
 
-        # Find all acronyms in the file
         for acronym, definition in acronyms.items():
             # Skip very short acronyms
             if len(acronym) < 2:
@@ -996,12 +990,7 @@ class FileExtHandler:
 
             # Create regex pattern to find the acronym as a whole word
             if latex_mode:
-                if use_acronym_package:
-                    # Avoid matching acronyms already in \ac, \acf, \acs, \acl commands
-                    pattern = r'(?<!\\ac\{)(?<!\\acf\{)(?<!\\acs\{)(?<!\\acl\{)(?<!\w)' + re.escape(acronym) + r'(?!\w)(?!\})'
-                else:
-                    # For glossaries package
-                    pattern = r'(?<!\\gls\{)(?<!\\ac\{)(?<!\w)' + re.escape(acronym) + r'(?!\w)(?!\})'
+                pattern = r'(?<!\\gls\{)(?<!\\ac\{)(?<!\w)' + re.escape(acronym) + r'(?!\w)(?!\})'
             else:
                 pattern = r'(?<!\w)' + re.escape(acronym) + r'(?!\w)'
 
@@ -1048,28 +1037,16 @@ class FileExtHandler:
                 is_first_occurrence = (start, end) == first_occurrences.get(acronym)
                 
                 if latex_mode:
-                    if use_acronym_package:
-                        # Use acronym package commands with direct acronym as key
-                        if is_first_occurrence:
-                            # For first occurrence, use \acf
-                            replacement = f"\\acf{{{acronym}}}"
-                        else:
-                            # For subsequent occurrences, use \ac
-                            replacement = f"\\ac{{{acronym}}}"
-                    else:
-                        # Use glossaries package commands with sanitized key
-                        sanitized_acronym = re.sub(r'[^a-zA-Z0-9]', '', acronym).lower()
-                        if is_first_occurrence:
-                            replacement = f"\\acf{{{sanitized_acronym}}}"
-                        else:
-                            replacement = f"\\ac{{{sanitized_acronym}}}"
-                else:
-                    # For plain text
+                    # Use glossaries package commands with sanitized key
+                    sanitized_acronym = re.sub(r'[^a-zA-Z0-9]', '', acronym).lower()
                     if is_first_occurrence:
-                        # First occurrence: definition (ACRONYM)
+                        replacement = f"\\acf{{{sanitized_acronym}}}"
+                    else:
+                        replacement = f"\\ac{{{sanitized_acronym}}}"
+                else:  # For plain text
+                    if is_first_occurrence:
                         replacement = f"{acronyms[acronym]} ({acronym})"
                     else:
-                        # Subsequent occurrences: just ACRONYM
                         replacement = acronym
                         
                 modified_content = modified_content[:start] + replacement + modified_content[end:]
@@ -1080,20 +1057,15 @@ class FileExtHandler:
             if output_dir and not os.path.exists(output_dir):
                 os.makedirs(output_dir, exist_ok=True)
                 
-            # Write the modified content
-            try:
-                with open(output_file, 'w', encoding='utf-8') as f:
-                    f.write(modified_content)
-            except Exception as e:
-                if not silent:
-                    print(f"Error writing output file: {e}")
-
+            with open(output_file, 'w', encoding='utf-8') as f:
+                f.write(modified_content)
+                
         return result
 
     def acroscan_dir(self, source_dir, output_dir=None, acronym_list_path=None, exclude_dirs=None,
                 exclude_exts=None, exclude_files=None, include_dirs=None, include_exts=None,
                 include_files=None, find_potential=False, replace_acronyms=True, latex_mode=False,
-                clear_dest_dir=False, recursive=True, silent=False, use_acronym_package=True):
+                clear_dest_dir=False, recursive=True, silent=False):
         source_dir = os.path.abspath(source_dir)
         acronyms = load_acronyms_csv(acronym_list_path, silent)
         if output_dir:
@@ -1207,7 +1179,6 @@ class FileExtHandler:
                     latex_mode=latex_mode,
                     silent=True,
                     consolidate_output=True,
-                    use_acronym_package=use_acronym_package
                 )
                 
                 # Track that we scanned this file
@@ -1267,7 +1238,6 @@ class FileExtHandler:
                         latex_mode=latex_mode,
                         silent=silent,
                         consolidate_output=True,
-                        use_acronym_package=use_acronym_package
                     )
                     
                     # Update replacement stats
@@ -1371,43 +1341,18 @@ class FileExtHandler:
                 # IMPORTANT FIX: Ensure acronyms_found.tex uses the acronym package format when requested
                 acronyms_tex_path = os.path.join(output_dir, DEFAULT_ACRONYMS_FOUND_TEX_OUTPUT_PATH)
                 with open(acronyms_tex_path, 'w', encoding='utf-8') as f:
-                    if use_acronym_package:
-                        # Using acronym package format
-                        f.write("% Acronyms found by CodeFlux (acronym package format)\n")
-                        f.write("% Usage: \n")
-                        f.write("%   \\ac{ACRONYM}  - Automatic: first use full form, then short form\n")
-                        f.write("%   \\acf{ACRONYM} - Full form: \"definition (ACRONYM)\"\n")
-                        f.write("%   \\acs{ACRONYM} - Short form: \"ACRONYM\"\n")
-                        f.write("%   \\acl{ACRONYM} - Long form: \"definition\"\n\n")
-                        
-                        f.write("\\begin{acronym}\n")
-                        for acronym in sorted(stats["all_found_acronyms"].keys()):
-                            info = stats["all_found_acronyms"][acronym]
-                            definition = info["definition"]
-                            definition = definition.replace("_", "\\_").replace("&", "\\&").replace("#", "\\#")
-                            f.write(f"    \\acro{{{acronym}}}{{{definition}}}\n")
-                        f.write("\\end{acronym}\n")
-                    else:
-                        # Using glossaries package format
-                        f.write("% Acronyms found by CodeFlux (glossaries package format)\n")
-                        f.write("% Usage: \n")
-                        f.write("%   \\ac{acronym}  - Automatic: first use full form, then short form\n")
-                        f.write("%   \\acf{acronym} - Full form: \"definition (ACRONYM)\"\n")
-                        f.write("%   \\acs{acronym} - Short form: \"ACRONYM\"\n")
-                        f.write("%   \\acl{acronym} - Long form: \"definition\"\n\n")
-                        
-                        for acronym in sorted(stats["all_found_acronyms"].keys()):
-                            info = stats["all_found_acronyms"][acronym]
-                            definition = info["definition"]
-                            definition = definition.replace("_", "\\_").replace("&", "\\&").replace("#", "\\#")
-                            sanitized_acronym = re.sub(r'[^a-zA-Z0-9]', '', acronym).lower()
-                            f.write(f"\\newacronym{{{sanitized_acronym}}}{{{acronym}}}{{{definition}}}\n")
+                    # Using glossaries package format
+                    f.write("% Acronyms found by CodeFlux (glossaries package format)\n")
+                    for acronym in sorted(stats["all_found_acronyms"].keys()):
+                        info = stats["all_found_acronyms"][acronym]
+                        definition = info["definition"]
+                        definition = definition.replace("_", "\\_").replace("&", "\\&").replace("#", "\\#")
+                        sanitized_acronym = re.sub(r'[^a-zA-Z0-9]', '', acronym).lower()
+                        f.write(f"\\newacronym{{{sanitized_acronym}}}{{{acronym}}}{{{definition}}}\n")
             
-            # Also generate a file in the acronym package format for direct inclusion
             direct_tex_path = os.path.join(output_dir, DEFAULT_ACRONYMS_TRANSLATED_OUTPUT_PATH)
             if latex_mode and stats["unique_acronyms_found"]:
-                # Pass the use_acronym_package parameter to ensure consistent format
-                make_acronyms_tex_from_csv(acronym_list_path, direct_tex_path, use_acronym_package)
+                make_acronyms_tex_from_csv(acronym_list_path, direct_tex_path)
 
         return stats
     
