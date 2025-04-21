@@ -2,8 +2,11 @@ Acronym,Definition,Context,Notes
 ANN,Artificial Neural Network,Neural network architecture,
 RNN,Recurrent Neural Network,Sequential data processing,Used in time-series, audio, and NLP
 LSTM,Long Short-Term Memory,RNN variant,Handles long-range dependencies
+GRU,Gated Recurrent Unit,RNN variant,Lightweight alternative to LSTM
+CNN,Convulutional Neural Network,Deep learning,Used for audio spectrogram and MIR tasks
 GAN,Generative Adversarial Network,Generative modeling,Consists of Generator and Discriminator
 VQ-VAE,Vector Quantized Variational Autoencoder,Autoencoder variant,Combines quantization with VAE
+VAE,Variational Autoencoder,Generative modeling,Probabilistic latent variable model
 LDM,Latent Diffusion Model,Diffusion models,Generates data in latent space
 DPM,Diffusion Probabilistic Model,Diffusion models,
 DiT,Diffusion Transformer,Diffusion models,Applies transformers to diffusion processes
@@ -25,6 +28,9 @@ FAD,Fréchet Audio Distance,Evaluation metric,Measures similarity between real a
 KL,Kullback-Leibler,Probability/Information theory,Measures divergence between two distributions
 T2M-QLT,Text-to-Music Quality,Evaluation metric,
 T2M-ALI,Text-to-Music Alignment,Evaluation metric,
+T2M,Text-to-Music,Music generation,Transforms text prompts into music
+T2S,Text-to-Speech,Speech synthesis,Used for voice generation from text
+L2S,Lyrics-to-Song,Music generation,Maps lyrics directly to singing output
 REMI,REvamped MIDI-derived events,Music representation,Event-based representation used in transformers
 MuMIDI,MUlti-track MIDI representation,Music representation,Allows modeling of polyphonic multi-instrument music
 SVS,Singing Voice Synthesis,Voice synthesis,
@@ -34,7 +40,11 @@ VIB,Variational Information Bottleneck,Regularization technique,Balances compres
 HMM,Hidden Markov Model,Sequential modeling,Classical model for speech/music/NLP
 CSP,Constraint Satisfaction Problem,Optimization,Used in symbolic composition
 LM,Language Model,NLP/Generative modeling,
+LLM,Large Language Model,NLP/Generative modeling,Handles long-context understanding
 NLP,Natural Language Processing,Text modeling,Used for conditioning in text-to-music
 BERT,Bidirectional Encoder Representations from Transformers,NLP,Pretrained transformer model
 GTTM,Generative Theory of Tonal Music,Music theory,Formal grammar-based tonal theory
 IFS,Iterated Function System,Mathematical modeling,Fractal-based generative structure
+PLCA,Probabilistic Latent Component Analysis,Audio analysis,Used for music source separation and MIR
+RAVE,Realtime Audio Variational autoEncoder,Audio synthesis,Low-latency generative audio model
+FM,Frequency Modulation,Synthesis technique,Used in audio synthesis (e.g., FM synthesis)

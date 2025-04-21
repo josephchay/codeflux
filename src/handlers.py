@@ -971,18 +971,21 @@ class FileExtHandler:
 
     def acroscan(self, file_path, acronyms, output_file=None,
                 find_potential=False, replace_acronyms=True, latex_mode=False, silent=False,
-                consolidate_output=True):
+                consolidate_output=True, match_definition_variants=True):
         # Initialize result dictionary
         result = {
             "found_acronyms": {},
+            "found_definitions": {},  # Track definition matches
             "potential_acronyms": [],
             "file_size": os.path.getsize(file_path),
-            "replaced": 0
+            "replaced": 0,
+            "definition_matches_replaced": 0  # Track definition replacements
         }
 
         with open(file_path, 'r', encoding='utf-8') as f:
             content = f.read()
 
+        # First, find the acronyms
         for acronym, definition in acronyms.items():
             # Skip very short acronyms
             if len(acronym) < 2:
@@ -1002,6 +1005,87 @@ class FileExtHandler:
                     "positions": [(m.start(), m.end()) for m in matches]
                 }
 
+        # Next, if requested, find variations of the expanded definitions
+        if match_definition_variants:
+            for acronym, definition in acronyms.items():
+                # Skip very short acronyms
+                if len(acronym) < 2 or not definition:
+                    continue
+                    
+                # Create patterns for variations of the definition
+                # 1. Basic definition with case insensitive matching
+                # 2. Allow plural forms (add optional 's')
+                # 3. Allow hyphenated versions (replace spaces with optional hyphen)
+                
+                # Create a normalized version of the definition for matching
+                # Split the definition into words
+                words = definition.split()
+                if not words:
+                    continue
+                    
+                # Create a pattern that allows for variations
+                # - First word can be capitalized or not
+                # - Middle words can be lowercase
+                # - Last word can be singular or plural
+                # - Words can be separated by spaces or hyphens
+                
+                # Process the first word (can be capitalized or not)
+                if len(words[0]) > 0:
+                    first_char = words[0][0]
+                    rest_of_word = words[0][1:] if len(words[0]) > 1 else ""
+                    if first_char.isalpha():
+                        first_word_pattern = f"[{first_char.upper()}{first_char.lower()}]{re.escape(rest_of_word.lower())}"
+                    else:
+                        first_word_pattern = re.escape(words[0].lower())
+                else:
+                    continue  # Skip if first word is empty
+                    
+                # Process middle words (can be lowercase)
+                middle_words_pattern = []
+                for word in words[1:-1] if len(words) > 2 else []:
+                    middle_words_pattern.append(re.escape(word.lower()))
+                    
+                # Process the last word (can be singular or plural)
+                if len(words) > 1:
+                    last_word = words[-1].lower()
+                    # Handle common plural forms
+                    if last_word.endswith('s'):
+                        # Could be already plural, allow optional 's'
+                        last_word_pattern = f"{re.escape(last_word)}|{re.escape(last_word[:-1])}"
+                    else:
+                        # Could be singular, allow optional 's'
+                        last_word_pattern = f"{re.escape(last_word)}s?"
+                else:
+                    last_word_pattern = ""  # No last word (single word definition)
+                    
+                # Combine all parts with flexible spacing/hyphenation
+                definition_parts = []
+                if first_word_pattern:
+                    definition_parts.append(f"({first_word_pattern})")
+                
+                for middle_pattern in middle_words_pattern:
+                    definition_parts.append(f"([-\\s]+{middle_pattern})")
+                    
+                if last_word_pattern and len(words) > 1:
+                    definition_parts.append(f"([-\\s]+({last_word_pattern}))")
+                    
+                # Complete pattern with word boundaries
+                if definition_parts:
+                    definition_pattern = r"\b" + "".join(definition_parts) + r"\b"
+                    
+                    try:
+                        # Find matches for this definition variation
+                        def_matches = list(re.finditer(definition_pattern, content, re.IGNORECASE))
+                        if def_matches:
+                            result["found_definitions"][acronym] = {
+                                "pattern": definition_pattern,
+                                "count": len(def_matches),
+                                "positions": [(m.start(), m.end(), m.group(0)) for m in def_matches]
+                            }
+                    except re.error as e:
+                        if not silent:
+                            print(f"Error creating regex for '{definition}': {e}")
+
         # Find potential unknown acronyms if requested
         if find_potential:
             # Pattern for words with at least 2 uppercase letters
@@ -1013,38 +1097,65 @@ class FileExtHandler:
                 potential_matches - set(acronyms.keys())
             ))
 
-        # Replace acronyms if requested and if there are any to replace
-        if replace_acronyms and result["found_acronyms"] and output_file:
+        # Replace acronyms and definitions if requested and if there are any to replace
+        if replace_acronyms and (result["found_acronyms"] or result["found_definitions"]) and output_file:
             modified_content = content
-            all_positions = []
             
-            # Collect all positions
+            # 1. First collect and sort all positions for acronyms
+            all_acronym_positions = []
             for acronym, info in result["found_acronyms"].items():
                 for start, end in info["positions"]:
-                    all_positions.append((start, end, acronym))
+                    all_acronym_positions.append((start, end, acronym, "acronym"))
             
-            # Sort positions in reverse order to avoid position shifts
-            all_positions.sort(reverse=True)
-
-            # Track first occurrences of each acronym
+            # 2. Collect positions for definition matches
+            all_definition_positions = []
+            for acronym, info in result["found_definitions"].items():
+                for start, end, matched_text in info["positions"]:
+                    all_definition_positions.append((start, end, acronym, "definition", matched_text))
+                    
+            # 3. Combine and sort all positions in reverse order to avoid position shifts
+            all_positions = all_acronym_positions + all_definition_positions
+            all_positions.sort(reverse=True, key=lambda x: x[0])  # Sort by start position
+            
+            # 4. Track first occurrences for each acronym 
+            # We want to use \acf for first occurrence
             first_occurrences = {}
-            for start, end, acronym in sorted(all_positions, key=lambda x: x[0]):  # Sort by position (ascending)
+            forward_sorted = sorted(all_positions, key=lambda x: x[0])  # Sort by position (ascending)
+            for pos in forward_sorted:
+                acronym = pos[2]
                 if acronym not in first_occurrences:
-                    first_occurrences[acronym] = (start, end)
-
-            # Perform replacements in reverse order
-            for start, end, acronym in all_positions:
-                is_first_occurrence = (start, end) == first_occurrences.get(acronym)
-                
-                if latex_mode:
-                    # Use glossaries package commands with sanitized key
-                    sanitized_acronym = re.sub(r'[^a-zA-Z0-9]', '', acronym).lower()
-                    replacement = f"\\gls{{{sanitized_acronym}}}"
-                else:  # For plain text
-                    if is_first_occurrence:
-                        replacement = f"{acronyms[acronym]} ({acronym})"
-                    else:
-                        replacement = acronym
+                    first_occurrences[acronym] = pos
+                    
+            # 5. Perform replacements in reverse order
+            for pos in all_positions:
+                if len(pos) == 4:  # Acronym replacement
+                    start, end, acronym, pos_type = pos
+                    is_first_occurrence = pos == first_occurrences.get(acronym)
+                    
+                    if latex_mode:
+                        # Use glossaries package commands with sanitized key
+                        sanitized_acronym = re.sub(r'[^a-zA-Z0-9]', '', acronym).lower()
+                        if is_first_occurrence:
+                            replacement = f"\\acf{{{sanitized_acronym}}}"
+                        else:
+                            replacement = f"\\ac{{{sanitized_acronym}}}"
+                    else:  # For plain text
+                        if is_first_occurrence:
+                            replacement = f"{acronyms[acronym]} ({acronym})"
+                        else:
+                            replacement = acronym
+                else:  # Definition replacement
+                    start, end, acronym, pos_type, matched_text = pos
+                    is_first_occurrence = pos == first_occurrences.get(acronym)
+                    
+                    if latex_mode:
+                        # Use glossaries package commands with sanitized key
+                        sanitized_acronym = re.sub(r'[^a-zA-Z0-9]', '', acronym).lower()
+                        replacement = f"\\acf{{{sanitized_acronym}}}"
+                        result["definition_matches_replaced"] += 1
+                    else:  # For plain text
+                        replacement = f"{matched_text} ({acronym})"
+                        result["definition_matches_replaced"] += 1
                         
                 modified_content = modified_content[:start] + replacement + modified_content[end:]
                 result["replaced"] += 1
@@ -1059,10 +1170,11 @@ class FileExtHandler:
                 
         return result
 
+
     def acroscan_dir(self, source_dir, output_dir=None, acronym_list_path=None, exclude_dirs=None,
-                exclude_exts=None, exclude_files=None, include_dirs=None, include_exts=None,
-                include_files=None, find_potential=False, replace_acronyms=True, latex_mode=False,
-                clear_dest_dir=False, recursive=True, silent=False):
+                    exclude_exts=None, exclude_files=None, include_dirs=None, include_exts=None,
+                    include_files=None, find_potential=False, replace_acronyms=True, latex_mode=False,
+                    clear_dest_dir=False, recursive=True, silent=False, match_definition_variants=True):
         source_dir = os.path.abspath(source_dir)
         acronyms = load_acronyms_csv(acronym_list_path, silent)
         if output_dir:
@@ -1075,14 +1187,18 @@ class FileExtHandler:
         stats = {
             "total_files_processed": 0,
             "files_with_acronyms": 0,
+            "files_with_definitions": 0,
             "total_acronyms_replaced": 0,
+            "total_definitions_replaced": 0,
             "skipped_files": 0,
             "files_scanned": 0,
             "dirs_traversed": 0,
             "max_nesting_level": 0,
             "unique_acronyms_found": set(),
+            "unique_definitions_found": set(),
             "potential_acronyms_found": set(),
-            "all_found_acronyms": {}
+            "all_found_acronyms": {},
+            "all_found_definitions": {}
         }
 
         if not silent:
@@ -1097,6 +1213,8 @@ class FileExtHandler:
                 print(f"Including only directories: {', '.join(include_dirs)}")
             if include_files:
                 print(f"Including only files: {', '.join(include_files)}")
+            if match_definition_variants:
+                print(f"Matching variations of definitions: Yes")
 
         # Find and filter files
         file_paths = []
@@ -1161,6 +1279,7 @@ class FileExtHandler:
             
         # Track whether any acronyms were found across all files
         found_any_acronyms = False
+        found_any_definitions = False  # NEW: Track definitions
         
         for file_path in filtered_files:
             rel_path = os.path.relpath(file_path, source_dir)
@@ -1176,48 +1295,79 @@ class FileExtHandler:
                     latex_mode=latex_mode,
                     silent=True,
                     consolidate_output=True,
+                    match_definition_variants=match_definition_variants
                 )
                 
                 # Track that we scanned this file
                 stats["files_scanned"] += 1
                 
-                # Only proceed with replacement if acronyms were found
+                # Check for matches (acronyms or definitions)
                 has_acronyms = bool(scan_result["found_acronyms"])
+                has_definitions = bool(scan_result.get("found_definitions", {}))
                 
                 if has_acronyms:
                     found_any_acronyms = True
+                    
+                if has_definitions:
+                    found_any_definitions = True
                 
-                if not has_acronyms:
+                if not has_acronyms and not has_definitions:
                     # Add file info for reporting
                     files_info.append({
                         "file": rel_path,
                         "size": scan_result["file_size"],
                         "acronyms_found": 0,
+                        "definitions_found": 0,
                         "acronyms_replaced": 0,
-                        "status": "No acronyms found"
+                        "definitions_replaced": 0,
+                        "status": "No matches found"
                     })
                     continue
                     
                 # Update statistics with found acronyms
-                stats["files_with_acronyms"] += 1
-                stats["unique_acronyms_found"].update(scan_result["found_acronyms"].keys())
-                
+                if has_acronyms:
+                    stats["files_with_acronyms"] += 1
+                    stats["unique_acronyms_found"].update(scan_result["found_acronyms"].keys())
+                    
+                    # Merge acronym details
+                    for acronym, info in scan_result["found_acronyms"].items():
+                        if acronym not in stats["all_found_acronyms"]:
+                            stats["all_found_acronyms"][acronym] = {
+                                "definition": info["definition"],
+                                "count": 0,
+                                "files": []
+                            }
+                        stats["all_found_acronyms"][acronym]["count"] += info["count"]
+                        stats["all_found_acronyms"][acronym]["files"].append(rel_path)
+                        
+                # Update statistics with found definitions
+                if has_definitions:
+                    stats["files_with_definitions"] += 1
+                    stats["unique_definitions_found"].update(scan_result["found_definitions"].keys())
+                    
+                    # Merge definition details  
+                    for acronym, info in scan_result["found_definitions"].items():
+                        if acronym not in stats["all_found_definitions"]:
+                            definition = acronyms.get(acronym, "Unknown")
+                            stats["all_found_definitions"][acronym] = {
+                                "acronym": acronym,
+                                "definition": definition,
+                                "count": 0,
+                                "files": [],
+                                "matches": []
+                            }
+                        stats["all_found_definitions"][acronym]["count"] += info["count"]
+                        if rel_path not in stats["all_found_definitions"][acronym]["files"]:
+                            stats["all_found_definitions"][acronym]["files"].append(rel_path)
+                        # Add some example matches for the report
+                        matches = [m[2] for m in info["positions"][:5]]  # Get up to 5 example matches
+                        stats["all_found_definitions"][acronym]["matches"].extend(matches)
+                        
                 if find_potential:
                     stats["potential_acronyms_found"].update(scan_result["potential_acronyms"])
-                    
-                # Merge acronym details
-                for acronym, info in scan_result["found_acronyms"].items():
-                    if acronym not in stats["all_found_acronyms"]:
-                        stats["all_found_acronyms"][acronym] = {
-                            "definition": info["definition"],
-                            "count": 0,
-                            "files": []
-                        }
-                    stats["all_found_acronyms"][acronym]["count"] += info["count"]
-                    stats["all_found_acronyms"][acronym]["files"].append(rel_path)
-                    
+                        
                 # If replacing acronyms and we have a place to put them
-                if replace_acronyms and has_acronyms and converted_dir:
+                if replace_acronyms and (has_acronyms or has_definitions) and converted_dir:
                     output_file = os.path.join(converted_dir, rel_path)
                     output_dir_path = os.path.dirname(output_file)
                     
@@ -1235,27 +1385,33 @@ class FileExtHandler:
                         latex_mode=latex_mode,
                         silent=silent,
                         consolidate_output=True,
+                        match_definition_variants=match_definition_variants
                     )
                     
                     # Update replacement stats
-                    stats["total_acronyms_replaced"] += result.get("replaced", 0)
+                    stats["total_acronyms_replaced"] += result.get("replaced", 0) - result.get("definition_matches_replaced", 0)
+                    stats["total_definitions_replaced"] += result.get("definition_matches_replaced", 0)
                     
                     # Add file info
                     files_info.append({
                         "file": rel_path,
                         "size": result["file_size"],
                         "acronyms_found": len(scan_result["found_acronyms"]),
-                        "acronyms_replaced": result.get("replaced", 0),
-                        "status": f"Replaced {result.get('replaced', 0)} acronyms"
+                        "definitions_found": len(scan_result.get("found_definitions", {})),
+                        "acronyms_replaced": result.get("replaced", 0) - result.get("definition_matches_replaced", 0),
+                        "definitions_replaced": result.get("definition_matches_replaced", 0),  # NEW: Add definitions replaced
+                        "status": f"Replaced {result.get('replaced', 0)} matches"
                     })
-                elif has_acronyms and not replace_acronyms:
-                    # Add file info for files with acronyms but not replacing
+                elif (has_acronyms or has_definitions) and not replace_acronyms:
+                    # Add file info for files with matches but not replacing
                     files_info.append({
                         "file": rel_path,
                         "size": scan_result["file_size"],
                         "acronyms_found": len(scan_result["found_acronyms"]),
+                        "definitions_found": len(scan_result.get("found_definitions", {})),
                         "acronyms_replaced": 0,
-                        "status": f"Found {len(scan_result['found_acronyms'])} acronyms"
+                        "definitions_replaced": 0,
+                        "status": f"Found {len(scan_result['found_acronyms'])} acronyms, {len(scan_result.get('found_definitions', {}))} definitions"
                     })
                     
             except Exception as e:
@@ -1265,21 +1421,24 @@ class FileExtHandler:
                     "file": rel_path,
                     "size": os.path.getsize(file_path),
                     "acronyms_found": 0,
+                    "definitions_found": 0,
                     "acronyms_replaced": 0,
+                    "definitions_replaced": 0,
                     "status": f"Error: {str(e)}"
                 })
 
-        # If no acronyms were found across all files, show a general message
-        if not found_any_acronyms and not silent:
-            print("No acronyms found in any files for this file type.")
+        # If no matches were found across all files, show a general message
+        if not found_any_acronyms and not found_any_definitions and not silent:
+            print("No acronyms or definition matches found in any files for this file type.")
 
         stats["file_results"] = files_info
         # Convert sets to lists for easier serialization in the main operation
         stats["unique_acronyms_found"] = list(stats["unique_acronyms_found"])
+        stats["unique_definitions_found"] = list(stats["unique_definitions_found"])  # NEW: Convert set to list
         stats["potential_acronyms_found"] = list(stats["potential_acronyms_found"])
 
         # Generate summary output for this specific file type
-        if not silent and files_info and found_any_acronyms:
+        if not silent and files_info and (found_any_acronyms or found_any_definitions):
             print("[FILES PROCESSED]")
             file_table = format_file_table(files_info, OPERATION_ACROSCAN)
             print(file_table)
@@ -1292,6 +1451,19 @@ class FileExtHandler:
                     print(f"  - {acronym}: {info['definition']} (found {info['count']} times in {len(info['files'])} files)")
             else:
                 print("No acronyms found.")
+                
+            # NEW: Add information about definition matches
+            if stats["unique_definitions_found"]:
+                print("\n[DEFINITION VARIATIONS FOUND]")
+                print(f"Found {len(stats['unique_definitions_found'])} definitions with variations across {stats['files_with_definitions']} files:")
+                for acronym in sorted(stats["all_found_definitions"].keys()):
+                    info = stats["all_found_definitions"][acronym]
+                    matches = ", ".join(info["matches"][:3])  # Show up to 3 example matches
+                    if len(info["matches"]) > 3:
+                        matches += "..."
+                    print(f"  - {acronym}: {info['definition']}")
+                    print(f"    Examples: {matches}")
+                    print(f"    Found {info['count']} times in {len(info['files'])} files")
 
             if find_potential and stats["potential_acronyms_found"]:
                 print("\n[POTENTIAL UNKNOWN ACRONYMS]")
@@ -1300,7 +1472,7 @@ class FileExtHandler:
                     print(f"  - {acronym}")
 
         # Generate LaTeX acronym files for found acronyms if needed
-        if output_dir and found_any_acronyms:
+        if output_dir and (found_any_acronyms or found_any_definitions):
             # Generate consolidated files
             acronyms_txt_path = os.path.join(output_dir, DEFAULT_ACRONYMS_FOUND_OUTPUT_PATH)
             with open(acronyms_txt_path, 'w', encoding='utf-8') as f:
@@ -1328,27 +1500,62 @@ class FileExtHandler:
                         f.write("\n")
                 else:
                     f.write("No known acronyms found.\n")
+                    
+                if stats["unique_definitions_found"]:
+                    f.write("\n## Definition Variations Found\n\n")
+                    for acronym in sorted(stats["all_found_definitions"].keys()):
+                        info = stats["all_found_definitions"][acronym]
+                        f.write(f"- {acronym}: {info['definition']}\n")
+                        f.write(f"  - Examples: {', '.join(info['matches'][:5])}\n")
+                        f.write(f"  - Found {info['count']} times in {len(info['files'])} files\n")
+                    
+                    f.write("\n## Files with Definition Variations\n\n")
+                    file_definitions = {}
+                    for acronym, info in stats["all_found_definitions"].items():
+                        for file_path in info["files"]:
+                            if file_path not in file_definitions:
+                                file_definitions[file_path] = []
+                            file_definitions[file_path].append(acronym)
+
+                    for file_path in sorted(file_definitions.keys()):
+                        f.write(f"### {file_path}\n")
+                        for acronym in sorted(file_definitions[file_path]):
+                            info = stats["all_found_definitions"][acronym]
+                            examples = ", ".join(info["matches"][:3])
+                            if len(info["matches"]) > 3:
+                                examples += "..."
+                            f.write(f"- {acronym}: {info['definition']} (e.g., {examples})\n")
+                        f.write("\n")
 
                 if find_potential and stats["potential_acronyms_found"]:
                     f.write("\n## Potential Unknown Acronyms\n\n")
                     for acronym in sorted(stats["potential_acronyms_found"]):
                         f.write(f"- {acronym}\n")
 
-            if latex_mode and stats["unique_acronyms_found"]:
-                # IMPORTANT FIX: Ensure acronyms_found.tex uses the acronym package format when requested
+            if latex_mode and (stats["unique_acronyms_found"] or stats["unique_definitions_found"]):
                 acronyms_tex_path = os.path.join(output_dir, DEFAULT_ACRONYMS_FOUND_TEX_OUTPUT_PATH)
                 with open(acronyms_tex_path, 'w', encoding='utf-8') as f:
                     # Using glossaries package format
                     f.write("% Acronyms found by CodeFlux (glossaries package format)\n")
-                    for acronym in sorted(stats["all_found_acronyms"].keys()):
-                        info = stats["all_found_acronyms"][acronym]
-                        definition = info["definition"]
-                        definition = definition.replace("_", "\\_").replace("&", "\\&").replace("#", "\\#")
-                        sanitized_acronym = re.sub(r'[^a-zA-Z0-9]', '', acronym).lower()
-                        f.write(f"\\newacronym{{{sanitized_acronym}}}{{{acronym}}}{{{definition}}}\n")
-            
-            direct_tex_path = os.path.join(output_dir, DEFAULT_ACRONYMS_TRANSLATED_OUTPUT_PATH)
-            if latex_mode and stats["unique_acronyms_found"]:
+                    
+                    # Add both direct acronyms and those found via definition variations
+                    all_acronyms = set(stats["unique_acronyms_found"] + stats["unique_definitions_found"])
+                    
+                    for acronym in sorted(all_acronyms):
+                        definition = None
+                        if acronym in stats["all_found_acronyms"]:
+                            definition = stats["all_found_acronyms"][acronym]["definition"]
+                        elif acronym in stats["all_found_definitions"]:
+                            definition = stats["all_found_definitions"][acronym]["definition"]
+                        else:
+                            definition = acronyms.get(acronym, "")
+                            
+                        if definition:
+                            definition = definition.replace("_", "\\_").replace("&", "\\&").replace("#", "\\#")
+                            sanitized_acronym = re.sub(r'[^a-zA-Z0-9]', '', acronym).lower()
+                            f.write(f"\\newacronym{{{sanitized_acronym}}}{{{acronym}}}{{{definition}}}\n")
+                
+                direct_tex_path = os.path.join(output_dir, DEFAULT_ACRONYMS_TRANSLATED_OUTPUT_PATH)
                 make_acronyms_tex_from_csv(acronym_list_path, direct_tex_path)
 
         return stats
