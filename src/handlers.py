@@ -1039,10 +1039,7 @@ class FileExtHandler:
                 if latex_mode:
                     # Use glossaries package commands with sanitized key
                     sanitized_acronym = re.sub(r'[^a-zA-Z0-9]', '', acronym).lower()
-                    if is_first_occurrence:
-                        replacement = f"\\acf{{{sanitized_acronym}}}"
-                    else:
-                        replacement = f"\\ac{{{sanitized_acronym}}}"
+                    replacement = f"\\gls{{{sanitized_acronym}}}"
                 else:  # For plain text
                     if is_first_occurrence:
                         replacement = f"{acronyms[acronym]} ({acronym})"
@@ -1355,7 +1352,7 @@ class FileExtHandler:
                 make_acronyms_tex_from_csv(acronym_list_path, direct_tex_path)
 
         return stats
-    
+
     def properties_dir(self, source_dir, exclude_dirs=None, exclude_exts=None, exclude_files=None,
                        include_dirs=None, include_exts=None, include_files=None, silent=False,
                        include_hash=False, include_line_count=False):
