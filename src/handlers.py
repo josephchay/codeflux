@@ -970,8 +970,8 @@ class FileExtHandler:
         return stats
 
     def acroscan(self, file_path, acronyms, output_file=None,
-             find_potential=False, replace_acronyms=True, latex_mode=False, silent=False,
-             consolidate_output=True):
+                find_potential=False, replace_acronyms=True, latex_mode=False, silent=False,
+                consolidate_output=True):
         """Scan a file for acronyms and optionally replace them."""
         # Initialize result dictionary
         result = {
@@ -1037,8 +1037,7 @@ class FileExtHandler:
             # Perform replacements in reverse order
             for start, end, acronym in all_positions:
                 if latex_mode:
-                    # Updated to use \gls instead of \ac
-                    replacement = f"\\gls{{{acronym}}}"
+                    replacement = f"\\gls{{{acronym.lower()}}}"
                 else:
                     replacement = f"{acronym} ({acronyms[acronym]})"
                 modified_content = modified_content[:start] + replacement + modified_content[end:]
@@ -1352,18 +1351,17 @@ class FileExtHandler:
                     acronyms_tex_path = os.path.join(output_dir, DEFAULT_ACRONYMS_FOUND_TEX_OUTPUT_PATH)
                     with open(acronyms_tex_path, 'w', encoding='utf-8') as f:
                         f.write("% Acronyms found by CodeFlux\n")
-
                         for acronym in sorted(stats["all_found_acronyms"].keys()):
                             info = stats["all_found_acronyms"][acronym]
-                            # Escape special LaTeX characters in the definition
                             definition = info["definition"]
                             definition = definition.replace("_", "\\_").replace("&", "\\&").replace("#", "\\#")
-                            f.write(f"\\newacronym{{{acronym}}}{{{acronym}}}{{{definition}}}\n")
+                            f.write(f"\\newacronym{{{acronym.lower()}}}{{{acronym}}}{{{definition}}}\n")
+                    if not silent:
+                        print(f"\nGenerated LaTeX acronyms file: {acronyms_tex_path}")
                 except Exception as e:
                     if not silent:
                         print(f"Error writing LaTeX acronyms file: {e}")
 
-            # Generate direct translation from CSV to LaTeX format
             if latex_mode and acronym_list_path:
                 try:
                     direct_tex_path = os.path.join(output_dir, DEFAULT_ACRONYMS_TRANSLATED_OUTPUT_PATH)

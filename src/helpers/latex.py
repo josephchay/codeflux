@@ -68,10 +68,9 @@ def make_acronyms_tex_from_csv(csv_path, output_tex_path):
 
     acronyms.sort(key=lambda x: x[0])
     with open(output_tex_path, 'w', encoding='utf-8') as f:
-        f.write("% Acronyms converted from CSV by CodeFlux\n")
+        f.write("% Acronyms converted from CSV by CodeFlux\n")        
         for acronym, definition in acronyms:
-            # Clean up the definition - escape special LaTeX characters
             definition = definition.replace("_", "\\_").replace("&", "\\&").replace("#", "\\#")
-            f.write(f"\\newacronym{{{acronym}}}{{{acronym}}}{{{definition}}}\n")
+            f.write(f"\\newacronym{{{acronym.lower()}}}{{{acronym}}}{{{definition}}}\n")
 
     return True

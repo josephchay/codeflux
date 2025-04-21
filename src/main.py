@@ -789,8 +789,6 @@ def main():
                                 acronyms_tex_path = os.path.join(acroscan_dest, DEFAULT_ACRONYMS_FOUND_TEX_OUTPUT_PATH)
                                 with open(acronyms_tex_path, 'w', encoding='utf-8') as f:
                                     f.write("% Acronyms found by CodeFlux\n")
-                                    f.write("% Using \\newacronym format for glossaries package\n\n")
-
                                     for acronym in sorted(all_unique_acronyms):
                                         if acronym in all_acronyms_details:
                                             info = all_acronyms_details[acronym]
@@ -885,8 +883,6 @@ def main():
                                         acronyms_tex_path = os.path.join(single_file_output_dir, DEFAULT_ACRONYMS_FOUND_TEX_OUTPUT_PATH)
                                         with open(acronyms_tex_path, 'w', encoding='utf-8') as f:
                                             f.write("% Acronyms found by CodeFlux\n")
-                                            f.write("% Using \\newacronym format for glossaries package\n\n")
-
                                             for acronym, info in sorted(result["found_acronyms"].items()):
                                                 definition = info["definition"]
                                                 definition = definition.replace("_", "\\_").replace("&", "\\&").replace("#", "\\#")
