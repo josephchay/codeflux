@@ -631,15 +631,8 @@ def main():
 
                 os.makedirs(acroscan_dest, exist_ok=True)
                 if acronym_list_path and os.path.exists(acronym_list_path):
-                    try:
-                        direct_tex_path = os.path.join(acroscan_dest, DEFAULT_ACRONYMS_TRANSLATED_OUTPUT_PATH)
-                        success = make_acronyms_tex_from_csv(acronym_list_path, direct_tex_path)
-                        
-                        if success and not args.no_log:
-                            print(f"Generated direct LaTeX acronyms file from CSV: {direct_tex_path}")
-                    except Exception as e:
-                        if not args.no_log:
-                            print(f"Error generating direct LaTeX acronyms file: {e}")
+                    direct_tex_path = os.path.join(acroscan_dest, DEFAULT_ACRONYMS_TRANSLATED_OUTPUT_PATH)
+                    success = make_acronyms_tex_from_csv(acronym_list_path, direct_tex_path)
                 
                 # Initialize for collecting all acronyms across all handlers
                 all_handler_results = []

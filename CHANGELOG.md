@@ -63,6 +63,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Status symbols now print correctly for the root directory tree visualization.
 - `NOEXT` files now only truly handle files that have no extension - initially handling all kinds of file extensions.
 - Acronym properly replaces found acronym values with the actual (lowercase) acronym identifier in `.tex` instead of the display value.
+- Acronyms properly get converted and incldued in to the output file `acronyms_from_csv.tex`.
 
 ### Changed
 
