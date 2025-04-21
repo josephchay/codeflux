@@ -745,7 +745,6 @@ def main():
                     if all_unique_acronyms or all_potential_acronyms:
                         try:
                             acronyms_txt_path = os.path.join(acroscan_dest, DEFAULT_ACRONYMS_FOUND_OUTPUT_PATH)
-
                             with open(acronyms_txt_path, 'w', encoding='utf-8') as f:
                                 f.write(f"# Acronyms found in {os.path.basename(source_dir)}\n\n")
 
@@ -788,10 +787,9 @@ def main():
                         if args.latex_mode and all_unique_acronyms:
                             try:
                                 acronyms_tex_path = os.path.join(acroscan_dest, DEFAULT_ACRONYMS_FOUND_TEX_OUTPUT_PATH)
-
                                 with open(acronyms_tex_path, 'w', encoding='utf-8') as f:
                                     f.write("% Acronyms found by CodeFlux\n")
-                                    f.write("\\begin{acronym}[XXXXXXXXX]\n")  # Adjust width as needed
+                                    f.write("% Using \\newacronym format for glossaries package\n\n")
 
                                     for acronym in sorted(all_unique_acronyms):
                                         if acronym in all_acronyms_details:
@@ -799,15 +797,15 @@ def main():
                                             # Escape special LaTeX characters in the definition
                                             definition = info["definition"]
                                             definition = definition.replace("_", "\\_").replace("&", "\\&").replace("#", "\\#")
-                                            f.write(f"  \\acro{{{acronym}}}{{{definition}}}\n")
-                                    f.write("\\end{acronym}\n")
+                                            # Use the new \newacronym format
+                                            f.write(f"\\newacronym{{{acronym}}}{{{acronym}}}{{{definition}}}\n")
 
                                 if not args.no_log:
                                     print(f"\nGenerated consolidated LaTeX acronyms file: {acronyms_tex_path}")
                             except Exception as e:
                                 if not args.no_log:
                                     print(f"Error writing LaTeX acronyms file: {e}")
-                                
+                                    
                     # Show final operation summary
                     if not args.no_log:
                         print("----- OPERATION SUMMARY -----")
@@ -883,18 +881,17 @@ def main():
                                 try:
                                     # Generate acronym list files specific to this file
                                     if args.latex_mode:
-                                        # Generate LaTeX acronyms file
+                                        # Generate LaTeX acronyms file with the new format
                                         acronyms_tex_path = os.path.join(single_file_output_dir, DEFAULT_ACRONYMS_FOUND_TEX_OUTPUT_PATH)
                                         with open(acronyms_tex_path, 'w', encoding='utf-8') as f:
                                             f.write("% Acronyms found by CodeFlux\n")
-                                            f.write("\\begin{acronym}[XXXXXXXXX]\n")
+                                            f.write("% Using \\newacronym format for glossaries package\n\n")
 
                                             for acronym, info in sorted(result["found_acronyms"].items()):
                                                 definition = info["definition"]
                                                 definition = definition.replace("_", "\\_").replace("&", "\\&").replace("#", "\\#")
-                                                f.write(f"  \\acro{{{acronym}}}{{{definition}}}\n")
-
-                                            f.write("\\end{acronym}\n")
+                                                # Use the new \newacronym format
+                                                f.write(f"\\newacronym{{{acronym}}}{{{acronym}}}{{{definition}}}\n")
 
                                         if not args.no_log:
                                             print(f"Generated LaTeX acronyms file: {acronyms_tex_path}")
@@ -903,7 +900,6 @@ def main():
                                     acronyms_txt_path = os.path.join(single_file_output_dir, DEFAULT_ACRONYMS_FOUND_OUTPUT_PATH)
                                     with open(acronyms_txt_path, 'w', encoding='utf-8') as f:
                                         f.write(f"# Acronyms found in {os.path.basename(file_path)}\n\n")
-
                                         if result["found_acronyms"]:
                                             f.write("## Known Acronyms\n\n")
                                             for acronym, info in sorted(result["found_acronyms"].items()):
@@ -921,7 +917,6 @@ def main():
                                 except Exception as e:
                                     if not args.no_log:
                                         print(f"Error writing output file: {e}")
-                            
                             try:
                                 direct_tex_path = os.path.join(single_file_output_dir, DEFAULT_ACRONYMS_TRANSLATED_OUTPUT_PATH)
                                 success = make_acronyms_tex_from_csv(acronym_list_path, direct_tex_path)

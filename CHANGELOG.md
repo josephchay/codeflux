@@ -78,6 +78,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Removed output file path from being displayed in the status columns of `flattening`, and `deflattening` operations.
 - Renamed `ROOT_TREE_UI_TRUNCATE_DIRS` to `ROOT_TREE_UI_EXCLUDE_DIRS` constant.
 - Updated `status` column default output value for "success".
+- Formatting for LaTeX acronyms to be in the `\newacronym` instead of the `\acro` command and usage to be in `\gsl` instead of `\ac`.
 
 ### Removed
 
