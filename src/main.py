@@ -631,9 +631,12 @@ def main():
                     print(f"Recursive: {'No' if args.no_recursive_acroscan else 'Yes'}\n")
 
                 os.makedirs(acroscan_dest, exist_ok=True)
+                
+                # Generate acronyms.tex from source CSV (this is kept and used directly)
                 if acronym_list_path and os.path.exists(acronym_list_path):
                     direct_tex_path = os.path.join(acroscan_dest, DEFAULT_ACRONYMS_TRANSLATED_OUTPUT_PATH)
-                    success = make_acronyms_tex_from_csv(acronym_list_path, direct_tex_path)
+                    # Pass the use_acronym_package parameter (default to True)
+                    success = make_acronyms_tex_from_csv(acronym_list_path, direct_tex_path, use_acronym_package=True)
                 
                 # Initialize for collecting all acronyms across all handlers
                 all_handler_results = []
@@ -657,16 +660,13 @@ def main():
                     # Process each handler type
                     for file_type, handler in HANDLERS.items():
                         if file_type in args.file_types:
-                            # Skip handlers that aren't applicable for acroscan
-                            if not hasattr(handler, 'acroscan_dir'):
-                                continue
-
                             if args.include_extensions and not any(ext in args.include_extensions for ext in handler.extensions):
                                 continue
 
                             if not args.no_log:
                                 print(f"----- {file_type.upper()} FILES -----")
 
+                            # Pass use_acronym_package=True to the handler
                             stats = handler.acroscan_dir(
                                 source_dir,
                                 output_dir=acroscan_dest,
@@ -682,7 +682,8 @@ def main():
                                 latex_mode=args.latex_mode,
                                 clear_dest_dir=args.clear_dest_dir,
                                 recursive=not args.no_recursive_acroscan,
-                                silent=args.no_log
+                                silent=args.no_log,
+                                use_acronym_package=True  # Always use acronym package format
                             )
 
                             all_handler_results.append(stats)
@@ -730,7 +731,6 @@ def main():
                             if not args.no_log:
                                 print("--------------------\n")
                     
-                    # Generate consolidated output files from ALL handler results
                     if all_unique_acronyms or all_potential_acronyms:
                         acronyms_txt_path = os.path.join(acroscan_dest, DEFAULT_ACRONYMS_FOUND_OUTPUT_PATH)
                         with open(acronyms_txt_path, 'w', encoding='utf-8') as f:
@@ -769,18 +769,25 @@ def main():
                         if not args.no_log:
                             print(f"\nGenerated consolidated acronyms list: {acronyms_txt_path}")
 
+                        # Generate LaTeX acronyms file using acronym package format
                         if args.latex_mode and all_unique_acronyms:
                             acronyms_tex_path = os.path.join(acroscan_dest, DEFAULT_ACRONYMS_FOUND_TEX_OUTPUT_PATH)
                             with open(acronyms_tex_path, 'w', encoding='utf-8') as f:
-                                f.write("% Acronyms found by CodeFlux\n")
+                                f.write("% Acronyms found by CodeFlux (acronym package format)\n")
+                                f.write("% Usage: \n")
+                                f.write("%   \\ac{ACRONYM}  - Automatic: first use full form, then short form\n")
+                                f.write("%   \\acf{ACRONYM} - Full form: \"definition (ACRONYM)\"\n")
+                                f.write("%   \\acs{ACRONYM} - Short form: \"ACRONYM\"\n")
+                                f.write("%   \\acl{ACRONYM} - Long form: \"definition\"\n\n")
                                 
+                                f.write("\\begin{acronym}\n")
                                 for acronym in sorted(all_unique_acronyms):
                                     if acronym in all_acronyms_details:
                                         info = all_acronyms_details[acronym]
                                         definition = info["definition"]
                                         definition = definition.replace("_", "\\_").replace("&", "\\&").replace("#", "\\#")
-                                        sanitized_acronym = re.sub(r'[^a-zA-Z0-9]', '', acronym).lower()
-                                        f.write(f"\\newacronym{{{sanitized_acronym}}}{{{acronym}}}{{{definition}}}\n")
+                                        f.write(f"    \\acro{{{acronym}}}{{{definition}}}\n")
+                                f.write("\\end{acronym}\n")
 
                     if not args.no_log:
                         print("----- OPERATION SUMMARY -----")
@@ -822,7 +829,8 @@ def main():
                             replace_acronyms=False,
                             latex_mode=args.latex_mode,
                             silent=True,
-                            consolidate_output=True
+                            consolidate_output=True,
+                            use_acronym_package=True
                         )
                         
                         has_acronyms = bool(scan_result["found_acronyms"])
@@ -844,20 +852,30 @@ def main():
                             replace_acronyms=args.replace_acronyms,
                             latex_mode=args.latex_mode,
                             silent=args.no_log,
-                            consolidate_output=True
+                            consolidate_output=True,
+                            use_acronym_package=True  # Always use acronym package format
                         )
 
                         if result["found_acronyms"] or (args.find_potential and result["potential_acronyms"]):
+                            # Generate LaTeX acronyms file using acronym package format
                             if args.latex_mode:
                                 acronyms_tex_path = os.path.join(single_file_output_dir, DEFAULT_ACRONYMS_FOUND_TEX_OUTPUT_PATH)
                                 with open(acronyms_tex_path, 'w', encoding='utf-8') as f:
-                                    f.write("% Acronyms found by CodeFlux\n")
+                                    f.write("% Acronyms found by CodeFlux (acronym package format)\n")
+                                    f.write("% Usage: \n")
+                                    f.write("%   \\ac{ACRONYM}  - Automatic: first use full form, then short form\n")
+                                    f.write("%   \\acf{ACRONYM} - Full form: \"definition (ACRONYM)\"\n")
+                                    f.write("%   \\acs{ACRONYM} - Short form: \"ACRONYM\"\n")
+                                    f.write("%   \\acl{ACRONYM} - Long form: \"definition\"\n\n")
+                                    
+                                    f.write("\\begin{acronym}\n")
                                     for acronym, info in sorted(result["found_acronyms"].items()):
                                         definition = info["definition"]
                                         definition = definition.replace("_", "\\_").replace("&", "\\&").replace("#", "\\#")
-                                        sanitized_acronym = re.sub(r'[^a-zA-Z0-9]', '', acronym).lower()
-                                        f.write(f"\\newacronym{{{sanitized_acronym}}}{{{acronym}}}{{{definition}}}\n")
+                                        f.write(f"    \\acro{{{acronym}}}{{{definition}}}\n")
+                                    f.write("\\end{acronym}\n")
                             
+                            # Generate text summary file
                             acronyms_txt_path = os.path.join(single_file_output_dir, DEFAULT_ACRONYMS_FOUND_OUTPUT_PATH)
                             with open(acronyms_txt_path, 'w', encoding='utf-8') as f:
                                 f.write(f"# Acronyms found in {os.path.basename(file_path)}\n\n")
@@ -875,8 +893,10 @@ def main():
 
                             if not args.no_log:
                                 print(f"Generated acronyms list: {acronyms_txt_path}")
+                        
+                        # Always generate the direct acronyms.tex file
                         direct_tex_path = os.path.join(single_file_output_dir, DEFAULT_ACRONYMS_TRANSLATED_OUTPUT_PATH)
-                        success = make_acronyms_tex_from_csv(acronym_list_path, direct_tex_path)
+                        success = make_acronyms_tex_from_csv(acronym_list_path, direct_tex_path, use_acronym_package=True)
 
                         if success and not args.no_log:
                             print(f"Generated direct LaTeX acronyms file from CSV: {direct_tex_path}")

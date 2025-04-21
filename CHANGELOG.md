@@ -44,6 +44,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Default sample `acronym.csv` template under `src/templates` directory.
 - New `helpers` directory for helper functions.
 - `DEFAULT_ACRONYMS_LIST_PATH` file path using the right relative path to the package (CodeFlux) module.
+- Option to use `use_acronym_package` for acroscan functionality.
 
 ### Fixed
 
