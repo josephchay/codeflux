@@ -1,50 +1,49 @@
 Acronym,Definition,Context,Notes
-ANN,Artificial Neural Network,Neural network architecture,
-RNN,Recurrent Neural Network,Sequential data processing,Used in time-series, audio, and NLP
-LSTM,Long Short-Term Memory,RNN variant,Handles long-range dependencies
-GRU,Gated Recurrent Unit,RNN variant,Lightweight alternative to LSTM
-CNN,Convulutional Neural Network,Deep learning,Used for audio spectrogram and MIR tasks
-GAN,Generative Adversarial Network,Generative modeling,Consists of Generator and Discriminator
-VQ-VAE,Vector Quantized Variational Autoencoder,Autoencoder variant,Combines quantization with VAE
-VAE,Variational Autoencoder,Generative modeling,Probabilistic latent variable model
-LDM,Latent Diffusion Model,Diffusion models,Generates data in latent space
-DPM,Diffusion Probabilistic Model,Diffusion models,
-DiT,Diffusion Transformer,Diffusion models,Applies transformers to diffusion processes
-DDPM,Denoising Diffusion Probabilistic Model,Diffusion models,Baseline model for generative diffusion
-DDIM,Denoising Diffusion Implicit Model,Diffusion models,Improves inference speed
-SDE,Stochastic Differential Equation,Mathematics / Diffusion modeling,Defines continuous-time diffusion
-DMAE,Diffusion Magnitude-Autoencoding,Diffusion models,
-TCLD,Text-Conditioned Latent Diffusion,Text-to-music,Used in Moûsai
-MusicLM,Music Language Model,Music generation,Proposed by Google Research
-MusicGen,Music Generation model,Music generation,By Meta AI
-MusicLDM,Music Latent Diffusion Model,Music generation,
-AudioLDM,Audio Latent Diffusion Model,Audio synthesis,
-MusicVAE,Music Variational Autoencoder,Music generation,Captures musical structure
-Moûsai,Text-to-music generation model with long-context latent diffusion,Text-to-music,Supports long input prompts
-RMSSinger,Realistic-Music-Score based singing voice synthesis,Voice synthesis,Focused on expressive singing
-MOS,Mean Opinion Score,Evaluation metric,Subjective audio quality measure
-MUSHRA,Multiple Stimuli with Hidden Reference and Anchor,Evaluation metric,Used for perceptual audio quality
-FAD,Fréchet Audio Distance,Evaluation metric,Measures similarity between real and generated audio
-KL,Kullback-Leibler,Probability/Information theory,Measures divergence between two distributions
-T2M-QLT,Text-to-Music Quality,Evaluation metric,
-T2M-ALI,Text-to-Music Alignment,Evaluation metric,
-T2M,Text-to-Music,Music generation,Transforms text prompts into music
-T2S,Text-to-Speech,Speech synthesis,Used for voice generation from text
-L2S,Lyrics-to-Song,Music generation,Maps lyrics directly to singing output
-REMI,REvamped MIDI-derived events,Music representation,Event-based representation used in transformers
-MuMIDI,MUlti-track MIDI representation,Music representation,Allows modeling of polyphonic multi-instrument music
-SVS,Singing Voice Synthesis,Voice synthesis,
-DSP,Digital Signal Processing,Signal processing,Foundation for audio and music analysis
-CFG,Classifier-Free Guidance,Sampling guidance,Improves conditional generation
-VIB,Variational Information Bottleneck,Regularization technique,Balances compression and relevance
-HMM,Hidden Markov Model,Sequential modeling,Classical model for speech/music/NLP
-CSP,Constraint Satisfaction Problem,Optimization,Used in symbolic composition
-LM,Language Model,NLP/Generative modeling,
-LLM,Large Language Model,NLP/Generative modeling,Handles long-context understanding
-NLP,Natural Language Processing,Text modeling,Used for conditioning in text-to-music
-BERT,Bidirectional Encoder Representations from Transformers,NLP,Pretrained transformer model
-GTTM,Generative Theory of Tonal Music,Music theory,Formal grammar-based tonal theory
-IFS,Iterated Function System,Mathematical modeling,Fractal-based generative structure
-PLCA,Probabilistic Latent Component Analysis,Audio analysis,Used for music source separation and MIR
-RAVE,Realtime Audio Variational autoEncoder,Audio synthesis,Low-latency generative audio model
-FM,Frequency Modulation,Synthesis technique,Used in audio synthesis (e.g., FM synthesis)
+ANN,Artificial Neural Network,Neural network architecture,""
+API,Application Programming Interface,Software interface,"Allows communication between software components"
+MIDI,Musical Instrument Digital Interface,Music representation,"Protocol for music data transmission"
+BPM,Beats Per Minute,Tempo in music,"Indicates speed of music"
+BERT,Bidirectional Encoder Representations from Transformers,NLP,"Pretrained transformer model for language understanding"
+CFG,Classifier-Free Guidance,Sampling guidance,"Improves conditional generation"
+CSP,Constraint Satisfaction Problem,Optimization,"Used in symbolic composition"
+DDIM,Denoising Diffusion Implicit Model,Diffusion models,"Improves inference speed"
+DDPM,Denoising Diffusion Probabilistic Model,Diffusion models,"Baseline model for generative diffusion"
+DMAE,Diffusion Magnitude-Autoencoding,Diffusion models,""
+DPM,Diffusion Probabilistic Model,Diffusion models,""
+SDE,Stochastic Differential Equation,Mathematics / Diffusion modeling,"Defines continuous-time diffusion"
+TCLD,Text-Conditioned Latent Diffusion,Text-to-music,"Used in Moûsai"
+DSP,Digital Signal Processing,Signal processing,"Foundation for audio and music analysis"
+DiT,Diffusion Transformer,Diffusion models,"Applies transformers to diffusion processes"
+FAD,Fréchet Audio Distance,Evaluation metric,"Measures similarity between real and generated audio"
+GAN,Generative Adversarial Network,Generative modeling,"Consists of Generator and Discriminator"
+GTTM,Generative Theory of Tonal Music,Music theory,"Formal grammar-based tonal theory"
+HMM,Hidden Markov Model,Sequential modeling,"Classical model for speech/music/NLP"
+IFS,Iterated Function System,Mathematical modeling,"Fractal-based generative structure"
+KL,Kullback-Leibler,Probability/Information theory,"Measures divergence between two distributions"
+LDM,Latent Diffusion Model,Diffusion models,"Generates data in latent space"
+LM,Language Model,NLP/Generative modeling,""
+LLM,Large Language Model,NLP/Generative modeling,""
+LSTM,Long Short-Term Memory,RNN variant,"Handles long-range dependencies"
+MOS,Mean Opinion Score,Evaluation metric,"Subjective audio quality measure"
+MUSHRA,Multiple Stimuli with Hidden Reference and Anchor,Evaluation metric,"Used for perceptual audio quality"
+VAE,Variational Autoencoder,Autoencoder variant,""
+VQ-VAE,Vector Quantized Variational Autoencoder,Autoencoder variant,"Combines quantization with VAE"
+NLP,Natural Language Processing,Text modeling,"Used for conditioning in text-to-music"
+REMI,REvamped MIDI-derived events,Music representation,"Event-based representation used in transformers"
+RNN,Recurrent Neural Network,Sequential data processing,"Used in time-series, audio, and NLP"
+SDE,Stochastic Differential Equation,Mathematics / Diffusion modeling,"Defines continuous-time diffusion"
+SVS,Singing Voice Synthesis,Voice synthesis,""
+T2M,Text-to-Music,Text-to-music generation,""
+T2M-ALI,Text-to-Music Alignment,Evaluation metric,""
+T2M-QLT,Text-to-Music Quality,Evaluation metric,""
+T2S,Text-to-Speech,Speech synthesis,""
+L2S,Lyrics-to-Song,Music generation,""
+TCLD,Text-Conditioned Latent Diffusion,Text-to-music,"Used in Moûsai"
+VIB,Variational Information Bottleneck,Regularization technique,"Balances compression and relevance"
+VQ-VAE,Vector Quantized Variational Autoencoder,Autoencoder variant,"Combines quantization with VAE"
+MIR,Music Information Retrieval,Music analysis,""
+MFCC,Mel-Frequency Cepstral Coefficient,Audio features,"Captures timbral features of audio"
+PLCA,Probabilistic Latent Component Analysis,Music analysis,""
+FM,Frequency Modulation,Audio synthesis,""
+GRU,Gated Recurrent Unit,RNN variant,"Efficient alternative to LSTM"
+CNN,Convulutional Neural Network,Neural network architecture,"Common in audio, image, and speech recognition"
