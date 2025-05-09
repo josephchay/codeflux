@@ -285,7 +285,7 @@ def visualize_dir_tree(root_dir, output_file, exclude_dirs=None, exclude_exts=No
         # Start the recursive tree building for console output
         build_console_lines(tree, is_root=True)
 
-        print("[DIRECTORY TREE]")
+        print("\n[DIRECTORY TREE]")
         if truncate_output:
             max_lines = min(50, len(console_tree_lines))
             truncated = len(console_tree_lines) > max_lines
@@ -784,7 +784,7 @@ def visualize_root_dir_tree(source_dir, output_file, print_to_console=True, trun
     stats['time_taken'] = duration
 
     if print_to_console:
-        print("[DIRECTORY TREE]")
+        print("\n[DIRECTORY TREE]")
         if show_processing_status:
             status_description = []
             for status_key in ['processed', 'excluded', 'mixed', 'out_of_scope']:

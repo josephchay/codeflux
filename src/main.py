@@ -4,20 +4,19 @@ CodeFlux: A comprehensive codebase management and transformation tool.
 This application provides utilities for code flattening, minification, bundling, and analysis.
 """
 
-import os
-import sys
 import argparse
 import datetime
-from typing import Dict, List, Optional, Any, Tuple, Set
+import os
+import sys
 
 # Import core modules
 from file_handler import FileHandler
-from utils.logging import Logger
 from handlers import HANDLERS
-from operations.flatten import FlattenOperation
-from operations.deflatten import DeflattenOperation
-from operations.minify import MinifyOperation
 from operations.bundle import BundleOperation
+from operations.deflatten import DeflattenOperation
+from operations.flatten import FlattenOperation
+from operations.minify import MinifyOperation
+from utils.logging import Logger
 
 # Define constants
 OPERATION_FLATTEN = "flatten"
@@ -47,11 +46,64 @@ DEFAULT_ROOT_TREE_OUTPUT_PATH = "root_directory_tree.txt"
 DEFAULT_SUMMARY_OUTPUT_PATH = "summary.txt"
 
 
+def run_processed_tree_operation(source_dir, timestamp_dir, args, logger):
+    """Run the processed directory tree visualization."""
+    from ui.tree import visualize_dir_tree
+
+    try:
+        output_file = os.path.join(timestamp_dir, DEFAULT_TREE_OUTPUT_PATH)
+        if not args.no_log:
+            logger.info("\n\n:::::::::::::::::::::::::::::: PROCESSED DIRECTORY TREE ::::::::::::::::::::::::::::::")
+            logger.info(f"Destination: \"{DEFAULT_TREE_OUTPUT_PATH}\"")
+
+        visualize_dir_tree(
+            source_dir,
+            output_file,
+            exclude_dirs=args.exclude_dirs or DEFAULT_EXCLUDE_DIRS,
+            exclude_exts=args.exclude_extensions,
+            exclude_files=args.exclude_files,
+            print_to_console=not args.no_log,
+            truncate_output=args.truncate
+        )
+
+        if not args.no_log:
+            logger.info("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
+    except Exception as e:
+        if not args.no_log:
+            logger.error(f"Error generating processed directory tree: {str(e)}")
+
+
+def run_root_tree_operation(source_dir, timestamp_dir, args, logger):
+    """Run the root directory tree visualization."""
+    from ui.tree import visualize_root_dir_tree
+
+    try:
+        output_file = os.path.join(timestamp_dir, DEFAULT_ROOT_TREE_OUTPUT_PATH)
+        if not args.no_log:
+            logger.info("\n\n:::::::::::::::::::::::::::::: ROOT DIRECTORY TREE ::::::::::::::::::::::::::::::")
+            logger.info(f"Destination: \"{DEFAULT_ROOT_TREE_OUTPUT_PATH}\"")
+
+        visualize_root_dir_tree(
+            source_dir,
+            output_file,
+            print_to_console=not args.no_log,
+            truncate_output=args.truncate,
+            show_processing_status=True,
+            user_exclude_dirs=args.exclude_dirs,
+            user_exclude_exts=args.exclude_extensions,
+            user_exclude_files=args.exclude_files
+        )
+
+        if not args.no_log:
+            logger.info("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
+    except Exception as e:
+        if not args.no_log:
+            logger.error(f"Error generating root directory tree: {str(e)}")
+
+
 def make_parser():
     """Create and configure the argument parser for the CLI."""
-    parser = argparse.ArgumentParser(
-        description="CodeFlux: A comprehensive codebase management and transformation tool."
-    )
+    parser = argparse.ArgumentParser(description="CodeFlux: A comprehensive codebase management and transformation tool.")
 
     # Source and destination arguments
     src_group = parser.add_argument_group('source')
@@ -412,7 +464,7 @@ def process_deflatten_operation(source_dir, output_dir, args, exclude_files, log
         return results
 
     if not args.no_log:
-        logger.info(f"Destination: {os.path.relpath(output_dir)}\n")
+        logger.info(f"Destination: \"{DEFAULT_DEFLATTEN_OUTPUT_PATH}/\"\n")
 
     for file_type in args.file_types:
         if file_type in HANDLERS:
@@ -596,7 +648,6 @@ def main():
     output_paths = {}
 
     try:
-        # Process each operation
         for operation in operations:
             if operation == OPERATION_FLATTEN:
                 flatten_dest = args.dest_named if args.dest_named else args.dest_pos
@@ -606,11 +657,9 @@ def main():
 
                 if not args.no_log:
                     logger.info("\n\n:::::::::::::::::::::::::::::: FLATTEN ::::::::::::::::::::::::::::::")
-                    logger.info(f"Destination: {os.path.relpath(flatten_dest)}\n")
+                    logger.info(f"Destination: \"{DEFAULT_FLATTEN_OUTPUT_PATH}/\"\n")
 
-                results = process_flatten_operation(
-                    source_dir, flatten_dest, args, exclude_dirs, exclude_exts, exclude_files, logger
-                )
+                results = process_flatten_operation(source_dir, flatten_dest, args, exclude_dirs, exclude_exts, exclude_files, logger)
 
                 if not args.no_log:
                     if results:
@@ -633,11 +682,9 @@ def main():
 
                 if not args.no_log:
                     logger.info("\n\n:::::::::::::::::::::::::::::: DEFLATTEN ::::::::::::::::::::::::::::::")
-                    logger.info(f"Destination: {os.path.relpath(deflatten_dest)}\n")
+                    logger.info(f"Destination: \"{DEFAULT_DEFLATTEN_OUTPUT_PATH}/\"\n")
 
-                results = process_deflatten_operation(
-                    source_dir, deflatten_dest, args, exclude_files, logger
-                )
+                results = process_deflatten_operation(source_dir, deflatten_dest, args, exclude_files, logger)
 
                 if not args.no_log:
                     if results:
@@ -666,10 +713,10 @@ def main():
                 if not args.no_log:
                     if operation == OPERATION_BUNDLE:
                         logger.info("\n\n:::::::::::::::::::::::::::::: BUNDLE ::::::::::::::::::::::::::::::")
-                        logger.info(f"Destination: {os.path.relpath(bundle_dest)}\n")
+                        logger.info(f"Destination: \"{DEFAULT_BUNDLE_OUTPUT_PATH}\"\n")
                     else:
                         logger.info("\n\n:::::::::::::::::::::::::::::: MINIFY-BUNDLE ::::::::::::::::::::::::::::::")
-                        logger.info(f"Destination: {os.path.relpath(bundle_dest)}")
+                        logger.info(f"Destination: \"{DEFAULT_MINIFY_BUNDLE_OUTPUT_PATH}\"")
                         logger.info("Minification: Enabled")
                         if args.continue_on_error:
                             logger.info("Note: Continuing on minification errors (--continue-on-error flag is set)")
@@ -691,7 +738,7 @@ def main():
 
                 if not args.no_log:
                     logger.info("\n\n:::::::::::::::::::::::::::::: MINIFY ::::::::::::::::::::::::::::::")
-                    logger.info(f"Destination: {os.path.relpath(minify_dest)}")
+                    logger.info(f"Destination: \"{DEFAULT_MINIFY_OUTPUT_PATH}/\"")
                     logger.info("Minification: Enabled")
                     if args.continue_on_error:
                         logger.info("Note: Continuing on minification errors (--continue-on-error flag is set)")
@@ -723,6 +770,9 @@ def main():
                             logger.info("----- OPERATION SUMMARY -----")
                             logger.info(f"No files were minified.")
                     logger.info("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
+
+        run_processed_tree_operation(source_dir, timestamp_dir, args, logger)
+        run_root_tree_operation(source_dir, timestamp_dir, args, logger)
 
         # Write summary file
         summary_path = os.path.join(timestamp_dir, DEFAULT_SUMMARY_OUTPUT_PATH)
