@@ -1,8 +1,28 @@
+"""
+Snippet utilities for code extraction and line range handling.
+"""
+
 import re
+from typing import Tuple, List, Optional, Any, Dict, Set
 
 
-def apply_snippet_filter(content, snippet_enabled=False, snippet_lines=50,
-                         snippet_start="top", snippet_context=5, search_pattern=None):
+def apply_snippet_filter(content: str, snippet_enabled: bool = False, snippet_lines: int = 50,
+                         snippet_start: str = "top", snippet_context: int = 5,
+                         search_pattern: Optional[str] = None) -> Tuple[str, int, int]:
+    """
+    Extract a snippet from the content based on the specified parameters.
+
+    Args:
+        content: The full file content
+        snippet_enabled: Whether to enable snippet mode
+        snippet_lines: Maximum number of lines to include
+        snippet_start: Where to start the snippet (top, middle, bottom)
+        snippet_context: Number of context lines around matches
+        search_pattern: Pattern to search for
+
+    Returns:
+        Tuple of (snippet_content, line_count, original_line_count)
+    """
     if not snippet_enabled:
         # If snippet mode is not enabled, return the original content
         return content, len(content.splitlines()), len(content.splitlines())
@@ -68,7 +88,17 @@ def apply_snippet_filter(content, snippet_enabled=False, snippet_lines=50,
     return '\n'.join(filtered_lines), len(filtered_lines), original_line_count
 
 
-def parse_line_ranges(line_ranges_str, max_lines):
+def parse_line_ranges(line_ranges_str: str, max_lines: int) -> List[int]:
+    """
+    Parse a string of line ranges into a list of line numbers.
+
+    Args:
+        line_ranges_str: String with line ranges (e.g. "1-5,7,9-12")
+        max_lines: Maximum number of lines in the file
+
+    Returns:
+        List of line numbers
+    """
     line_numbers = []
     try:
         for part in line_ranges_str.split(','):
@@ -87,12 +117,27 @@ def parse_line_ranges(line_ranges_str, max_lines):
     return sorted(set(line_numbers))  # Remove duplicates and sort
 
 
-def get_file_snippet(content, max_lines=50, position="top", pattern=None, context_lines=5):
+def get_file_snippet(content: str, max_lines: int = 50, position: str = "top",
+                     pattern: Optional[str] = None, context_lines: int = 5) -> Tuple[str, bool, int]:
+    """
+    Get a snippet from a file based on various criteria.
+
+    Args:
+        content: File content
+        max_lines: Maximum number of lines to include
+        position: Where to extract from (top, middle, bottom)
+        pattern: Pattern to search for
+        context_lines: Number of context lines around matches
+
+    Returns:
+        Tuple of (snippet_content, is_truncated, original_line_count)
+    """
     lines = content.splitlines()
     original_line_count = len(lines)
 
     if len(lines) <= max_lines:
         return content, False, original_line_count
+
     if pattern:
         matches = list(re.finditer(pattern, content))
         if matches:

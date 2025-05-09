@@ -1,7 +1,14 @@
+"""
+Constants used throughout the CodeFlux application.
+Contains file extension definitions, default exclusion lists, and output paths.
+"""
+
+# Default directory exclusions
 DEFAULT_EXCLUDE_DIRS = ["__pycache__", ".git", ".idea", ".vscode", ".venv", "venv",
                         "node_modules", "dist", "build", ".next", "codeflux.egg-info",
                         "codeflux"]
 
+# File extensions and exclusion mappings for different file types
 PYTHON_EXTENSIONS = [".py"]
 PYTHON_EXCLUDE_EXTENSIONS = [".pyc", ".pyo", "__init__.py"]
 PYTHON_EXCLUDE_FILENAMES = ["setup.py", "conftest.py"]
@@ -153,6 +160,7 @@ DOCX_EXTENSIONS = [".docx", ".doc"]
 DOCX_EXCLUDE_EXTENSIONS = []
 DOCX_EXCLUDE_FILENAMES = []
 
+# Combine all extensions and exclusions
 ALL_EXTENSIONS = (
     PYTHON_EXTENSIONS + NOTEBOOK_EXTENSIONS + JSTS_EXTENSIONS +
     MDTXT_EXTENSIONS + YML_EXTENSIONS + SHELL_EXTENSIONS +
@@ -200,6 +208,7 @@ ALL_EXCLUDE_FILENAMES = (
     DOCX_EXCLUDE_FILENAMES
 )
 
+# Root tree visualization settings
 ROOT_TREE_UI_EXCLUDE_DIRS = ["__pycache__", ".git", ".idea", ".vscode", ".venv", "venv", "codeflux", "node_modules",
                               "codeflux.egg-info"]
 ROOT_TREE_UI_STATUS_SYMBOLS = {
@@ -211,6 +220,7 @@ ROOT_TREE_UI_STATUS_SYMBOLS = {
     "out_of_scope": "◯"  # For files outside source_dir
 }
 
+# Default output paths
 DEFAULT_FLATTEN_OUTPUT_PATH = "flattened"
 DEFAULT_DEFLATTEN_OUTPUT_PATH = "deflattened"
 DEFAULT_MINIFY_OUTPUT_PATH = "minified"
@@ -225,6 +235,7 @@ DEFAULT_ACRONYMS_FOUND_TEX_OUTPUT_PATH = "acronyms_found.tex"
 DEFAULT_ACRONYMS_TRANSLATED_OUTPUT_PATH = "acronyms_from_csv.tex"
 DEFAULT_ACRONYMS_LIST_PATH = "acronyms.csv"
 
+# Operation names
 OPERATION_FLATTEN = "flatten"
 OPERATION_DEFLATTEN = "deflatten"
 OPERATION_MINIFY = "minify"
@@ -237,6 +248,7 @@ OPERATION_ROOT_TREE = "root_tree"
 OPERATION_BIBDEDUP = "bibdedup"
 OPERATION_ACROSCAN = "acroscan"
 
+# UI settings
 TABULATE_FORMAT = "grid"
 MINIFICATION_DESCRIPTION = "python-minifier (Python); terser (JS/TS); html-minifier (HTML); csso (CSS); php-minifier (PHP)"
 ROOT_TREE_UI_SYMBOLS_DESCRIPTION = "; ".join(f"{v} ({k})" for k, v in ROOT_TREE_UI_STATUS_SYMBOLS.items()) + ";"

@@ -1,21 +1,59 @@
-import os
-import argparse
-import sys
-import datetime
-import re
+"""
+CodeFlux: A comprehensive codebase management and transformation tool.
 
-from constants import *
-from helpers.latex import make_acronyms_tex_from_csv, load_acronyms_csv
-from utils import merge_with_defaults, merge_stats, mkdir_output, get_relpath
-from handlers import HANDLERS, FileExtHandler
-from search import Searcher
-from ui.table import get_table_formatter
-from ui.tree import visualize_dir_tree, visualize_root_dir_tree
+This application provides utilities for code flattening, minification, bundling, and analysis.
+"""
+
+import os
+import sys
+import argparse
+import datetime
+from typing import Dict, List, Optional, Any, Tuple, Set
+
+# Import core modules
+from file_handler import FileHandler
+from utils.logging import Logger
+from handlers import HANDLERS
+from operations.flatten import FlattenOperation
+from operations.deflatten import DeflattenOperation
+from operations.minify import MinifyOperation
+from operations.bundle import BundleOperation
+
+# Define constants
+OPERATION_FLATTEN = "flatten"
+OPERATION_DEFLATTEN = "deflatten"
+OPERATION_MINIFY = "minify"
+OPERATION_BUNDLE = "bundle"
+OPERATION_MINIFY_BUNDLE = "minify_bundle"
+OPERATION_ACROSCAN = "acroscan"
+OPERATION_SEARCH = "search"
+OPERATION_PROPERTIES = "properties"
+OPERATION_TREE = "tree"
+OPERATION_ROOT_TREE = "root_tree"
+OPERATION_BIBDEDUP = "bibdedup"
+
+DEFAULT_EXCLUDE_DIRS = ["__pycache__", ".git", ".idea", ".vscode", ".venv", "venv",
+                        "node_modules", "dist", "build", ".next", "codeflux.egg-info",
+                        "codeflux"]
+
+# Default output paths
+DEFAULT_FLATTEN_OUTPUT_PATH = "flattened"
+DEFAULT_DEFLATTEN_OUTPUT_PATH = "deflattened"
+DEFAULT_MINIFY_OUTPUT_PATH = "minified"
+DEFAULT_BUNDLE_OUTPUT_PATH = "bundled.txt"
+DEFAULT_MINIFY_BUNDLE_OUTPUT_PATH = "minified_bundle.txt"
+DEFAULT_TREE_OUTPUT_PATH = "processed_directory_tree.txt"
+DEFAULT_ROOT_TREE_OUTPUT_PATH = "root_directory_tree.txt"
+DEFAULT_SUMMARY_OUTPUT_PATH = "summary.txt"
 
 
 def make_parser():
-    parser = argparse.ArgumentParser(description="A plugin that gives you full control and deep insight into any project's codebase.")
+    """Create and configure the argument parser for the CLI."""
+    parser = argparse.ArgumentParser(
+        description="CodeFlux: A comprehensive codebase management and transformation tool."
+    )
 
+    # Source and destination arguments
     src_group = parser.add_argument_group('source')
     src_group.add_argument(
         "src_pos",
@@ -40,6 +78,7 @@ def make_parser():
         help="Destination directory or file path (named)"
     )
 
+    # Operation arguments
     operation_group = parser.add_argument_group('operations')
     operation_group.add_argument(
         "--flatten", "-f",
@@ -97,6 +136,7 @@ def make_parser():
         help="Generate a complete text-based visualization of the root directory tree (with operation status)"
     )
 
+    # BibTeX deduplication
     parser.add_argument(
         '--bibdedup', "-bd",
         action='store_true',
@@ -109,18 +149,15 @@ def make_parser():
         help="Similarity threshold for BibTeX duplicate detection (0.0-1.0, default: 0.9)"
     )
 
+    # File type selection
     parser.add_argument(
         "--file-types", "-t",
         nargs="+",
-        choices=["py", "ipynb", "jsts", "html", "css", "php", "ruby", "swift", "kotlin", "java", "csharp", "shell",
-                 "mdtxt", "yml", "json", "go", "ini", "db", "bat", "scp", "noext", "ps1", "docker", "xml", "r",
-                 "cpp", "rust", "scala", "perl", "lua", "groovy", "haskell", "erlang", "latex", "bibtex"],
-        default=["py", "ipynb", "jsts", "html", "css", "php", "ruby", "swift", "kotlin", "java", "csharp", "shell",
-                 "mdtxt", "yml", "json", "go", "ini", "db", "bat", "scp", "noext", "ps1", "docker", "xml", "r",
-                 "cpp", "rust", "scala", "perl", "lua", "groovy", "haskell", "erlang", "latex", "bibtex"],
+        default=list(HANDLERS.keys()),
         help="File types to process (default: all)"
     )
 
+    # Exclusion options
     exclusion_group = parser.add_argument_group('exclusion options')
     exclusion_group.add_argument(
         "--exclude-dirs", "-xd",
@@ -138,6 +175,7 @@ def make_parser():
         help="Specific file paths to exclude (requires full path relative to source dir, e.g. 'path/to/file.py')"
     )
 
+    # Inclusion options
     inclusion_group = parser.add_argument_group('inclusion options')
     inclusion_group.add_argument(
         "--include-dirs", "-id",
@@ -155,6 +193,7 @@ def make_parser():
         help="Specific filenames to include (only these will be processed)"
     )
 
+    # Default handling
     defaults_group = parser.add_argument_group('defaults handling')
     defaults_group.add_argument(
         "--ignore-defaults", "-i",
@@ -162,6 +201,7 @@ def make_parser():
         help="Ignore all default exclusion lists and only use the provided options"
     )
 
+    # Acroscan options
     acroscan_group = parser.add_argument_group('acroscan options')
     acroscan_group.add_argument(
         "--acronym-list", "-al",
@@ -194,6 +234,7 @@ def make_parser():
         help="Do not recursively process subdirectories for acroscan"
     )
 
+    # Search operations
     search_group = parser.add_argument_group('search operations')
     search_group.add_argument(
         "--search-ext", "-se",
@@ -229,6 +270,7 @@ def make_parser():
         help="Find duplicate code blocks (optional: minimum lines, default 5)"
     )
 
+    # Snippet options
     snippet_group = parser.add_argument_group('snippet options (for bundle and minify-bundle operations)')
     snippet_group.add_argument(
         "--snippet", "-sn",
@@ -254,6 +296,7 @@ def make_parser():
         help="Number of context lines to include around matches when using with search-pattern (default: 5)"
     )
 
+    # General options
     parser.add_argument(
         "--clear-dest-dir", "-c",
         action="store_true",
@@ -269,7 +312,6 @@ def make_parser():
         action='store_true',
         help="Suppress all output logs."
     )
-
     parser.add_argument(
         '--continue-on-error', "-coe",
         action='store_true',
@@ -279,26 +321,232 @@ def make_parser():
     return parser
 
 
+def merge_with_defaults(user_values, defaults, ignore_defaults=False):
+    """Merge user-provided values with default values."""
+    if user_values is None:
+        return [] if ignore_defaults else defaults
+    if ignore_defaults:
+        return user_values
+
+    return list(set(user_values + defaults))
+
+
+def mkdir_output(operation=None):
+    """Create output directories and return paths."""
+    base_dir = os.path.join(os.getcwd(), "codeflux")
+    os.makedirs(base_dir, exist_ok=True)
+
+    if operation:
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        timestamp_dir = os.path.join(base_dir, timestamp)
+        os.makedirs(timestamp_dir, exist_ok=True)
+        return timestamp_dir, operation
+
+    return base_dir, None
+
+
+def process_flatten_operation(source_dir, output_dir, args, exclude_dirs, exclude_exts, exclude_files, logger):
+    """Process the flatten operation for all selected file types."""
+    results = []
+
+    for file_type in args.file_types:
+        if file_type in HANDLERS:
+            handler = HANDLERS[file_type]
+
+            if args.no_filetype_dirs:
+                file_dest_dir = output_dir
+            else:
+                file_dest_dir = os.path.join(output_dir, file_type)
+
+            if args.include_extensions and not any(ext in args.include_extensions for ext in handler.extensions):
+                continue
+
+            if not args.no_log:
+                logger.info(f"----- {file_type.upper()} FILES -----")
+
+            operation = FlattenOperation(handler, logger)
+            stats = operation.execute(
+                source_dir,
+                file_dest_dir,
+                exclude_dirs=exclude_dirs,
+                exclude_exts=exclude_exts,
+                exclude_files=exclude_files,
+                include_dirs=args.include_dirs,
+                include_exts=args.include_extensions,
+                include_files=args.include_files,
+                clear_dest_dir=args.clear_dest_dir
+            )
+            results.append(stats)
+
+            # Clean up empty directories
+            if stats.files_copied == 0 and os.path.exists(file_dest_dir) and not os.listdir(file_dest_dir):
+                try:
+                    os.rmdir(file_dest_dir)
+                    if not args.no_log:
+                        logger.info(f"Removed empty directory: {os.path.relpath(file_dest_dir)}")
+                except OSError:
+                    pass
+
+            if not args.no_log:
+                logger.info("--------------------\n")
+
+    return results
+
+
+def process_deflatten_operation(source_dir, output_dir, args, exclude_files, logger):
+    """Process the deflatten operation for all selected file types."""
+    results = []
+    has_files_to_process = False
+
+    # Check if there are any files to process
+    for file_type in args.file_types:
+        if file_type in HANDLERS:
+            file_source_dir = os.path.join(source_dir, file_type)
+            if os.path.exists(file_source_dir) and os.listdir(file_source_dir):
+                has_files_to_process = True
+                break
+
+    if not has_files_to_process and not args.no_log:
+        logger.info("No files found to deflatten.")
+        logger.info("No operations performed.")
+        return results
+
+    if not args.no_log:
+        logger.info(f"Destination: {os.path.relpath(output_dir)}\n")
+
+    for file_type in args.file_types:
+        if file_type in HANDLERS:
+            handler = HANDLERS[file_type]
+            file_source_dir = os.path.join(source_dir, file_type)
+
+            if args.include_extensions and not any(ext in args.include_extensions for ext in handler.extensions):
+                continue
+
+            if os.path.exists(file_source_dir) and os.listdir(file_source_dir):
+                if not args.no_log:
+                    logger.info(f"---------- {file_type.upper()} FILES ----------")
+
+                operation = DeflattenOperation(handler, logger)
+                stats = operation.execute(
+                    file_source_dir,
+                    output_dir,
+                    exclude_files=exclude_files,
+                    include_dirs=args.include_dirs,
+                    include_exts=args.include_extensions,
+                    include_files=args.include_files,
+                    clear_dest_dir=args.clear_dest_dir
+                )
+                results.append(stats)
+
+                if not args.no_log:
+                    logger.info("--------------------\n")
+
+    return results
+
+
+def process_minify_operation(source_dir, output_dir, args, exclude_dirs, exclude_exts, exclude_files, logger):
+    """Process the minify operation for all selected file types."""
+    results = []
+
+    for file_type in args.file_types:
+        if file_type in HANDLERS:
+            handler = HANDLERS[file_type]
+
+            if args.include_extensions and not any(ext in args.include_extensions for ext in handler.extensions):
+                continue
+
+            if not args.no_log:
+                logger.info(f"----- {file_type.upper()} FILES -----")
+
+            operation = MinifyOperation(handler, logger)
+            stats = operation.execute(
+                source_dir,
+                output_dir,
+                exclude_dirs=exclude_dirs,
+                exclude_exts=exclude_exts,
+                exclude_files=exclude_files,
+                include_dirs=args.include_dirs,
+                include_exts=args.include_extensions,
+                include_files=args.include_files,
+                clear_dest_dir=args.clear_dest_dir,
+                continue_on_error=args.continue_on_error
+            )
+            results.append(stats)
+
+            if not args.no_log:
+                logger.info("--------------------\n")
+
+    return results
+
+
+def process_bundle_operation(source_dir, output_file, args, exclude_dirs, exclude_exts, exclude_files, is_minified,
+                             logger):
+    """Process the bundle operation with combined file handlers."""
+    results = []
+
+    # Create a combined bundle of all file types
+    if args.file_types and HANDLERS:
+        combined_extensions = []
+        for file_type in args.file_types:
+            if file_type in HANDLERS:
+                combined_extensions.extend(HANDLERS[file_type].extensions)
+
+        # Create a combined handler with all extensions
+        combined_handler = FileHandler(
+            extensions=combined_extensions,
+            exclude_dirs=DEFAULT_EXCLUDE_DIRS,
+            exclude_extensions=exclude_exts,
+            exclude_filenames=exclude_files
+        )
+
+        operation = BundleOperation(combined_handler, logger)
+        stats = operation.execute(
+            source_dir,
+            output_file,
+            exclude_dirs=exclude_dirs,
+            exclude_exts=exclude_exts,
+            exclude_files=exclude_files,
+            include_dirs=args.include_dirs,
+            include_exts=args.include_extensions,
+            include_files=args.include_files,
+            minify=is_minified,
+            snippet=args.snippet,
+            snippet_lines=args.snippet_lines,
+            snippet_start=args.snippet_start,
+            snippet_context=args.snippet_context,
+            search_pattern=args.search_pattern if hasattr(args, 'search_pattern') else None,
+            continue_on_error=args.continue_on_error
+        )
+        results.append(stats)
+
+    return results
+
+
 def main():
+    """Main entry point for the application."""
     args = make_parser().parse_args()
 
+    # Determine source directory
     source_dir = args.src_named if args.src_named else args.src_pos
     if not source_dir:
         source_dir = os.getcwd()
+
     if not os.path.isdir(source_dir):
         print(f"Error: Source directory '{source_dir}' does not exist or is not a directory")
         return 1
 
+    # Create output directories
     base_dir, _ = mkdir_output()
     timestamp_dir, _ = mkdir_output("multiple")
 
-    if not args.no_log:
-        # print(f"Base output directory: {base_dir}")
-        print(f"Source directory (absolute): {os.path.abspath(source_dir)}")
-        print(f"Destination directory (absolute): {timestamp_dir}")
-        if not get_table_formatter()[1]:
-            print("Notice: 'tabulate' module is not available. Reverting to default output formatting.")
+    # Set up logger
+    logger = Logger(silent=args.no_log)
 
+    if not args.no_log:
+        logger.info(f"Source directory (absolute): {os.path.abspath(source_dir)}")
+        logger.info(f"Destination directory (absolute): {timestamp_dir}")
+
+    # Determine which operations to run
     operations = []
     if args.flatten:
         operations.append(OPERATION_FLATTEN)
@@ -322,62 +570,29 @@ def main():
         operations.append(OPERATION_ROOT_TREE)
     if args.bibdedup:
         operations.append(OPERATION_BIBDEDUP)
-    if not operations:
-        operations = [OPERATION_FLATTEN, OPERATION_DEFLATTEN, OPERATION_MINIFY, OPERATION_BUNDLE,
-                      OPERATION_MINIFY_BUNDLE, OPERATION_ACROSCAN, OPERATION_BIBDEDUP]
-    has_operations = operations and not all(op in [OPERATION_TREE, OPERATION_ROOT_TREE] for op in operations)
 
-    output_paths = {}
+    # If no operations specified, default to all
+    if not operations:
+        operations = [
+            OPERATION_FLATTEN, OPERATION_DEFLATTEN, OPERATION_MINIFY,
+            OPERATION_BUNDLE, OPERATION_MINIFY_BUNDLE, OPERATION_ACROSCAN,
+            OPERATION_BIBDEDUP
+        ]
+
+    # Combine exclusion lists
     exclude_dirs = merge_with_defaults(args.exclude_dirs, DEFAULT_EXCLUDE_DIRS, args.ignore_defaults)
-    exclude_exts = merge_with_defaults(args.exclude_extensions, ALL_EXCLUDE_EXTENSIONS, args.ignore_defaults)
-    exclude_files = merge_with_defaults(args.exclude_files, ALL_EXCLUDE_FILENAMES, args.ignore_defaults)
+    exclude_exts = merge_with_defaults(args.exclude_extensions, [], args.ignore_defaults)
+    exclude_files = merge_with_defaults(args.exclude_files, [], args.ignore_defaults)
+
     if exclude_files:
         exclude_files = [path.replace('\\', '/') for path in exclude_files]
 
-    # If only tree visualization operations are requested (tree or root-tree), process them and return
-    if len(operations) <= 2 and all(op in [OPERATION_TREE, OPERATION_ROOT_TREE] for op in operations):
-        tree_processed = False
-        processed_tree_output_file = None
-        root_tree_output_file = None
-
-        # Process the processed directory tree first if requested
-        if OPERATION_TREE in operations:
-            processed_tree_output_file = args.dest_named if args.dest_named else args.dest_pos
-            if not processed_tree_output_file:
-                processed_tree_output_file = os.path.join(timestamp_dir, DEFAULT_TREE_OUTPUT_PATH)
-            output_paths[OPERATION_TREE] = processed_tree_output_file
-
-            if not args.no_log:
-                print("\n\n:::::::::::::::::::::::::::::: PROCESSED DIRECTORY TREE ::::::::::::::::::::::::::::::")
-                print(f"Destination: {get_relpath(processed_tree_output_file, timestamp_dir)}\n")
-
-            tree_stats = visualize_dir_tree(source_dir, processed_tree_output_file, exclude_dirs, exclude_exts, exclude_files,
-                                            print_to_console=not args.no_log, truncate_output=args.truncate)
-
-            if not args.no_log:
-                print("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
-            tree_processed = True
-        if OPERATION_ROOT_TREE in operations:
-            root_tree_output_file = args.dest_named if args.dest_named else args.dest_pos
-            if not root_tree_output_file:
-                root_tree_output_file = os.path.join(timestamp_dir, DEFAULT_ROOT_TREE_OUTPUT_PATH)
-            output_paths[OPERATION_ROOT_TREE] = root_tree_output_file
-
-            if not args.no_log:
-                print("\n\n:::::::::::::::::::::::::::::: ROOT DIRECTORY TREE ::::::::::::::::::::::::::::::")
-                print(f"Destination: {get_relpath(root_tree_output_file, timestamp_dir)}")
-                print(f"Legend: {ROOT_TREE_UI_SYMBOLS_DESCRIPTION}\n")
-
-            root_tree_stats = visualize_root_dir_tree(source_dir, root_tree_output_file, print_to_console=not args.no_log,
-                                                      truncate_output=args.truncate)
-
-            if not args.no_log:
-                print("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
-        return 0
+    # Track output paths for summary
+    output_paths = {}
 
     try:
+        # Process each operation
         for operation in operations:
-            handler_results = []
             if operation == OPERATION_FLATTEN:
                 flatten_dest = args.dest_named if args.dest_named else args.dest_pos
                 if not flatten_dest:
@@ -385,53 +600,26 @@ def main():
                 output_paths[operation] = flatten_dest
 
                 if not args.no_log:
-                    print("\n\n:::::::::::::::::::::::::::::: FLATTEN ::::::::::::::::::::::::::::::")
-                    print(f"Destination: {get_relpath(flatten_dest)}\n")
+                    logger.info("\n\n:::::::::::::::::::::::::::::: FLATTEN ::::::::::::::::::::::::::::::")
+                    logger.info(f"Destination: {os.path.relpath(flatten_dest)}\n")
 
-                for file_type in args.file_types:
-                    if file_type in HANDLERS:
-                        handler = HANDLERS[file_type]
+                results = process_flatten_operation(
+                    source_dir, flatten_dest, args, exclude_dirs, exclude_exts, exclude_files, logger
+                )
 
-                        if args.no_filetype_dirs:
-                            file_dest_dir = flatten_dest
-                        else:
-                            file_dest_dir = os.path.join(flatten_dest, file_type)
-
-                        if args.include_extensions and not any(ext in args.include_extensions for ext in handler.extensions):
-                            continue
-
-                        if not args.no_log:
-                            print(f"----- {file_type.upper()} FILES -----")
-
-                        stats = handler.flatten_dir(
-                            source_dir, file_dest_dir, exclude_dirs, exclude_exts, exclude_files,
-                            args.include_dirs, args.include_extensions, args.include_files,
-                            args.clear_dest_dir, args.no_log
-                        )
-                        handler_results.append(stats)
-
-                        # Clean up empty directories
-                        if stats["files_copied"] == 0 and os.path.exists(file_dest_dir) and not os.listdir(file_dest_dir):
-                            try:
-                                os.rmdir(file_dest_dir)
-                                if not args.no_log:
-                                    print(f"Removed empty directory: {get_relpath(file_dest_dir)}")
-                            except OSError:
-                                pass
-                        if not args.no_log:
-                            print("--------------------\n")
-
-                merged_stats = merge_stats(handler_results)
                 if not args.no_log:
-                    if handler_results:
-                        if merged_stats["files_copied"] > 0:
-                            print("----- OPERATION SUMMARY -----")
-                            print(f"Total files flattened: {merged_stats['files_copied']}")
-                            print(f"Total data processed: {merged_stats['bytes_copied'] / 1024:.2f} KB")
+                    if results:
+                        total_files = sum(result.files_copied for result in results)
+                        if total_files > 0:
+                            logger.info("----- OPERATION SUMMARY -----")
+                            logger.info(f"Total files flattened: {total_files}")
+                            total_bytes = sum(result.bytes_copied for result in results)
+                            logger.info(f"Total data processed: {total_bytes / 1024:.2f} KB")
                         else:
-                            print("----- OPERATION SUMMARY -----")
-                            print(f"No files were flattened.")
-                    print("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
+                            logger.info("----- OPERATION SUMMARY -----")
+                            logger.info(f"No files were flattened.")
+                    logger.info("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
+
             elif operation == OPERATION_DEFLATTEN:
                 deflatten_dest = args.dest_named if args.dest_named else args.dest_pos
                 if not deflatten_dest:
@@ -439,61 +627,28 @@ def main():
                 output_paths[operation] = deflatten_dest
 
                 if not args.no_log:
-                    print("\n\n:::::::::::::::::::::::::::::: DEFLATTEN ::::::::::::::::::::::::::::::")
-                    print(f"Destination: {get_relpath(deflatten_dest, timestamp_dir)}\n")
+                    logger.info("\n\n:::::::::::::::::::::::::::::: DEFLATTEN ::::::::::::::::::::::::::::::")
+                    logger.info(f"Destination: {os.path.relpath(deflatten_dest)}\n")
 
-                # Check if there are any files to process
-                has_files_to_process = False
-                for file_type in args.file_types:
-                    if file_type in HANDLERS:
-                        file_source_dir = os.path.join(source_dir, file_type)
-                        if os.path.exists(file_source_dir) and os.listdir(file_source_dir):
-                            has_files_to_process = True
-                            break
+                results = process_deflatten_operation(
+                    source_dir, deflatten_dest, args, exclude_files, logger
+                )
 
-                if not has_files_to_process and not args.no_log:
-                    print("No files found to deflatten.")
-                    print("No operations performed.")
-
-                else:
-                    if not args.no_log:
-                        print(f"Destination: {get_relpath(deflatten_dest)}\n")
-
-                    for file_type in args.file_types:
-                        if file_type in HANDLERS:
-                            handler = HANDLERS[file_type]
-                            file_source_dir = os.path.join(source_dir, file_type)
-
-                            if args.include_extensions and not any(ext in args.include_extensions for ext in handler.extensions):
-                                continue
-
-                            if os.path.exists(file_source_dir) and os.listdir(file_source_dir):
-                                if not args.no_log:
-                                    print(f"---------- {file_type.upper()} FILES ----------")
-
-                                stats = handler.deflatten_dir(
-                                    file_source_dir, deflatten_dest, exclude_files,
-                                    args.include_dirs, args.include_extensions, args.include_files,
-                                    args.clear_dest_dir, args.no_log
-                                )
-
-                                handler_results.append(stats)
-
-                                if not args.no_log:
-                                    print("--------------------\n")
-
-                merged_stats = merge_stats(handler_results)
                 if not args.no_log:
-                    if handler_results:
-                        if merged_stats["files_copied"] > 0:
-                            print("----- OPERATION SUMMARY -----")
-                            print(f"Total files deflattened: {merged_stats['files_copied']}")
-                            print(f"Total directories created: {merged_stats['dirs_created']}")
-                            print(f"Total data processed: {merged_stats['bytes_copied'] / 1024:.2f} KB")
+                    if results:
+                        total_files = sum(result.files_copied for result in results)
+                        if total_files > 0:
+                            logger.info("----- OPERATION SUMMARY -----")
+                            logger.info(f"Total files deflattened: {total_files}")
+                            total_dirs = sum(result.dirs_created for result in results)
+                            logger.info(f"Total directories created: {total_dirs}")
+                            total_bytes = sum(result.bytes_copied for result in results)
+                            logger.info(f"Total data processed: {total_bytes / 1024:.2f} KB")
                         else:
-                            print("----- OPERATION SUMMARY -----")
-                            print(f"No files were deflattened.")
-                    print("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
+                            logger.info("----- OPERATION SUMMARY -----")
+                            logger.info(f"No files were deflattened.")
+                    logger.info("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
+
             elif operation in [OPERATION_BUNDLE, OPERATION_MINIFY_BUNDLE]:
                 bundle_dest = args.dest_named if args.dest_named else args.dest_pos
                 if not bundle_dest:
@@ -505,37 +660,24 @@ def main():
 
                 if not args.no_log:
                     if operation == OPERATION_BUNDLE:
-                        print("\n\n:::::::::::::::::::::::::::::: BUNDLE ::::::::::::::::::::::::::::::")
-                        print(f"Destination: {get_relpath(bundle_dest, timestamp_dir)}\n")
+                        logger.info("\n\n:::::::::::::::::::::::::::::: BUNDLE ::::::::::::::::::::::::::::::")
+                        logger.info(f"Destination: {os.path.relpath(bundle_dest)}\n")
                     else:
-                        print("\n\n:::::::::::::::::::::::::::::: MINIFY-BUNDLE ::::::::::::::::::::::::::::::")
-                        print(f"Destination: {get_relpath(bundle_dest, timestamp_dir)}")
-                        print(f"Minification: {MINIFICATION_DESCRIPTION}")
+                        logger.info("\n\n:::::::::::::::::::::::::::::: MINIFY-BUNDLE ::::::::::::::::::::::::::::::")
+                        logger.info(f"Destination: {os.path.relpath(bundle_dest)}")
+                        logger.info("Minification: Enabled")
                         if args.continue_on_error:
-                            print("Note: Continuing on minification errors (--continue-on-error flag is set)")
-                        print()
+                            logger.info("Note: Continuing on minification errors (--continue-on-error flag is set)")
+                        logger.info("")
 
-                # Create a combined bundle of all file types
-                if args.file_types and HANDLERS:
-                    combined_extensions = []
-                    for file_type in args.file_types:
-                        if file_type in HANDLERS:
-                            combined_extensions.extend(HANDLERS[file_type].extensions)
-                    combined_handler = FileExtHandler(extensions=combined_extensions, exclude_dirs=DEFAULT_EXCLUDE_DIRS,
-                                                      exclude_extensions=ALL_EXCLUDE_EXTENSIONS,
-                                                      exclude_filenames=ALL_EXCLUDE_FILENAMES)
-                    stats = combined_handler.bundle_files(
-                        source_dir, bundle_dest, exclude_dirs, exclude_exts, exclude_files,
-                        args.include_dirs, args.include_extensions, args.include_files,
-                        args.no_log, operation == OPERATION_MINIFY_BUNDLE,
-                        args.snippet, args.snippet_lines, args.snippet_start, args.snippet_context,
-                        args.search_pattern if hasattr(args, 'search_pattern') else None,
-                        args.continue_on_error if hasattr(args, 'continue_on_error') else False
-                    )
-                    handler_results.append(stats)
+                is_minified = (operation == OPERATION_MINIFY_BUNDLE)
+                results = process_bundle_operation(
+                    source_dir, bundle_dest, args, exclude_dirs, exclude_exts, exclude_files, is_minified, logger
+                )
 
                 if not args.no_log:
-                    print("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
+                    logger.info("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
+
             elif operation == OPERATION_MINIFY:
                 minify_dest = args.dest_named if args.dest_named else args.dest_pos
                 if not minify_dest:
@@ -543,549 +685,42 @@ def main():
                 output_paths[operation] = minify_dest
 
                 if not args.no_log:
-                    print("\n\n:::::::::::::::::::::::::::::: MINIFY ::::::::::::::::::::::::::::::")
-                    print(f"Destination: {get_relpath(minify_dest, timestamp_dir)}")
-                    print(f"Minification: ({MINIFICATION_DESCRIPTION})")
+                    logger.info("\n\n:::::::::::::::::::::::::::::: MINIFY ::::::::::::::::::::::::::::::")
+                    logger.info(f"Destination: {os.path.relpath(minify_dest)}")
+                    logger.info("Minification: Enabled")
                     if args.continue_on_error:
-                        print("Note: Continuing on minification errors (--continue-on-error flag is set)")
-                    print()
+                        logger.info("Note: Continuing on minification errors (--continue-on-error flag is set)")
+                    logger.info("")
 
-                processed_files = set()
-                file_type_map = {}
-                if args.include_files:
-                    for include_file in args.include_files:
-                        file_ext = os.path.splitext(include_file)[1].lower()
-                        matched_handler = None
-                        for handler_type, handler in HANDLERS.items():
-                            if any(file_ext == ext.lower() for ext in handler.extensions):
-                                if handler_type not in file_type_map:
-                                    file_type_map[handler_type] = []
-                                file_type_map[handler_type].append(include_file)
-                                break
-
-                for file_type in args.file_types:
-                    if file_type in HANDLERS:
-                        handler = HANDLERS[file_type]
-
-                        if args.include_extensions and not any(ext in args.include_extensions for ext in handler.extensions):
-                            continue
-                        if args.include_files and file_type not in file_type_map:
-                            continue
-
-                        if not args.no_log:
-                            print(f"----- {file_type.upper()} FILES -----")
-
-                        handler_include_files = file_type_map.get(file_type, []) if args.include_files else args.include_files
-                        stats = handler.minify_dir(
-                            source_dir, minify_dest, exclude_dirs, exclude_exts, exclude_files,
-                            args.include_dirs, args.include_extensions, handler_include_files,
-                            args.clear_dest_dir, args.no_log, args.continue_on_error
-                        )
-                        handler_results.append(stats)
-
-                        # Clean up empty directories
-                        type_dir = os.path.join(minify_dest, file_type)
-                        if stats["files_copied"] == 0 and os.path.exists(type_dir) and not os.listdir(type_dir):
-                            try:
-                                os.rmdir(type_dir)
-                                if not args.no_log:
-                                    print(f"Removed empty directory: {get_relpath(type_dir)}")
-                            except OSError:
-                                pass
-                        if not args.no_log:
-                            print("--------------------\n")
-
-                merged_stats = merge_stats(handler_results)
-                if not args.no_log:
-                    if handler_results:
-                        if merged_stats["files_copied"] > 0:
-                            print("----- OPERATION SUMMARY -----")
-                            print(f"Total files minified: {merged_stats['files_minified']}")
-                            print(f"Total files processed: {merged_stats['files_copied']}")
-                            if merged_stats["bytes_original"] > 0 and merged_stats["bytes_minified"] > 0:
-                                orig_kb = merged_stats["bytes_original"] / 1024
-                                mini_kb = merged_stats["bytes_minified"] / 1024
-                                reduction = (1 - merged_stats["bytes_minified"] / max(merged_stats["bytes_original"], 1)) * 100
-                                print(f"Original size: {orig_kb:.2f} KB")
-                                print(f"Minified size: {mini_kb:.2f} KB")
-                                print(f"Overall reduction: {reduction:.2f}%")
-                        else:
-                            print("----- OPERATION SUMMARY -----")
-                            print(f"No files were minified.")
-                    print("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
-            elif operation == OPERATION_ACROSCAN:
-                acroscan_dest = args.dest_named if args.dest_named else args.dest_pos
-                acronym_list_path = args.acronym_list if args.acronym_list else os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates', DEFAULT_ACRONYMS_LIST_PATH)
-                if not acroscan_dest:
-                    acroscan_dest = f"{timestamp_dir}/acronyms"
-                output_paths[operation] = acroscan_dest
-
-                if not args.no_log:
-                    print("\n\n:::::::::::::::::::::::::::::: ACROSCAN ::::::::::::::::::::::::::::::")
-                    print(f"Source: {get_relpath(source_dir)}")
-                    print(f"Destination: {get_relpath(acroscan_dest)}")
-                    print(f"Acronym List: {get_relpath(acronym_list_path)}")
-                    print(f"LaTeX Mode: {'Yes' if args.latex_mode else 'No'}")
-                    print(f"Replace Acronyms: {'Yes' if args.replace_acronyms else 'No'}")
-                    print(f"Find Potential Acronyms: {'Yes' if args.find_potential else 'No'}")
-                    print(f"Recursive: {'No' if args.no_recursive_acroscan else 'Yes'}\n")
-
-                os.makedirs(acroscan_dest, exist_ok=True)
-                if acronym_list_path and os.path.exists(acronym_list_path):
-                    direct_tex_path = os.path.join(acroscan_dest, DEFAULT_ACRONYMS_TRANSLATED_OUTPUT_PATH)
-                    success = make_acronyms_tex_from_csv(acronym_list_path, direct_tex_path)
-                
-                # Initialize for collecting all acronyms across all handlers
-                all_handler_results = []
-                all_unique_acronyms = set()
-                all_acronyms_details = {}
-                all_potential_acronyms = set()
-                
-                # Initialize combined statistics
-                combined_stats = {
-                    "total_files_processed": 0,
-                    "files_with_acronyms": 0,
-                    "total_acronyms_replaced": 0,
-                    "skipped_files": 0,
-                    "files_scanned": 0,
-                    "dirs_traversed": 0,
-                    "max_nesting_level": 0
-                }
-                
-                # Process directory or single file differently
-                if os.path.isdir(source_dir):
-                    # Process each handler type
-                    for file_type, handler in HANDLERS.items():
-                        if file_type in args.file_types:
-                            if args.include_extensions and not any(ext in args.include_extensions for ext in handler.extensions):
-                                continue
-
-                            if not args.no_log:
-                                print(f"----- {file_type.upper()} FILES -----")
-
-                            stats = handler.acroscan_dir(
-                                source_dir,
-                                output_dir=acroscan_dest,
-                                acronym_list_path=acronym_list_path,
-                                exclude_dirs=exclude_dirs,
-                                exclude_exts=exclude_exts,
-                                exclude_files=exclude_files,
-                                include_dirs=args.include_dirs,
-                                include_exts=args.include_extensions,
-                                include_files=args.include_files,
-                                find_potential=args.find_potential,
-                                replace_acronyms=args.replace_acronyms,
-                                latex_mode=args.latex_mode,
-                                clear_dest_dir=args.clear_dest_dir,
-                                recursive=not args.no_recursive_acroscan,
-                                silent=args.no_log
-                            )
-
-                            all_handler_results.append(stats)
-                            
-                            # Collect all acronyms from this handler
-                            if "unique_acronyms_found" in stats:
-                                acronyms_list = stats["unique_acronyms_found"]
-                                if isinstance(acronyms_list, list):
-                                    all_unique_acronyms.update(acronyms_list)
-                                else:
-                                    all_unique_acronyms.update(set(acronyms_list))
-                            
-                            # Collect all potential acronyms
-                            if "potential_acronyms_found" in stats:
-                                potential_list = stats["potential_acronyms_found"]
-                                if isinstance(potential_list, list):
-                                    all_potential_acronyms.update(potential_list)
-                                else:
-                                    all_potential_acronyms.update(set(potential_list))
-                            
-                            # Collect detailed info for each acronym
-                            for acronym, info in stats.get("all_found_acronyms", {}).items():
-                                if acronym not in all_acronyms_details:
-                                    all_acronyms_details[acronym] = {
-                                        "definition": info["definition"],
-                                        "count": 0,
-                                        "files": []
-                                    }
-                                all_acronyms_details[acronym]["count"] += info["count"]
-                                all_acronyms_details[acronym]["files"].extend(info["files"])
-                            
-                            # Aggregate key statistics
-                            for key in ["total_files_processed", "files_with_acronyms", 
-                                        "total_acronyms_replaced", "skipped_files", 
-                                        "files_scanned", "dirs_traversed"]:
-                                if key in stats:
-                                    combined_stats[key] += stats[key]
-                                    
-                            if "max_nesting_level" in stats:
-                                combined_stats["max_nesting_level"] = max(
-                                    combined_stats.get("max_nesting_level", 0),
-                                    stats["max_nesting_level"]
-                                )
-
-                            if not args.no_log:
-                                print("--------------------\n")
-                    
-                    if all_unique_acronyms or all_potential_acronyms:
-                        acronyms_txt_path = os.path.join(acroscan_dest, DEFAULT_ACRONYMS_FOUND_OUTPUT_PATH)
-                        with open(acronyms_txt_path, 'w', encoding='utf-8') as f:
-                            f.write(f"# Acronyms found in {os.path.basename(source_dir)}\n\n")
-
-                            if all_unique_acronyms:
-                                f.write("## Known Acronyms\n\n")
-                                for acronym in sorted(all_unique_acronyms):
-                                    if acronym in all_acronyms_details:
-                                        info = all_acronyms_details[acronym]
-                                        f.write(f"- {acronym}: {info['definition']} (found {info['count']} times in {len(info['files'])} files)\n")
-
-                                # Group by file
-                                f.write("\n## Files with Acronyms\n\n")
-                                file_acronyms = {}
-                                for acronym, info in all_acronyms_details.items():
-                                    for file_path in info["files"]:
-                                        if file_path not in file_acronyms:
-                                            file_acronyms[file_path] = []
-                                        file_acronyms[file_path].append(acronym)
-
-                                for file_path in sorted(file_acronyms.keys()):
-                                    f.write(f"### {file_path}\n")
-                                    for acronym in sorted(file_acronyms[file_path]):
-                                        info = all_acronyms_details[acronym]
-                                        f.write(f"- {acronym}: {info['definition']}\n")
-                                    f.write("\n")
-                            else:
-                                f.write("No known acronyms found.\n")
-
-                            if args.find_potential and all_potential_acronyms:
-                                f.write("\n## Potential Unknown Acronyms\n\n")
-                                for acronym in sorted(all_potential_acronyms):
-                                    f.write(f"- {acronym}\n")
-
-                        if not args.no_log:
-                            print(f"\nGenerated consolidated acronyms list: {acronyms_txt_path}")
-
-                        if args.latex_mode and all_unique_acronyms:
-                            acronyms_tex_path = os.path.join(acroscan_dest, DEFAULT_ACRONYMS_FOUND_TEX_OUTPUT_PATH)
-                            with open(acronyms_tex_path, 'w', encoding='utf-8') as f:
-                                f.write("% Acronyms found by CodeFlux\n")
-                                
-                                for acronym in sorted(all_unique_acronyms):
-                                    if acronym in all_acronyms_details:
-                                        info = all_acronyms_details[acronym]
-                                        definition = info["definition"]
-                                        definition = definition.replace("_", "\\_").replace("&", "\\&").replace("#", "\\#")
-                                        sanitized_acronym = re.sub(r'[^a-zA-Z0-9]', '', acronym).lower()
-                                        f.write(f"\\newacronym{{{sanitized_acronym}}}{{{acronym}}}{{{definition}}}\n")
-
-                    if not args.no_log:
-                        print("----- OPERATION SUMMARY -----")
-                        print(f"Total files processed: {combined_stats['total_files_processed']}")
-                        print(f"Files scanned: {combined_stats['files_scanned']}")
-                        print(f"Files with acronyms: {combined_stats['files_with_acronyms']}")
-                        if args.replace_acronyms:
-                            print(f"Total acronyms replaced: {combined_stats['total_acronyms_replaced']}")
-                        print(f"Files skipped: {combined_stats['skipped_files']}")
-                        print(f"Directories traversed: {combined_stats['dirs_traversed']}")
-                        print(f"Maximum nesting level: {combined_stats['max_nesting_level']}")
-                        print(f"Unique acronyms found: {len(all_unique_acronyms)}")
-                        if args.find_potential:
-                            print(f"Potential unknown acronyms: {len(all_potential_acronyms)}")
-                        
-                else:
-                    # Single file processing
-                    filename = os.path.basename(source_dir)
-                    file_path = source_dir
-
-                    # Find appropriate handler
-                    handler = None
-                    for file_type, h in HANDLERS.items():
-                        if h.handles_file(filename):
-                            handler = h
-                            break
-
-                    if handler and hasattr(handler, 'acroscan'):
-                        # Set up the single file output directory
-                        single_file_output_dir = os.path.join(acroscan_dest, "single_file")
-                        os.makedirs(single_file_output_dir, exist_ok=True)
-
-                        acronyms = load_acronyms_csv(acronym_list_path, args.no_log)
-                        scan_result = handler.acroscan(
-                            file_path,
-                            acronyms,
-                            output_file=None,
-                            find_potential=args.find_potential,
-                            replace_acronyms=False,
-                            latex_mode=args.latex_mode,
-                            silent=True,
-                            consolidate_output=True
-                        )
-                        
-                        has_acronyms = bool(scan_result["found_acronyms"])
-                        output_file = None
-                        
-                        # Only set up output file if there are acronyms and we want to replace them
-                        if has_acronyms and args.replace_acronyms:
-                            converted_dir = os.path.join(single_file_output_dir, "converted")
-                            os.makedirs(converted_dir, exist_ok=True)
-                            output_file = os.path.join(converted_dir, os.path.basename(file_path))
-                            os.makedirs(os.path.dirname(output_file), exist_ok=True)
-                            
-                        # Process the file with acronym replacement if needed
-                        result = handler.acroscan(
-                            file_path,
-                            acronyms,
-                            output_file=output_file,
-                            find_potential=args.find_potential,
-                            replace_acronyms=args.replace_acronyms,
-                            latex_mode=args.latex_mode,
-                            silent=args.no_log,
-                            consolidate_output=True
-                        )
-
-                        if result["found_acronyms"] or (args.find_potential and result["potential_acronyms"]):
-                            if args.latex_mode:
-                                acronyms_tex_path = os.path.join(single_file_output_dir, DEFAULT_ACRONYMS_FOUND_TEX_OUTPUT_PATH)
-                                with open(acronyms_tex_path, 'w', encoding='utf-8') as f:
-                                    f.write("% Acronyms found by CodeFlux\n")
-                                    for acronym, info in sorted(result["found_acronyms"].items()):
-                                        definition = info["definition"]
-                                        definition = definition.replace("_", "\\_").replace("&", "\\&").replace("#", "\\#")
-                                        sanitized_acronym = re.sub(r'[^a-zA-Z0-9]', '', acronym).lower()
-                                        f.write(f"\\newacronym{{{sanitized_acronym}}}{{{acronym}}}{{{definition}}}\n")
-                            
-                            acronyms_txt_path = os.path.join(single_file_output_dir, DEFAULT_ACRONYMS_FOUND_OUTPUT_PATH)
-                            with open(acronyms_txt_path, 'w', encoding='utf-8') as f:
-                                f.write(f"# Acronyms found in {os.path.basename(file_path)}\n\n")
-                                if result["found_acronyms"]:
-                                    f.write("## Known Acronyms\n\n")
-                                    for acronym, info in sorted(result["found_acronyms"].items()):
-                                        f.write(f"- {acronym}: {info['definition']} (found {info['count']} times)\n")
-                                else:
-                                    f.write("No known acronyms found.\n")
-
-                                if args.find_potential and result["potential_acronyms"]:
-                                    f.write("\n## Potential Unknown Acronyms\n\n")
-                                    for acronym in sorted(result["potential_acronyms"]):
-                                        f.write(f"- {acronym}\n")
-
-                            if not args.no_log:
-                                print(f"Generated acronyms list: {acronyms_txt_path}")
-                        direct_tex_path = os.path.join(single_file_output_dir, DEFAULT_ACRONYMS_TRANSLATED_OUTPUT_PATH)
-                        success = make_acronyms_tex_from_csv(acronym_list_path, direct_tex_path)
-                        
-                        # Show scan results
-                        if not args.no_log:
-                            print("\n[SCAN RESULTS]")
-                            print(f"File: {get_relpath(file_path)}")
-                            if args.replace_acronyms and has_acronyms:
-                                print(f"Output: {get_relpath(output_file)}")
-                                print(f"Acronyms Replaced: {result.get('replaced', 0)}")
-                            print(f"Unique Acronyms Found: {len(result['found_acronyms'])}")
-
-                            if result["found_acronyms"]:
-                                print("\nAcronyms Found:")
-                                for acronym, info in sorted(result["found_acronyms"].items()):
-                                    print(f"  - {acronym}: {info['definition']} (found {info['count']} times)")
-
-                            if args.find_potential and result["potential_acronyms"]:
-                                print("\nPotential Unknown Acronyms:")
-                                for acronym in sorted(result["potential_acronyms"]):
-                                    print(f"  - {acronym}")
-                    else:
-                        if not args.no_log:
-                            print(f"No handler available for file type: {filename}")
-
-                if not args.no_log:
-                    print("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
-            elif operation == OPERATION_BIBDEDUP:
-                bibdedup_dest = args.dest_named if args.dest_named else args.dest_pos
-                if not bibdedup_dest:
-                    bibdedup_dest = os.path.join(timestamp_dir, DEFAULT_BIBDEDUP_OUTPUT_PATH)
-                output_paths[operation] = bibdedup_dest
-
-                if not args.no_log:
-                    print("\n\n:::::::::::::::::::::::::::::: BIBTEX DUPLICATION SCAN ::::::::::::::::::::::::::::::")
-                    print(f"Destination: {get_relpath(bibdedup_dest, timestamp_dir)}")
-                    print(f"Similarity threshold: {args.similarity_threshold}\n")
-
-                # Process BibTeX files
-                handler = HANDLERS["bibtex"]
-                bibdedup_stats = handler.bibdedup_dir(
-                    source_dir, bibdedup_dest, exclude_dirs, exclude_exts, exclude_files,
-                    args.include_dirs, args.include_extensions, args.include_files,
-                    args.similarity_threshold, args.no_log
+                results = process_minify_operation(
+                    source_dir, minify_dest, args, exclude_dirs, exclude_exts, exclude_files, logger
                 )
 
                 if not args.no_log:
-                    print("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
-            elif operation == OPERATION_SEARCH:
-                if not args.no_log:
-                    print("\n\n:::::::::::::::::::::::::::::: SEARCH ::::::::::::::::::::::::::::::")
+                    if results:
+                        total_files_copied = sum(result.files_copied for result in results)
+                        total_files_minified = sum(result.files_minified for result in results)
+                        if total_files_copied > 0:
+                            logger.info("----- OPERATION SUMMARY -----")
+                            logger.info(f"Total files minified: {total_files_minified}")
+                            logger.info(f"Total files processed: {total_files_copied}")
 
-                search_handler = Searcher(exclude_dirs=exclude_dirs, exclude_exts=exclude_exts, exclude_files=exclude_files)
-                if args.search_ext:
-                    print(f"\nSearching for files with extensions: {', '.join(args.search_ext)}")
-                    search_handler.search_by_extension(source_dir, args.search_ext, args.no_log)
-
-                if args.search_pattern:
-                    target_exts = args.include_extensions or None
-                    print(f"\nSearching for pattern: '{args.search_pattern}'")
-                    if target_exts:
-                        print(f"In files with extensions: {', '.join(target_exts)}")
-                    search_handler.search_by_pattern(source_dir, args.search_pattern, target_exts, args.no_log)
-
-                if args.search_size:
-                    min_size = None if args.search_size[0].lower() == 'none' else float(args.search_size[0])
-                    max_size = None if args.search_size[1].lower() == 'none' else float(args.search_size[1])
-                    target_exts = args.include_extensions or None
-
-                    size_range = []
-                    if min_size is not None:
-                        size_range.append(f">= {min_size} KB")
-                    if max_size is not None:
-                        size_range.append(f"<= {max_size} KB")
-
-                    print(f"\nSearching for files with size {' and '.join(size_range)}")
-                    if target_exts:
-                        print(f"In files with extensions: {', '.join(target_exts)}")
-                    search_handler.search_by_size(source_dir, min_size, max_size, target_exts, args.no_log)
-
-                if args.search_date:
-                    start_date = args.search_date[0]
-                    end_date = args.search_date[1] if len(args.search_date) > 1 else None
-                    target_exts = args.include_extensions or None
-                    print(f"\nSearching for files modified since {start_date} until {end_date}" if end_date else "")
-                    if target_exts:
-                        print(f"In files with extensions: {', '.join(target_exts)}")
-                    search_handler.search_by_date(source_dir, start_date, end_date, target_exts, args.no_log)
-
-                if args.search_imports:
-                    target_exts = args.include_extensions or ['.py']
-                    print(f"\nSearching for imports of '{args.search_imports}'")
-                    if target_exts:
-                        print(f"In files with extensions: {', '.join(target_exts)}")
-                    search_handler.search_imports(source_dir, args.search_imports, target_exts, args.no_log)
-
-                if args.search_duplicates is not None:
-                    target_exts = args.include_extensions or None
-                    min_lines = args.search_duplicates
-                    print(f"\nSearching for duplicate code blocks (min {min_lines} lines)")
-                    if target_exts:
-                        print(f"In files with extensions: {', '.join(target_exts)}")
-                    search_handler.search_duplicates(source_dir, min_lines, extensions=target_exts, silent=args.no_log)
-
-                if not args.no_log:
-                    print("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
-            elif operation == OPERATION_PROPERTIES:
-                if not args.no_log:
-                    print("\n\n:::::::::::::::::::::::::::::: FILE PROPERTIES ANALYSIS ::::::::::::::::::::::::::::::")
-
-                handler_results = []
-                for file_type in args.file_types:
-                    if file_type in HANDLERS:
-                        handler = HANDLERS[file_type]
-                        if args.include_extensions and not any(ext in args.include_extensions for ext in handler.extensions):
-                            continue
-
-                        if not args.no_log:
-                            print(f"---------- {file_type.upper()} FILES ----------")
-
-                        stats = handler.properties_dir(
-                            source_dir, exclude_dirs, exclude_exts, exclude_files,
-                            args.include_dirs, args.include_extensions, args.include_files,
-                            args.no_log, not args.exclude_hash  # Include hash by default unless explicitly excluded
-                        )
-                        handler_results.append(stats)
-
-                        if not args.no_log:
-                            print("--------------------\n")
-
-                merged_stats = merge_stats(handler_results)
-                if not args.no_log:
-                    if handler_results:
-                        if merged_stats["total_files_counted"] > 0:
-                            print("----- OPERATION SUMMARY -----")
-                            print(f"Total files analyzed: {merged_stats['total_files_counted']}")
-                            total_size_mb = merged_stats['bytes_total'] / (1024 * 1024)
-                            if total_size_mb < 1:
-                                print(f"Total data size: {merged_stats['bytes_total'] / 1024:.2f} KB")
-                            else:
-                                print(f"Total data size: {total_size_mb:.2f} MB")
-                            print(f"Text files: {merged_stats.get('text_files_count', 0)}")
-                            print(f"Binary files: {merged_stats.get('binary_files_count', 0)}")
+                            total_original = sum(result.bytes_original for result in results)
+                            total_minified = sum(result.bytes_minified for result in results)
+                            if total_original > 0 and total_minified > 0:
+                                orig_kb = total_original / 1024
+                                mini_kb = total_minified / 1024
+                                reduction = (1 - total_minified / max(total_original, 1)) * 100
+                                logger.info(f"Original size: {orig_kb:.2f} KB")
+                                logger.info(f"Minified size: {mini_kb:.2f} KB")
+                                logger.info(f"Overall reduction: {reduction:.2f}%")
                         else:
-                            print("----- OPERATION SUMMARY -----")
-                            print(f"No files were analyzed.")
-                        print("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
-            elif operation == OPERATION_TREE:
-                tree_output_file = args.dest_named if args.dest_named else args.dest_pos
-                if not tree_output_file:
-                    tree_output_file = os.path.join(timestamp_dir, DEFAULT_TREE_OUTPUT_PATH)
-                output_paths[operation] = tree_output_file
+                            logger.info("----- OPERATION SUMMARY -----")
+                            logger.info(f"No files were minified.")
+                    logger.info("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
 
-                if not args.no_log:
-                    print("\n\n:::::::::::::::::::::::::::::: PROCESSED DIRECTORY TREE ::::::::::::::::::::::::::::::")
-                    print(f"Destination: {get_relpath(tree_output_file, timestamp_dir)}\n")
-
-                tree_stats = visualize_dir_tree(source_dir, tree_output_file, exclude_dirs, exclude_exts, exclude_files,
-                                                print_to_console=not args.no_log, truncate_output=args.truncate)
-
-                if not args.no_log:
-                    print("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
-            elif operation == OPERATION_ROOT_TREE:
-                root_tree_output_file = args.dest_named if args.dest_named else args.dest_pos
-                if not root_tree_output_file:
-                    root_tree_output_file = os.path.join(timestamp_dir, DEFAULT_ROOT_TREE_OUTPUT_PATH)
-                output_paths[operation] = root_tree_output_file
-
-                if not args.no_log:
-                    print("\n\n:::::::::::::::::::::::::::::: ROOT (PACKAGE INSTALLATION) DIRECTORY TREE ::::::::::::::::::::::::::::::")
-                    print(f"Destination: {get_relpath(root_tree_output_file, timestamp_dir)}")
-                    print(f"Legend: {ROOT_TREE_UI_SYMBOLS_DESCRIPTION}\n")
-
-                # Generate root directory tree with proper filtering
-                root_tree_stats = visualize_root_dir_tree(source_dir, root_tree_output_file, print_to_console=not args.no_log,
-                                                          truncate_output=args.truncate, show_processing_status=has_operations,
-                                                          user_exclude_dirs=exclude_dirs, user_exclude_exts=exclude_exts,
-                                                          user_exclude_files=exclude_files)
-
-                if not args.no_log:
-                    print("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
-
-        # First generate processed directory tree visualization if operations are being performed and it's not already done
-        processed_tree_file = None
-        if has_operations and OPERATION_TREE not in operations:
-            processed_tree_file = os.path.join(timestamp_dir, DEFAULT_TREE_OUTPUT_PATH)
-            if not args.no_log:
-                print("\n\n:::::::::::::::::::::::::::::: PROCESSED DIRECTORY TREE ::::::::::::::::::::::::::::::")
-                print(f"Destination: {get_relpath(processed_tree_file, timestamp_dir)}\n")
-
-            tree_stats = visualize_dir_tree(source_dir, processed_tree_file, exclude_dirs, exclude_exts, exclude_files,
-                                            print_to_console=not args.no_log, truncate_output=args.truncate)
-
-            if not args.no_log:
-                print("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
-
-        # Then generate root directory tree if not already done but operations are being performed
-        if has_operations and OPERATION_ROOT_TREE not in operations and (args.root_tree or True):
-            root_tree_file = os.path.join(timestamp_dir, DEFAULT_ROOT_TREE_OUTPUT_PATH)
-            if not args.no_log:
-                print("\n\n:::::::::::::::::::::::::::::: ROOT DIRECTORY TREE ::::::::::::::::::::::::::::::")
-                print(f"Destination: {get_relpath(root_tree_file, timestamp_dir)}")
-                print(f"Legend: {ROOT_TREE_UI_SYMBOLS_DESCRIPTION}\n")
-
-            root_tree_stats = visualize_root_dir_tree(source_dir, root_tree_file, print_to_console=not args.no_log,
-                                                      truncate_output=args.truncate, show_processing_status=True,
-                                                      user_exclude_dirs=exclude_dirs, user_exclude_exts=exclude_exts,
-                                                      user_exclude_files=exclude_files)
-
-            if not args.no_log:
-                print("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
-
-        # Summary of operations
+        # Write summary file
         summary_path = os.path.join(timestamp_dir, DEFAULT_SUMMARY_OUTPUT_PATH)
-        raw_command = ' '.join([sys.argv[0]] + [f'"{arg}"' if ' ' in arg else arg for arg in sys.argv[1:]])
-        command = ' '.join([os.path.basename(sys.argv[0])] + sys.argv[1:])
         with open(summary_path, 'w', encoding='utf-8') as summary_file:
             summary_file.write(f"CodeFlux Operations Summary\n\n")
             summary_file.write(f"Timestamp: {os.path.basename(timestamp_dir)}\n")
@@ -1093,31 +728,24 @@ def main():
             summary_file.write(f"Created: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')} [{local_timezone}]\n")
             summary_file.write(f"Source: {os.path.abspath(source_dir)}\n")
             summary_file.write(f"Destination: {os.path.abspath(timestamp_dir)}\n\n")
+
+            # Record command for reference
+            raw_command = ' '.join([sys.argv[0]] + [f'"{arg}"' if ' ' in arg else arg for arg in sys.argv[1:]])
+            command = ' '.join([os.path.basename(sys.argv[0])] + sys.argv[1:])
             summary_file.write(f"Command (Raw): {raw_command}\n")
             summary_file.write(f"Command: {command}\n")
+
+            # Add information about each operation
             for op in operations:
-                if op not in [OPERATION_TREE, OPERATION_ROOT_TREE] and op in output_paths:
+                if op in output_paths:
                     dest_path = output_paths[op]
-                    rel_dest_path = get_relpath(dest_path, timestamp_dir)
+                    rel_dest_path = os.path.relpath(dest_path, timestamp_dir)
                     summary_file.write(f"\n{op.upper()}\n")
                     summary_file.write(f"Destination: {rel_dest_path}\n")
-            if OPERATION_TREE in operations:
-                tree_output_file = output_paths[OPERATION_TREE]
-                summary_file.write(f"\nPROCESSED DIRECTORY TREE\n")
-                summary_file.write(f"Destination: {get_relpath(tree_output_file, timestamp_dir)}\n")
-            elif processed_tree_file:
-                summary_file.write(f"\nPROCESSED DIRECTORY TREE\n")
-                summary_file.write(f"Destination: {get_relpath(processed_tree_file, timestamp_dir)}\n")
-            if OPERATION_ROOT_TREE in operations:
-                root_tree_output_file = output_paths[OPERATION_ROOT_TREE]
-                summary_file.write(f"\nROOT DIRECTORY TREE\n")
-                summary_file.write(f"Destination: {get_relpath(root_tree_output_file, timestamp_dir)}\n")
-            elif has_operations and 'root_tree_file' in locals():
-                summary_file.write(f"\nROOT DIRECTORY TREE\n")
-                summary_file.write(f"Destination: {get_relpath(root_tree_file, timestamp_dir)}\n")
 
         if not args.no_log:
-            print(f"\nSummary of operations written to \"{get_relpath(summary_path, timestamp_dir)}\"")
+            logger.info(f"\nSummary of operations written to \"{os.path.relpath(summary_path, timestamp_dir)}\"")
+
         return 0
     except ValueError as e:
         print(f"Error: {e}")

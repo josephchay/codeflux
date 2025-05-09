@@ -14,7 +14,7 @@ With robust filtering and deep code insight features, **CodeFlux** transforms me
 ### Supported File Types
 
 | Language          | Extensions                                                                  |
-| ----------------- | --------------------------------------------------------------------------- |
+|-------------------|-----------------------------------------------------------------------------|
 | Python            | `.py`                                                                       |
 | Python Notebooks  | `.ipynb`                                                                    |
 | JavaScript        | `.js`, `.jsx`                                                               |
@@ -100,7 +100,7 @@ pnpm add git+https://github.com/josephchay/codeflux.git --save-dev
 ## Command-Line Arguments
 
 | Argument                                        | Shorthand | Default                                                                                                                                                                                                                                                                          | Description                                                                                        |
-| ----------------------------------------------- | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+|-------------------------------------------------|-----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------|
 | `[src]`                                         | `-s`      | Current directory                                                                                                                                                                                                                                                                | Source directory containing the files to flatten                                                   |
 | `[dest]`                                        | `-d`      | Based on operation (see below)                                                                                                                                                                                                                                                   | Destination directory/file where files will be copied                                              |
 | `--file-types`                                  | `-t`      | `py`, `ipynb`, `jsts`, `html`, `css`, `php`, `ruby`, `swift`, `kotlin`, `java`, `csharp`, `shell`, `mdtxt`, `yml`, `json`, `go`, `ini`, `db`, `bat`, `scp`, `noext`, `ps1`, `docker`, `xml`, `r`, `cpp`, `rust`, `scala`, `perl`, `lua`, `groovy`, `haskell`, `erlang`, `bibtex` | File types to process (default: all)                                                               |
@@ -170,7 +170,7 @@ For detailed information on default values, refer to the [constants](src/constan
 Here are various scenarios and how to use the tool:
 
 | Scenario                                  | Command                                                     | Description                                                                               |
-| ----------------------------------------- | ----------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+|-------------------------------------------|-------------------------------------------------------------|-------------------------------------------------------------------------------------------|
 | All Operations                            | `codeflux`                                                  | Performs all operations onto the current directory into a timestamped output directory    |
 | Multiple Operations                       | `codeflux -f -df -b`                                        | Performs flatten, deflatten and bundle operations in sequence                             |
 | Process Specific Types                    | `codeflux -t py ipynb shell`                                | Process only Python, Python Notebooks, and Shell Script files from current directory      |
@@ -242,6 +242,15 @@ cd codeflux
 # Install locally
 pip install -e .
 ```
+
+### Code Architecture
+
+The codebase follows a modular structure:
+
+- `main.py` - Entry point and command processing
+- `file_handler.py` - Core file processing logic
+- `operations/` - Operation implementations (flatten, deflatten, etc.)
+- `utils/` - Helper utilities for logging, minification, etc.
 
 ### Testing
 
