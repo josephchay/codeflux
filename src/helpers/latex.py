@@ -1,7 +1,6 @@
 import os
 import csv
 import re
-import sys
 
 
 def process_acronym_csv_row(acronyms_dict, row):

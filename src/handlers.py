@@ -211,8 +211,7 @@ class FileExtHandler:
                 continue
 
             path_parts = file.split("___")
-            original_path = '/'.join(path_parts[:-1] + [original_filename]) if len(
-                path_parts) > 1 else original_filename
+            original_path = '/'.join(path_parts[:-1] + [original_filename]) if len(path_parts) > 1 else original_filename
             should_include = True
 
             if include_exts:
