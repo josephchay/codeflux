@@ -140,8 +140,12 @@ class AcroscanOperation(Operation):
 
             # Apply additional file filters
             if self.file_handler.should_process_file(
-                    filename, self.file_handler.extensions, exclude_exts, exclude_files,
-                    include_exts, include_files, file_rel_path=rel_path
+                    filename,  # filename
+                    exclude_exts,  # exclude_exts
+                    exclude_files,  # exclude_files
+                    include_exts,  # include_exts
+                    include_files,  # include_files
+                    rel_path  # file_rel_path
             ):
                 filtered_files.append(file_path)
             else:

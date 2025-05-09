@@ -118,18 +118,14 @@ class BundleOperation(Operation):
                 # Check if file should be included based on filters
                 rel_path = os.path.relpath(file_path, source_dir)
 
-                # FIX: The issue is that self.file_handler.extensions is being passed
-                # when the method expects filename as the first parameter after self
-                should_include = self.file_handler.should_process_file(
+                if self.file_handler.should_process_file(
                     file,  # filename
                     exclude_exts,  # exclude_exts
                     exclude_files,  # exclude_files
                     include_exts,  # include_exts
                     include_files,  # include_files
                     rel_path  # file_rel_path
-                )
-
-                if should_include:
+                ):
                     # Get path components for formatted path
                     source_dir_parts = len(os.path.normpath(source_dir).split(os.sep))
                     path_parts = os.path.normpath(root).split(os.sep)[source_dir_parts:]
@@ -411,7 +407,17 @@ class BundleOperation(Operation):
         if minify:
             self.stats.minified_size = total_minified_bytes
 
-            # Display results
+        # Update statistics for proper reporting
+        self.stats.files_processed = len(files_info)
+
+        # For minify-bundle, update files_minified count
+        if minify:
+            # Count files that were successfully minified (reduction > 0)
+            minified_files = sum(1 for file_info in files_info
+                                 if "reduction" in file_info and file_info["reduction"] > 0)
+            self.stats.files_minified = minified_files
+
+        # Display results
         if not self.logger.silent and files_info:
             self.logger.info("[FILES PROCESSED]")
             self.logger.print_file_table(files_info, "bundle" if not minify else "minify_bundle")

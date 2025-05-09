@@ -135,12 +135,7 @@ class MinifyOperation(Operation):
 
                 # Apply additional filters
                 rel_file_path = os.path.relpath(file_path, source_dir)
-                should_include = self.file_handler.should_process_file(
-                    file, self.file_handler.extensions, exclude_exts,
-                    exclude_files, include_exts, include_files, file_rel_path=rel_file_path
-                )
-
-                if should_include:
+                if self.file_handler.should_process_file(file, exclude_exts, exclude_files, include_exts, include_files, rel_path):
                     files_found = True
 
                     # Check if file exists and has size

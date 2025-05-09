@@ -16,6 +16,7 @@ class OperationStats:
         self.total_files_processed = 0
         self.dirs_traversed = 0
         self.files_copied = 0
+        self.files_processed = 0
         self.bytes_copied = 0
         self.skipped_files = 0
         self.max_nesting_level = 0

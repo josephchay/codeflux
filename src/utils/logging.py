@@ -398,24 +398,25 @@ class Logger:
                 data.append(["Average file size", f"{avg_file_size:.2f} KB"])
 
         elif operation_type == "minify" or operation_type == "minify_bundle":
-            files_copied = stats.files_copied
+            files_processed = getattr(stats, "files_processed", stats.files_copied)
             files_minified = stats.files_minified
             bytes_original = stats.bytes_original / 1024  # Convert to KB
             bytes_minified = stats.bytes_minified / 1024  # Convert to KB
+
             data.extend([
-                ["Files processed", files_copied],
+                ["Files processed", files_processed],
                 ["Files minified", files_minified],
             ])
 
             if hasattr(stats, "failed_minifications") and stats.failed_minifications > 0:
                 data.append(["Files with failed minification", stats.failed_minifications])
-                if files_copied > 0:
-                    fail_percentage = (stats.failed_minifications / files_copied) * 100
+                if files_processed > 0:
+                    fail_percentage = (stats.failed_minifications / files_processed) * 100
                     data.append(["Percentage of failed minifications", f"{fail_percentage:.1f}%"])
 
-            if files_copied > 0:
-                avg_orig_size = bytes_original / max(files_copied, 1)
-                avg_mini_size = bytes_minified / max(files_copied, 1)
+            if files_processed > 0:
+                avg_orig_size = bytes_original / max(files_processed, 1)
+                avg_mini_size = bytes_minified / max(files_processed, 1)
                 data.extend([
                     ["Average original file size", f"{avg_orig_size:.2f} KB"],
                     ["Average minified file size", f"{avg_mini_size:.2f} KB"],

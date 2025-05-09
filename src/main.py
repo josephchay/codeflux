@@ -479,8 +479,7 @@ def process_minify_operation(source_dir, output_dir, args, exclude_dirs, exclude
     return results
 
 
-def process_bundle_operation(source_dir, output_file, args, exclude_dirs, exclude_exts, exclude_files, is_minified,
-                             logger):
+def process_bundle_operation(source_dir: str, output_file: str, args, exclude_dirs, exclude_exts, exclude_files, is_minified, logger):
     """Process the bundle operation with combined file handlers."""
     results = []
 
@@ -517,6 +516,12 @@ def process_bundle_operation(source_dir, output_file, args, exclude_dirs, exclud
             search_pattern=args.search_pattern if hasattr(args, 'search_pattern') else None,
             continue_on_error=args.continue_on_error
         )
+
+        # Fix for minify-bundle statistics - ensure bytes_original is properly set
+        if is_minified and stats.bytes_original == 0:
+            # If original bytes are not set but bundled bytes are, use bundled bytes
+            stats.bytes_original = stats.bytes_bundled
+
         results.append(stats)
 
     return results

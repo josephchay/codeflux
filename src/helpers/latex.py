@@ -49,7 +49,7 @@ def make_acronyms_tex_from_csv(csv_path, output_tex_path):
 
     acronyms = []
     with open(csv_path, 'r', encoding='utf-8') as csvfile:
-        reader = csv.reader(csvfile)    
+        reader = csv.reader(csvfile)
         all_rows = list(reader)
         header_row = all_rows[0]
         start_idx = 0
@@ -57,7 +57,7 @@ def make_acronyms_tex_from_csv(csv_path, output_tex_path):
             start_idx = 1
         else:
             start_idx = 0
-        
+
         # Process data rows
         for i in range(start_idx, len(all_rows)):
             row = all_rows[i]
@@ -66,7 +66,7 @@ def make_acronyms_tex_from_csv(csv_path, output_tex_path):
                 definition = row[1].strip()
                 if acronym and definition:
                     acronyms.append((acronym, definition))
-    
+
     acronyms.sort(key=lambda x: x[0])
     with open(output_tex_path, 'w', encoding='utf-8') as f:
         # Use glossaries package format

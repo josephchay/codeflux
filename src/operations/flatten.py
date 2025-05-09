@@ -107,8 +107,12 @@ class FlattenOperation(Operation):
 
                 # Apply additional filtering criteria
                 if self.file_handler.should_process_file(
-                        file, self.file_handler.extensions, exclude_exts, exclude_files,
-                        include_exts, include_files, file_rel_path=rel_path
+                        file,  # filename
+                        exclude_exts,  # exclude_exts
+                        exclude_files,  # exclude_files
+                        include_exts,  # include_exts
+                        include_files,  # include_files
+                        rel_path  # file_rel_path
                 ):
                     # Create flattened filename with path components
                     path_parts = os.path.normpath(root).split(os.sep)[source_dir_parts:]
