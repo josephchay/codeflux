@@ -9,96 +9,24 @@ import datetime
 import os
 import sys
 
-# Import core modules
+from constants import (
+    OPERATION_FLATTEN, OPERATION_DEFLATTEN, OPERATION_MINIFY, OPERATION_BUNDLE,
+    OPERATION_MINIFY_BUNDLE, OPERATION_ACROSCAN, OPERATION_SEARCH, OPERATION_PROPERTIES,
+    OPERATION_TREE, OPERATION_ROOT_TREE, OPERATION_BIBDEDUP, OPERATION_AUTOCOMMENT,
+    DEFAULT_EXCLUDE_DIRS, DEFAULT_FLATTEN_OUTPUT_PATH, DEFAULT_DEFLATTEN_OUTPUT_PATH,
+    DEFAULT_MINIFY_OUTPUT_PATH, DEFAULT_BUNDLE_OUTPUT_PATH, DEFAULT_MINIFY_BUNDLE_OUTPUT_PATH,
+    DEFAULT_TREE_OUTPUT_PATH, DEFAULT_ROOT_TREE_OUTPUT_PATH, DEFAULT_SUMMARY_OUTPUT_PATH,
+    DEFAULT_AUTOCOMMENT_OUTPUT_PATH
+)
 from file_handler import FileHandler
 from handlers import HANDLERS
+from operations.autocomment import AutoCommentOperation
 from operations.bundle import BundleOperation
 from operations.deflatten import DeflattenOperation
 from operations.flatten import FlattenOperation
 from operations.minify import MinifyOperation
+from ui.tree import visualize_root_dir_tree, visualize_dir_tree
 from utils.logging import Logger
-
-# Define constants
-OPERATION_FLATTEN = "flatten"
-OPERATION_DEFLATTEN = "deflatten"
-OPERATION_MINIFY = "minify"
-OPERATION_BUNDLE = "bundle"
-OPERATION_MINIFY_BUNDLE = "minify_bundle"
-OPERATION_ACROSCAN = "acroscan"
-OPERATION_SEARCH = "search"
-OPERATION_PROPERTIES = "properties"
-OPERATION_TREE = "tree"
-OPERATION_ROOT_TREE = "root_tree"
-OPERATION_BIBDEDUP = "bibdedup"
-
-DEFAULT_EXCLUDE_DIRS = ["__pycache__", ".git", ".idea", ".vscode", ".venv", "venv",
-                        "node_modules", "dist", "build", ".next", "codeflux.egg-info",
-                        "codeflux"]
-
-# Default output paths
-DEFAULT_FLATTEN_OUTPUT_PATH = "flattened"
-DEFAULT_DEFLATTEN_OUTPUT_PATH = "deflattened"
-DEFAULT_MINIFY_OUTPUT_PATH = "minified"
-DEFAULT_BUNDLE_OUTPUT_PATH = "bundled.txt"
-DEFAULT_MINIFY_BUNDLE_OUTPUT_PATH = "minified_bundle.txt"
-DEFAULT_TREE_OUTPUT_PATH = "processed_directory_tree.txt"
-DEFAULT_ROOT_TREE_OUTPUT_PATH = "root_directory_tree.txt"
-DEFAULT_SUMMARY_OUTPUT_PATH = "summary.txt"
-
-
-def run_processed_tree_operation(source_dir, timestamp_dir, args, logger):
-    """Run the processed directory tree visualization."""
-    from ui.tree import visualize_dir_tree
-
-    try:
-        output_file = os.path.join(timestamp_dir, DEFAULT_TREE_OUTPUT_PATH)
-        if not args.no_log:
-            logger.info("\n\n:::::::::::::::::::::::::::::: PROCESSED DIRECTORY TREE ::::::::::::::::::::::::::::::")
-            logger.info(f"Destination: \"{DEFAULT_TREE_OUTPUT_PATH}\"")
-
-        visualize_dir_tree(
-            source_dir,
-            output_file,
-            exclude_dirs=args.exclude_dirs or DEFAULT_EXCLUDE_DIRS,
-            exclude_exts=args.exclude_extensions,
-            exclude_files=args.exclude_files,
-            print_to_console=not args.no_log,
-            truncate_output=args.truncate
-        )
-
-        if not args.no_log:
-            logger.info("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
-    except Exception as e:
-        if not args.no_log:
-            logger.error(f"Error generating processed directory tree: {str(e)}")
-
-
-def run_root_tree_operation(source_dir, timestamp_dir, args, logger):
-    """Run the root directory tree visualization."""
-    from ui.tree import visualize_root_dir_tree
-
-    try:
-        output_file = os.path.join(timestamp_dir, DEFAULT_ROOT_TREE_OUTPUT_PATH)
-        if not args.no_log:
-            logger.info("\n\n:::::::::::::::::::::::::::::: ROOT DIRECTORY TREE ::::::::::::::::::::::::::::::")
-            logger.info(f"Destination: \"{DEFAULT_ROOT_TREE_OUTPUT_PATH}\"")
-
-        visualize_root_dir_tree(
-            source_dir,
-            output_file,
-            print_to_console=not args.no_log,
-            truncate_output=args.truncate,
-            show_processing_status=True,
-            user_exclude_dirs=args.exclude_dirs,
-            user_exclude_exts=args.exclude_extensions,
-            user_exclude_files=args.exclude_files
-        )
-
-        if not args.no_log:
-            logger.info("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
-    except Exception as e:
-        if not args.no_log:
-            logger.error(f"Error generating root directory tree: {str(e)}")
 
 
 def make_parser():
@@ -168,6 +96,11 @@ def make_parser():
         help="Scan for and optionally replace acronyms in documents"
     )
     operation_group.add_argument(
+        "--autocomment", "-ac",
+        action="store_true",
+        help="Automatically add comments to code files"
+    )
+    operation_group.add_argument(
         "--properties", "-p",
         action="store_true",
         help="Display detailed file properties without modifying anything"
@@ -186,6 +119,16 @@ def make_parser():
         "--root-tree", "-rtr",
         action="store_true",
         help="Generate a complete text-based visualization of the root directory tree (with operation status)"
+    )
+    operation_group.add_argument(
+        "--no-tree", "-ntr",
+        action="store_true",
+        help="Do not generate the processed directory tree visualization"
+    )
+    operation_group.add_argument(
+        "--no-root-tree", "-nrtr",
+        action="store_true",
+        help="Do not generate the root directory tree visualization"
     )
 
     # BibTeX deduplication
@@ -284,6 +227,38 @@ def make_parser():
         "--no-recursive-acroscan", "-nras",
         action="store_true",
         help="Do not recursively process subdirectories for acroscan"
+    )
+
+    autocomment_group = parser.add_argument_group('autocomment options')
+    autocomment_group.add_argument(
+        "--comment-level", "-cl",
+        choices=["minimal", "standard", "verbose"],
+        default="standard",
+        help="Level of commenting to add (default: standard)"
+    )
+    autocomment_group.add_argument(
+        "--no-add-docstrings",
+        action="store_false",
+        dest="add_docstrings",
+        help="Don't add docstrings to functions and classes"
+    )
+    autocomment_group.add_argument(
+        "--no-add-inline",
+        action="store_false",
+        dest="add_inline",
+        help="Don't add inline comments for complex logic"
+    )
+    autocomment_group.add_argument(
+        "--no-add-header",
+        action="store_false",
+        dest="add_header",
+        help="Don't add file header comments"
+    )
+    autocomment_group.add_argument(
+        "--no-preserve-existing",
+        action="store_false",
+        dest="preserve_existing",
+        help="Don't preserve existing comments"
     )
 
     # Search operations
@@ -621,20 +596,24 @@ def main():
         operations.append(OPERATION_SEARCH)
     if args.properties:
         operations.append(OPERATION_PROPERTIES)
-    if args.tree:
-        operations.append(OPERATION_TREE)
-    if args.root_tree:
-        operations.append(OPERATION_ROOT_TREE)
     if args.bibdedup:
         operations.append(OPERATION_BIBDEDUP)
+    if args.autocomment:
+        operations.append(OPERATION_AUTOCOMMENT)
 
-    # If no operations specified, default to all
+    # If no operations specified, use defaults
     if not operations:
         operations = [
             OPERATION_FLATTEN, OPERATION_DEFLATTEN, OPERATION_MINIFY,
-            OPERATION_BUNDLE, OPERATION_MINIFY_BUNDLE, OPERATION_ACROSCAN,
-            OPERATION_BIBDEDUP
+            OPERATION_BUNDLE, OPERATION_MINIFY_BUNDLE, OPERATION_PROPERTIES,
+            OPERATION_BIBDEDUP, OPERATION_ACROSCAN, OPERATION_AUTOCOMMENT,
         ]
+
+    # Add tree operations unless explicitly disabled
+    if not args.no_tree:
+        operations.append(OPERATION_TREE)
+    if not args.no_root_tree:
+        operations.append(OPERATION_ROOT_TREE)
 
     # Combine exclusion lists
     exclude_dirs = merge_with_defaults(args.exclude_dirs, DEFAULT_EXCLUDE_DIRS, args.ignore_defaults)
@@ -771,8 +750,98 @@ def main():
                             logger.info(f"No files were minified.")
                     logger.info("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
 
-        run_processed_tree_operation(source_dir, timestamp_dir, args, logger)
-        run_root_tree_operation(source_dir, timestamp_dir, args, logger)
+            elif operation == OPERATION_AUTOCOMMENT:
+                autocomment_dest = args.dest_named if args.dest_named else args.dest_pos
+                if not autocomment_dest:
+                    autocomment_dest = os.path.join(timestamp_dir, DEFAULT_AUTOCOMMENT_OUTPUT_PATH)
+                output_paths[operation] = autocomment_dest
+
+                if not args.no_log:
+                    logger.info("\n\n:::::::::::::::::::::::::::::: AUTO-COMMENT ::::::::::::::::::::::::::::::")
+                    logger.info(f"Destination: \"{DEFAULT_AUTOCOMMENT_OUTPUT_PATH}/\"\n")
+
+                results = []
+                for file_type in args.file_types:
+                    if file_type in HANDLERS:
+                        handler = HANDLERS[file_type]
+
+                        if not args.no_log:
+                            logger.info(f"----- {file_type.upper()} FILES -----")
+
+                        operation_instance = AutoCommentOperation(handler, logger)
+                        stats = operation_instance.execute(
+                            source_dir,
+                            autocomment_dest,
+                            exclude_dirs=exclude_dirs,
+                            exclude_exts=exclude_exts,
+                            exclude_files=exclude_files,
+                            include_dirs=args.include_dirs,
+                            include_exts=args.include_extensions,
+                            include_files=args.include_files,
+                            comment_level=args.comment_level,
+                            add_docstrings=args.add_docstrings,
+                            add_inline=args.add_inline,
+                            add_header=args.add_header,
+                            preserve_existing=args.preserve_existing
+                        )
+                        results.append(stats)
+
+                        if not args.no_log:
+                            logger.info("--------------------\n")
+
+                if not args.no_log:
+                    logger.info("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
+
+            elif operation == OPERATION_TREE:
+                output_file = os.path.join(timestamp_dir, DEFAULT_TREE_OUTPUT_PATH)
+                output_paths[operation] = output_file
+
+                if not args.no_log:
+                    logger.info("\n\n:::::::::::::::::::::::::::::: PROCESSED DIRECTORY TREE ::::::::::::::::::::::::::::::")
+                    logger.info(f"Destination: \"{DEFAULT_TREE_OUTPUT_PATH}\"")
+
+                try:
+                    visualize_dir_tree(
+                        source_dir,
+                        output_file,
+                        exclude_dirs=args.exclude_dirs or DEFAULT_EXCLUDE_DIRS,
+                        exclude_exts=args.exclude_extensions,
+                        exclude_files=args.exclude_files,
+                        print_to_console=not args.no_log,
+                        truncate_output=args.truncate
+                    )
+                except Exception as e:
+                    if not args.no_log:
+                        logger.error(f"Error generating processed directory tree: {str(e)}")
+
+                if not args.no_log:
+                    logger.info("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
+
+            elif operation == OPERATION_ROOT_TREE:
+                output_file = os.path.join(timestamp_dir, DEFAULT_ROOT_TREE_OUTPUT_PATH)
+                output_paths[operation] = output_file
+
+                if not args.no_log:
+                    logger.info("\n\n:::::::::::::::::::::::::::::: ROOT DIRECTORY TREE ::::::::::::::::::::::::::::::")
+                    logger.info(f"Destination: \"{DEFAULT_ROOT_TREE_OUTPUT_PATH}\"")
+
+                try:
+                    visualize_root_dir_tree(
+                        source_dir,
+                        output_file,
+                        print_to_console=not args.no_log,
+                        truncate_output=args.truncate,
+                        show_processing_status=True,
+                        user_exclude_dirs=args.exclude_dirs,
+                        user_exclude_exts=args.exclude_extensions,
+                        user_exclude_files=args.exclude_files
+                    )
+                except Exception as e:
+                    if not args.no_log:
+                        logger.error(f"Error generating root directory tree: {str(e)}")
+
+                if not args.no_log:
+                    logger.info("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
 
         # Write summary file
         summary_path = os.path.join(timestamp_dir, DEFAULT_SUMMARY_OUTPUT_PATH)

@@ -12,6 +12,7 @@ from operations.flatten import FlattenOperation
 from operations.deflatten import DeflattenOperation
 from operations.minify import MinifyOperation
 from operations.bundle import BundleOperation
+from operations.autocomment import AutoCommentOperation
 
 __all__ = [
     'Operation',
@@ -20,4 +21,5 @@ __all__ = [
     'DeflattenOperation',
     'MinifyOperation',
     'BundleOperation',
+    'AutoCommentOperation',
 ]

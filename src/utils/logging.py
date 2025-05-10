@@ -210,6 +210,20 @@ class Logger:
                     row.append(file_info.get("warnings", ""))
                 rows.append(row)
 
+        elif operation_type == "autocomment":
+            headers = ["File", "Original Lines", "Commented Lines", "Comments Added", "Status"]
+
+            rows = []
+            for file_info in files_info:
+                row = [
+                    file_info["file"],
+                    str(file_info.get("original_lines", 0)),
+                    str(file_info.get("commented_lines", 0)),
+                    str(file_info.get("comments_added", 0)),
+                    file_info["status"]
+                ]
+                rows.append(row)
+
         else:
             headers = ["File", "Size (KB)", "Status"]
             if has_warnings:
@@ -273,6 +287,8 @@ class Logger:
             headers = ["File", "Size", "Type", "Modified", "Permissions"]
         elif operation_type == "bibdedup":
             headers = ["File", "Size (KB)", "Entries", "Status"]
+        elif operation_type == "autocomment":
+            headers = ["File", "Orig Lines", "Cmnt Lines", "Added", "Status"]
         else:
             headers = ["File", "Size (KB)", "Status"]
 

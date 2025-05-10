@@ -234,6 +234,7 @@ DEFAULT_ACRONYMS_FOUND_OUTPUT_PATH = "acronyms_found.txt"
 DEFAULT_ACRONYMS_FOUND_TEX_OUTPUT_PATH = "acronyms_found.tex"
 DEFAULT_ACRONYMS_TRANSLATED_OUTPUT_PATH = "acronyms_from_csv.tex"
 DEFAULT_ACRONYMS_LIST_PATH = "acronyms.csv"
+DEFAULT_AUTOCOMMENT_OUTPUT_PATH = "autocommented"
 
 # Operation names
 OPERATION_FLATTEN = "flatten"
@@ -243,10 +244,11 @@ OPERATION_BUNDLE = "bundle"
 OPERATION_MINIFY_BUNDLE = "minify_bundle"
 OPERATION_SEARCH = "search"
 OPERATION_PROPERTIES = "properties"
-OPERATION_TREE = "tree"
-OPERATION_ROOT_TREE = "root_tree"
 OPERATION_BIBDEDUP = "bibdedup"
 OPERATION_ACROSCAN = "acroscan"
+OPERATION_AUTOCOMMENT = "autocomment"
+OPERATION_TREE = "tree"
+OPERATION_ROOT_TREE = "root_tree"
 
 # UI settings
 TABULATE_FORMAT = "grid"

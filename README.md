@@ -6,52 +6,54 @@ preparing for migration or backup.
 ## Overview
 
 Tired of wading through tangled directory trees just to make sense of a codebase?
-**CodeFlux** is a versatile CLI tool that brings structure, clarity, and control to any source directory.
-It intelligently flattens or reconstructs file hierarchies, bundles and minifies code, snips code chunks,
-performs search functionalities across files, and delivers timestamped outputs.
-With robust filtering and deep code insight features, **CodeFlux** transforms messy projects into manageable, transparent systems.
+**CodeFlux** is a powerful CLI tool designed for comprehensive codebase management and transformation. 
+It provides a suite of operations including code flattening, minification, bundling, 
+directory tree visualization, file analysis, and search capabilities. 
+With intelligent file processing, extensive format support, and timestamped outputs, 
+CodeFlux transforms complex codebases into organized, manageable structures perfect for code review, 
+migration, or AI context optimization.
 
 ### Supported File Types
 
-| Language          | Extensions                                                                  |
-|-------------------|-----------------------------------------------------------------------------|
-| Python            | `.py`                                                                       |
-| Python Notebooks  | `.ipynb`                                                                    |
-| JavaScript        | `.js`, `.jsx`                                                               |
-| TypeScript        | `.ts`, `.tsx`                                                               |
-| HTML              | `.html`, `.htm`, `.xhtml`, `.shtml`                                         |
-| CSS               | `.css`, `.scss`, `.sass`, `.less`                                           |
-| PHP               | `.php`, `.phtml`, `.php5`, `.php7`, `.phps`                                 |
-| Ruby              | `.rb`, `.rake`, `.gemspec`, `.erb`                                          |
-| Swift             | `.swift`                                                                    |
-| Kotlin            | `.kt`, `.kts`                                                               |
-| Java              | `.java`, `.class`, `.jar`                                                   |
-| C#                | `.cs`, `.cshtml`, `.csx`                                                    |
-| Shell Scripts     | `.sh`, `.bash`, `.zsh`                                                      |
-| Markdown          | `.md`, `.markdown`, `.mdown`, `.mkdn`, `.mkd`, `.mdwn`, `.mdtxt`, `.mdtext` |
-| Plain Text        | `.txt`                                                                      |
-| YAML              | `.yaml`, `.yml`                                                             |
-| JSON              | `.json`, `.jsonl`, `.geojson`, `.json5`, `.ndjson`                          |
-| GO                | `.go`, `.mod`, `.sum`, `.pb.go`, `.tmpl`, `.tpl`                            |
-| INI Configuration | `.ini`, `.cfg`, `.conf`, `.properties`                                      |
-| Database Scripts  | `.sql`, `.ddl`, `.dml`                                                      |
-| Batch Scripts     | `.bat`, `.cmd`, `.btm`                                                      |
-| Custom Scripts    | `.scp`, `.script`                                                           |
-| No Extension      | Files without extensions (like `Makefile`, `activate`, `Dockerfile`)        |
-| PowerShell        | `.ps1`, `.psm1`, `.psd1`, `.ps1xml`                                         |
-| Docker            | `.dockerfile`, `.dockerignore`                                              |
-| XML               | `.xml`, `.xsd`, `.xsl`, `.xslt`, `.wsdl`, `.svg`, `.pom`                    |
-| R                 | `.r`, `.rmd`, `.rds`, `.rdata`, `.rda`                                      |
-| C/C++             | `.c`, `.cpp`, `.cc`, `.cxx`, `.h`, `.hpp`, `.hxx`, `.hh`                    |
-| Rust              | `.rs`, `.rlib`                                                              |
-| Scala             | `.scala`, `.sc`                                                             |
-| Perl              | `.pl`, `.pm`, `.t`                                                          |
-| Lua               | `.lua`                                                                      |
-| Groovy            | `.groovy`, `.gvy`, `.gy`, `.gsh`                                            |
-| Haskell           | `.hs`, `.lhs`                                                               |
-| Erlang/Elixir     | `.erl`, `.hrl`, `.ex`, `.exs`                                               |
-| LaTeX             | `.tex`, `.sty`, `.cls`, `.bib`, `.bst`, `.dtx`, `.ltx`, `.ins`              |
-| BibTeX            | `.bib`                                                                      |
+| Category              | Extensions                                                                          | Key Type  |
+|-----------------------|-------------------------------------------------------------------------------------|-----------|
+| Python                | `.py`                                                                               | `py`      |
+| Python Notebooks      | `.ipynb`                                                                            | `ipynb`   |
+| JavaScript/TypeScript | `.js`, `.jsx`, `.ts`, `.tsx`                                                        | `jsts`    |
+| HTML                  | `.html`, `.htm`, `.xhtml`, `.shtml`                                                 | `html`    |
+| CSS/Preprocessors     | `.css`, `.scss`, `.sass`, `.less`                                                   | `css`     |
+| PHP                   | `.php`, `.phtml`, `.php5`, `.php7`, `.phps`                                         | `php`     |
+| Ruby                  | `.rb`, `.rake`, `.gemspec`, `.erb`                                                  | `ruby`    |
+| Swift                 | `.swift`                                                                            | `swift`   |
+| Kotlin                | `.kt`, `.kts`                                                                       | `kotlin`  |
+| Java                  | `.java`, `.class`, `.jar`                                                           | `java`    |
+| C#                    | `.cs`, `.cshtml`, `.csx`                                                            | `csharp`  |
+| Shell Scripts         | `.sh`, `.bash`, `.zsh`                                                              | `shell`   |
+| Markdown/Text         | `.md`, `.markdown`, `.mdown`, `.mkdn`, `.mkd`, `.mdwn`, `.mdtxt`, `.mdtext`, `.txt` | `mdtxt`   |
+| YAML                  | `.yaml`, `.yml`                                                                     | `yml`     |
+| JSON                  | `.json`, `.jsonl`, `.geojson`, `.json5`, `.ndjson`                                  | `json`    |
+| Go                    | `.go`, `.mod`, `.sum`, `.pb.go`, `.tmpl`, `.tpl`                                    | `go`      |
+| Configuration         | `.ini`, `.cfg`, `.conf`, `.properties`                                              | `ini`     |
+| Database Scripts      | `.sql`, `.ddl`, `.dml`                                                              | `db`      |
+| Batch Scripts         | `.bat`, `.cmd`, `.btm`                                                              | `bat`     |
+| Script Files          | `.scp`, `.script`                                                                   | `scp`     |
+| PowerShell            | `.ps1`, `.psm1`, `.psd1`, `.ps1xml`                                                 | `ps1`     |
+| Docker                | `.dockerfile`, `.dockerignore`                                                      | `docker`  |
+| XML                   | `.xml`, `.xsd`, `.xsl`, `.xslt`, `.wsdl`, `.svg`, `.pom`                            | `xml`     |
+| R                     | `.r`, `.rmd`, `.rds`, `.rdata`, `.rda`                                              | `r`       |
+| C/C++                 | `.c`, `.cpp`, `.cc`, `.cxx`, `.h`, `.hpp`, `.hxx`, `.hh`                            | `cpp`     |
+| Rust                  | `.rs`, `.rlib`                                                                      | `rust`    |
+| Scala                 | `.scala`, `.sc`                                                                     | `scala`   |
+| Perl                  | `.pl`, `.pm`, `.t`                                                                  | `perl`    |
+| Lua                   | `.lua`                                                                              | `lua`     |
+| Groovy                | `.groovy`, `.gvy`, `.gy`, `.gsh`                                                    | `groovy`  |
+| Haskell               | `.hs`, `.lhs`                                                                       | `haskell` |
+| Erlang/Elixir         | `.erl`, `.hrl`, `.ex`, `.exs`                                                       | `erlang`  |
+| LaTeX                 | `.tex`, `.sty`, `.cls`, `.bib`, `.bst`, `.dtx`, `.ltx`, `.ins`                      | `latex`   |
+| BibTeX                | `.bib`                                                                              | `bibtex`  |
+| PDF                   | `.pdf`                                                                              | `pdf`     |
+| Word Documents        | `.docx`, `.doc`                                                                     | `docx`    |
+| No Extension          | Files without extensions (like `Makefile`, `README`, `Dockerfile`)                  | `noext`   |
 
 _More file types extensions to be added in the future._
 
@@ -97,56 +99,72 @@ pnpm add git+https://github.com/josephchay/codeflux.git --save-dev
 - Node version 22 or higher
 - NPM version 5.1 or higher
 
-## Command-Line Arguments
+### Command-Line Arguments
 
-| Argument                                        | Shorthand | Default                                                                                                                                                                                                                                                                          | Description                                                                                        |
-|-------------------------------------------------|-----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------|
-| `[src]`                                         | `-s`      | Current directory                                                                                                                                                                                                                                                                | Source directory containing the files to flatten                                                   |
-| `[dest]`                                        | `-d`      | Based on operation (see below)                                                                                                                                                                                                                                                   | Destination directory/file where files will be copied                                              |
-| `--file-types`                                  | `-t`      | `py`, `ipynb`, `jsts`, `html`, `css`, `php`, `ruby`, `swift`, `kotlin`, `java`, `csharp`, `shell`, `mdtxt`, `yml`, `json`, `go`, `ini`, `db`, `bat`, `scp`, `noext`, `ps1`, `docker`, `xml`, `r`, `cpp`, `rust`, `scala`, `perl`, `lua`, `groovy`, `haskell`, `erlang`, `bibtex` | File types to process (default: all)                                                               |
-| **Operations**                                  |           |                                                                                                                                                                                                                                                                                  |                                                                                                    |
-| `--flatten`                                     | `-f`      | `True` (if no other operation specified)                                                                                                                                                                                                                                         | Flatten the directory structure                                                                    |
-| `--deflatten`                                   | `-df`     | `True` (if no other operation specified)                                                                                                                                                                                                                                         | Deflatten the directory (restore original structure)                                               |
-| `--bundle`                                      | `-b`      | `True` (if no other operation specified)                                                                                                                                                                                                                                         | Bundle files into a single text file                                                               |
-| `--minify`                                      | `-m`      | `True` (if no other operation specified)                                                                                                                                                                                                                                         | Create a minified copy of the directory while preserving structure                                 |
-| `--minify-bundle`                               | `-mb`     | `True` (if no other operation specified)                                                                                                                                                                                                                                         | Minify files and bundle them into a single text file                                               |
-| `--bibdedup` (for BibTeX)                       | `-bd`     | `True` (if no other operation specified)                                                                                                                                                                                                                                         | Check for similar titles across multiple `.bib` files                                              |
-| **Operations Aids**                             |           |                                                                                                                                                                                                                                                                                  |                                                                                                    |
-| `--no-filetype-dirs` (Flattening only)          | `-nfd`    | `False`                                                                                                                                                                                                                                                                          | Place all files directly in the output directory without filetype subdirectories during flattening |
-| `--tree`                                        | `-tr`     | `True`                                                                                                                                                                                                                                                                           | Generate a text-based visualization of the processed directory structure                           |
-| `--root-tree`                                   | `-rtr`    | `True`                                                                                                                                                                                                                                                                           | Generate a complete text-based visualization of the root directory tree (with operation status)    |
-| `--truncate` (Tree only)                        | `-trc`    | `False`                                                                                                                                                                                                                                                                          | Truncate long tree output in console                                                               |
-| **Exclusion Options**                           |           |                                                                                                                                                                                                                                                                                  |                                                                                                    |
-| `--exclude-dirs`                                | `-xd`     | Various default directories                                                                                                                                                                                                                                                      | Directory names to exclude                                                                         |
-| `--exclude-extensions`                          | `-xe`     | Various default extensions                                                                                                                                                                                                                                                       | File extensions to exclude                                                                         |
-| `--exclude-files`                               | `-xf`     | Various path-based files                                                                                                                                                                                                                                                         | Specific file paths to exclude (requires full path relative to source dir, e.g. 'path/to/file.py') |
-| **Defaults Handling**                           |           |                                                                                                                                                                                                                                                                                  |                                                                                                    |
-| `--ignore-defaults`                             | `-i`      | `False`                                                                                                                                                                                                                                                                          | Ignore all default exclusions and only use provided exclusions                                     |
-| **Inclusion Options**                           |           |                                                                                                                                                                                                                                                                                  |                                                                                                    |
-| `--include-dirs`                                | `-id`     | `None`                                                                                                                                                                                                                                                                           | Directory names to include (only these will be processed)                                          |
-| `--include-extensions`                          | `-ie`     | `None`                                                                                                                                                                                                                                                                           | File extensions to include (only these will be processed)                                          |
-| `--include-files`                               | `-if`     | `None`                                                                                                                                                                                                                                                                           | Specific filenames to include (only these will be processed)                                       |
-| **BibTeX Options**                              |           |                                                                                                                                                                                                                                                                                  |                                                                                                    |
-| `--similarity-threshold`                        | `-st`     | `0.9`                                                                                                                                                                                                                                                                            | Similarity threshold for BibTeX duplicate detection (0.0-1.0)                                      |
-| **Snippet Options** (bundle/minify-bundle only) |           |                                                                                                                                                                                                                                                                                  |                                                                                                    |
-| `--snippet`                                     | `-sn`     | `False`                                                                                                                                                                                                                                                                          | Enable snippet mode for bundling operations (only includes a portion of each file)                 |
-| `--snippet-lines`                               | `-snl`    | `50`                                                                                                                                                                                                                                                                             | Maximum number of lines to include per file in snippet mode                                        |
-| `--snippet-start`                               | `-sns`    | `top`                                                                                                                                                                                                                                                                            | Where to take the snippet from: top, middle, or bottom of the file                                 |
-| `--snippet-context`                             | `-snc`    | `5`                                                                                                                                                                                                                                                                              | Number of context lines to include around matches when using with search-pattern                   |
-| **Search Options**                              |           |                                                                                                                                                                                                                                                                                  |                                                                                                    |
-| `--search-extensions`                           | `-se`     | `None`                                                                                                                                                                                                                                                                           | Search for files with specific extensions                                                          |
-| `--search-pattern`                              | `-sp`     | `None`                                                                                                                                                                                                                                                                           | Search for files containing a specific regex pattern                                               |
-| `--search-size`                                 | `-ss`     | `None`                                                                                                                                                                                                                                                                           | Search for files within a size range (in KB, use 'none' for no limit)                              |
-| `--search-date`                                 | `-sd`     | `None`                                                                                                                                                                                                                                                                           | Search for files modified between dates (YYYY-MM-DD format)                                        |
-| `--search-imports`                              | `-si`     | `None`                                                                                                                                                                                                                                                                           | Search for files that import a specific module                                                     |
-| `--search-duplicates`                           | `-sdu`    | `None`                                                                                                                                                                                                                                                                           | Search for duplicate code blocks (with optional minimum line threshold)                            |
-| **Properties Options**                          |           |                                                                                                                                                                                                                                                                                  |                                                                                                    |
-| `--properties`                                  | `-p`      | `None`                                                                                                                                                                                                                                                                           | Display detailed file properties without modifying anything                                        |
-| `--exclude-hash` (Properties only)              | `-xh`     | `None`                                                                                                                                                                                                                                                                           | Exclude MD5 hash calculation from properties analysis (faster for large files)                     |
-| **Other Options**                               |           |                                                                                                                                                                                                                                                                                  |                                                                                                    |
-| `--clear-dest-dir`                              | `-c`      | `False`                                                                                                                                                                                                                                                                          | Clear the destination directory before copying files                                               |
-| `--no-log`                                      | `-nl`     | `False`                                                                                                                                                                                                                                                                          | Disable logging output                                                                             |
-| `--continue-on-error`                           | `-coe`    | `False`                                                                                                                                                                                                                                                                          | Continue processing when minification errors occur (using original content for failed files)       |
+| Argument                               | Shorthand | Default                                | Description                                                                              |
+|----------------------------------------|-----------|----------------------------------------|------------------------------------------------------------------------------------------|
+| **Source/Destination**                 |           |                                        |                                                                                          |
+| `[src]`, `--src`                       | `-s`      | Current directory                      | Source directory containing the files to process                                         |
+| `[dest]`, `--dest`                     | `-d`      | Based on operation                     | Destination directory/file for output                                                    |
+| **Main Operations**                    |           |                                        |                                                                                          |
+| `--flatten`                            | `-f`      | `False`                                | Flatten the directory structure                                                          |
+| `--deflatten`                          | `-df`     | `False`                                | Deflatten the directory (restore original structure)                                     |
+| `--minify`                             | `-m`      | `False`                                | Create a minified copy preserving directory structure                                    |
+| `--bundle`                             | `-b`      | `False`                                | Bundle files into a single text file                                                     |
+| `--minify-bundle`                      | `-mb`     | `False`                                | Minify files and bundle them into a single text file                                     |
+| `--autocomment`                        | `-ac`     | `False`                                | Automatically add comments to code files                                                 |
+| `--acroscan`                           | `-as`     | `False`                                | Scan for and optionally replace acronyms in documents                                    |
+| `--bibdedup`                           | `-bd`     | `False`                                | Check for similar titles across multiple `.bib` files                                    |
+| `--properties`                         | `-p`      | `False`                                | Display detailed file properties without modifying anything                              |
+| **Tree Visualization**                 |           |                                        |                                                                                          |
+| `--tree`                               | `-tr`     | `True`                                 | Generate a text-based visualization of the processed directory structure                 |
+| `--root-tree`                          | `-rtr`    | `True`                                 | Generate a complete tree visualization with operation status                             |
+| `--no-tree`                            | `-ntr`    | `False`                                | Do not generate the processed directory tree visualization                               |
+| `--no-root-tree`                       | `-nrtr`   | `False`                                | Do not generate the root directory tree visualization                                    |
+| **Search Operations**                  |           |                                        |                                                                                          |
+| `--search-ext`                         | `-se`     | `None`                                 | Search for files with specific extensions                                                |
+| `--search-pattern`                     | `-sp`     | `None`                                 | Search for files containing a specific regex pattern                                     |
+| `--search-size`                        | `-ss`     | `None`                                 | Search for files within a size range (in KB)                                             |
+| `--search-date`                        | `-sd`     | `None`                                 | Search for files modified between dates (YYYY-MM-DD format)                              |
+| `--search-imports`                     | `-si`     | `None`                                 | Find files that import a specific module                                                 |
+| `--search-duplicates`                  | `-sdu`    | `None`                                 | Find duplicate code blocks (optional: minimum lines)                                     |
+| **File Type Selection**                |           |                                        |                                                                                          |
+| `--file-types`                         | `-t`      | All types                              | File types to process (e.g., `py`, `jsts`, `html`)                                       |
+| **Inclusion/Exclusion Options**        |           |                                        |                                                                                          |
+| `--include-dirs`                       | `-id`     | `None`                                 | Directory names to include (only these will be processed)                                |
+| `--include-extensions`                 | `-ie`     | `None`                                 | File extensions to include (only these will be processed)                                |
+| `--include-files`                      | `-if`     | `None`                                 | Specific filenames to include (only these will be processed)                             |
+| `--exclude-dirs`                       | `-xd`     | Various default directories            | Directory names to exclude                                                               |
+| `--exclude-extensions`                 | `-xe`     | Various default extensions             | File extensions to exclude                                                               |
+| `--exclude-files`                      | `-xf`     | Various default files                  | Specific file paths to exclude                                                           |
+| `--ignore-defaults`                    | `-i`      | `False`                                | Ignore all default exclusions                                                            |
+| **Snippet Options** (bundle only)      |           |                                        |                                                                                          |
+| `--snippet`                            | `-sn`     | `False`                                | Enable snippet mode for bundling operations                                              |
+| `--snippet-lines`                      | `-snl`    | `50`                                   | Maximum number of lines to include per file                                              |
+| `--snippet-start`                      | `-sns`    | `top`                                  | Where to take the snippet from: top, middle, or bottom                                   |
+| `--snippet-context`                    | `-snc`    | `5`                                    | Context lines around matches when using with search-pattern                              |
+| **Acroscan Options**                   |           |                                        |                                                                                          |
+| `--acronym-list`                       | `-al`     | `None`                                 | Path to CSV file containing acronyms                                                     |
+| `--acronym-output`                     | `-ao`     | `None`                                 | Path to output the acronyms file                                                         |
+| `--latex-mode`                         | `-lm`     | `True`                                 | Process files in LaTeX mode (uses \ac{...} syntax)                                       |
+| `--find-potential`                     | `-fp`     | `False`                                | Find potential acronyms not in the list                                                  |
+| `--replace-acronyms`                   | `-ra`     | `True`                                 | Replace found acronyms in processed files                                                |
+| `--no-recursive-acroscan`              | `-nras`   | `False`                                | Do not recursively process subdirectories                                                |
+| **AutoComment Options**                |           |                                        |                                                                                          |
+| `--comment-level`                      | `-cl`     | `standard`                             | Level of commenting: minimal, standard, or verbose                                       |
+| `--no-add-docstrings`                  | `-nad`    | `False`                                | Don't add docstrings to functions and classes                                            |
+| `--no-add-inline`                      | `-nai`    | `False`                                | Don't add inline comments for complex logic                                              |
+| `--no-add-header`                      | `-nah`    | `False`                                | Don't add file header comments                                                           |
+| `--no-preserve-existing`               | `-npe`    | `False`                                | Don't preserve existing comments                                                         |
+| **BibTeX Options**                     |           |                                        |                                                                                          |
+| `--similarity-threshold`               | `-st`     | `0.9`                                  | Similarity threshold for duplicate detection (0.0-1.0)                                   |
+| **Other Options**                      |           |                                        |                                                                                          |
+| `--no-filetype-dirs`                   | `-nfd`    | `False`                                | Place all files directly in output directory (flatten only)                              |
+| `--exclude-hash`                       | `-xh`     | `False`                                | Exclude MD5 hash calculation (properties only)                                           |
+| `--clear-dest-dir`                     | `-c`      | `False`                                | Clear the destination directory before copying                                           |
+| `--truncate`                           | `-trc`    | `False`                                | Truncate long tree output in console                                                     |
+| `--no-log`                             | `-nl`     | `False`                                | Suppress all output logs                                                                 |
+| `--continue-on-error`                  | `-coe`    | `False`                                | Continue processing when minification errors occur                                       |
 
 ### Default Paths and Output Organization
 
@@ -251,6 +269,10 @@ The codebase follows a modular structure:
 - `file_handler.py` - Core file processing logic
 - `operations/` - Operation implementations (flatten, deflatten, etc.)
 - `utils/` - Helper utilities for logging, minification, etc.
+- `helpers/` - Helper functions for various tasks
+- `templates/` - Predefined input structures for operations
+- `ui/` - User interface components for command-line interaction
+- `scripts/` - Scripts for specific tasks or examples
 
 ### Testing
 
