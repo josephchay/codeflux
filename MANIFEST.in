@@ -2,5 +2,54 @@ include README.md
 include LICENSE.txt
 include requirements.txt
 include package.json
-include src/scripts/minify/*.js
-include src/templates/*.csv
+include pyproject.toml
+include setup.py
+
+# Include minification scripts
+recursive-include codeflux/scripts/minify *.js
+
+# Include templates
+recursive-include codeflux/templates *.csv
+
+# Include all Python source files
+recursive-include codeflux *.py
+
+# Include package data files
+include codeflux/__init__.py
+include codeflux/constants.py
+include codeflux/file_handler.py
+include codeflux/handlers.py
+include codeflux/main.py
+
+# Include operations module
+recursive-include codeflux/operations *.py
+
+# Include utils module
+recursive-include codeflux/utils *.py
+
+# Include helpers module
+recursive-include codeflux/helpers *.py
+
+# Include ui module
+recursive-include codeflux/ui *.py
+
+# Exclude Python cache and compiled files
+global-exclude *.pyc
+global-exclude *.pyo
+global-exclude __pycache__
+global-exclude *.so
+global-exclude *.egg-info
+
+# Exclude test files if you have them
+global-exclude test_*
+recursive-exclude tests *
+
+# Exclude development and build directories
+prune .git
+prune build
+prune dist
+prune .idea
+prune .vscode
+prune venv
+prune .venv
+prune node_modules
