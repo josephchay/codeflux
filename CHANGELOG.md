@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `CODE_OF_CONDUCT.md` file for project code of conduct.
 - Automatic comment feature for python files.
+- `LinebreakOperation` class for handling linebreak operations.
 
 ### Removed
 

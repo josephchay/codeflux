@@ -13,6 +13,7 @@ from operations.deflatten import DeflattenOperation
 from operations.minify import MinifyOperation
 from operations.bundle import BundleOperation
 from operations.autocomment import AutoCommentOperation
+from operations.linebreak import LinebreakOperation
 
 __all__ = [
     'Operation',
@@ -22,4 +23,5 @@ __all__ = [
     'MinifyOperation',
     'BundleOperation',
     'AutoCommentOperation',
+    'LinebreakOperation',
 ]

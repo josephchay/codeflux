@@ -224,6 +224,20 @@ class Logger:
                 ]
                 rows.append(row)
 
+        elif operation_type == "linebreak":
+            headers = ["File", "Size (KB)", "Original Size (KB)", "Lines Broken", "Status"]
+
+            rows = []
+            for file_info in files_info:
+                row = [
+                    file_info["file"],
+                    f"{file_info['size'] / 1024:.2f}",
+                    f"{file_info.get('original_size', file_info['size']) / 1024:.2f}",
+                    str(file_info.get("lines_broken", 0)),
+                    file_info["status"]
+                ]
+                rows.append(row)
+
         else:
             headers = ["File", "Size (KB)", "Status"]
             if has_warnings:
@@ -289,6 +303,8 @@ class Logger:
             headers = ["File", "Size (KB)", "Entries", "Status"]
         elif operation_type == "autocomment":
             headers = ["File", "Orig Lines", "Cmnt Lines", "Added", "Status"]
+        elif operation_type == "linebreak":
+            headers = ["File", "Size (KB)", "Orig Size", "Lines Brk", "Status"]
         else:
             headers = ["File", "Size (KB)", "Status"]
 
@@ -446,6 +462,25 @@ class Logger:
                     ["Size reduction", f"{reduction:.2f}%"],
                 ])
 
+        elif operation_type == "linebreak":
+            files_processed = stats.files_copied
+            total_lines_original = getattr(stats, 'total_lines_original', 0)
+            total_lines_processed = getattr(stats, 'total_lines_processed', 0)
+            total_lines_broken = getattr(stats, 'total_lines_broken', 0)
+            files_with_long_lines = getattr(stats, 'files_with_long_lines', 0)
+
+            data.extend([
+                ["Files processed", files_processed],
+                ["Files with long lines", files_with_long_lines],
+                ["Total lines (original)", total_lines_original],
+                ["Total lines (processed)", total_lines_processed],
+                ["Lines broken", total_lines_broken]
+            ])
+
+            if files_processed > 0:
+                percentage_files_modified = (files_with_long_lines / files_processed * 100)
+                data.append(["Percentage of files modified", f"{percentage_files_modified:.1f}%"])
+
         # Add files processing rate if applicable
         files_processed = stats.total_files_processed
         if files_processed > 0:
@@ -543,6 +578,25 @@ class Logger:
                     f"Minified size: {bytes_minified:.2f} KB",
                     f"Size reduction: {reduction:.2f}%",
                 ])
+
+        elif operation_type == "linebreak":
+            files_processed = stats.files_copied
+            total_lines_original = getattr(stats, 'total_lines_original', 0)
+            total_lines_processed = getattr(stats, 'total_lines_processed', 0)
+            total_lines_broken = getattr(stats, 'total_lines_broken', 0)
+            files_with_long_lines = getattr(stats, 'files_with_long_lines', 0)
+
+            data.extend([
+                f"Files processed: {files_processed}",
+                f"Files with long lines: {files_with_long_lines}",
+                f"Total lines (original): {total_lines_original}",
+                f"Total lines (processed): {total_lines_processed}",
+                f"Lines broken: {total_lines_broken}"
+            ])
+
+            if files_processed > 0:
+                percentage_files_modified = (files_with_long_lines / files_processed * 100)
+                data.append(f"Percentage of files modified: {percentage_files_modified:.1f}%")
 
         # Add files processing rate if applicable
         files_processed = stats.total_files_processed

@@ -220,6 +220,21 @@ ROOT_TREE_UI_STATUS_SYMBOLS = {
     "out_of_scope": "◯"  # For files outside source_dir
 }
 
+# Operation names
+OPERATION_FLATTEN = "flatten"
+OPERATION_DEFLATTEN = "deflatten"
+OPERATION_MINIFY = "minify"
+OPERATION_BUNDLE = "bundle"
+OPERATION_MINIFY_BUNDLE = "minify_bundle"
+OPERATION_SEARCH = "search"
+OPERATION_PROPERTIES = "properties"
+OPERATION_BIBDEDUP = "bibdedup"
+OPERATION_ACROSCAN = "acroscan"
+OPERATION_AUTOCOMMENT = "autocomment"
+OPERATION_LINEBREAK = "linebreak"
+OPERATION_TREE = "tree"
+OPERATION_ROOT_TREE = "root_tree"
+
 # Default output paths
 DEFAULT_FLATTEN_OUTPUT_PATH = "flattened"
 DEFAULT_DEFLATTEN_OUTPUT_PATH = "deflattened"
@@ -235,20 +250,7 @@ DEFAULT_ACRONYMS_FOUND_TEX_OUTPUT_PATH = "acronyms_found.tex"
 DEFAULT_ACRONYMS_TRANSLATED_OUTPUT_PATH = "acronyms_from_csv.tex"
 DEFAULT_ACRONYMS_LIST_PATH = "acronyms.csv"
 DEFAULT_AUTOCOMMENT_OUTPUT_PATH = "autocommented"
-
-# Operation names
-OPERATION_FLATTEN = "flatten"
-OPERATION_DEFLATTEN = "deflatten"
-OPERATION_MINIFY = "minify"
-OPERATION_BUNDLE = "bundle"
-OPERATION_MINIFY_BUNDLE = "minify_bundle"
-OPERATION_SEARCH = "search"
-OPERATION_PROPERTIES = "properties"
-OPERATION_BIBDEDUP = "bibdedup"
-OPERATION_ACROSCAN = "acroscan"
-OPERATION_AUTOCOMMENT = "autocomment"
-OPERATION_TREE = "tree"
-OPERATION_ROOT_TREE = "root_tree"
+DEFAULT_LINEBREAK_OUTPUT_PATH = "linebreaked"
 
 # UI settings
 TABULATE_FORMAT = "grid"

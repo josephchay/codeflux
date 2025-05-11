@@ -16,7 +16,7 @@ from constants import (
     DEFAULT_EXCLUDE_DIRS, DEFAULT_FLATTEN_OUTPUT_PATH, DEFAULT_DEFLATTEN_OUTPUT_PATH,
     DEFAULT_MINIFY_OUTPUT_PATH, DEFAULT_BUNDLE_OUTPUT_PATH, DEFAULT_MINIFY_BUNDLE_OUTPUT_PATH,
     DEFAULT_TREE_OUTPUT_PATH, DEFAULT_ROOT_TREE_OUTPUT_PATH, DEFAULT_SUMMARY_OUTPUT_PATH,
-    DEFAULT_AUTOCOMMENT_OUTPUT_PATH
+    DEFAULT_AUTOCOMMENT_OUTPUT_PATH, OPERATION_LINEBREAK, DEFAULT_LINEBREAK_OUTPUT_PATH
 )
 from file_handler import FileHandler
 from handlers import HANDLERS
@@ -24,6 +24,7 @@ from operations.autocomment import AutoCommentOperation
 from operations.bundle import BundleOperation
 from operations.deflatten import DeflattenOperation
 from operations.flatten import FlattenOperation
+from operations.linebreak import LinebreakOperation
 from operations.minify import MinifyOperation
 from ui.tree import visualize_root_dir_tree, visualize_dir_tree
 from utils.logging import Logger
@@ -99,6 +100,11 @@ def make_parser():
         "--autocomment", "-ac",
         action="store_true",
         help="Automatically add comments to code files"
+    )
+    operation_group.add_argument(
+        "--linebreak", "-hb",
+        action="store_true",
+        help="Line break long lines at specified width while preserving structure"
     )
     operation_group.add_argument(
         "--properties", "-p",
@@ -259,6 +265,38 @@ def make_parser():
         action="store_false",
         dest="preserve_existing",
         help="Don't preserve existing comments"
+    )
+
+    linebreak_group = parser.add_argument_group('linebreak options')
+    linebreak_group.add_argument(
+        "--line-width", "-lw",
+        type=int,
+        default=80,
+        help="Maximum line width for linebreak operation (default: 80)"
+    )
+    linebreak_group.add_argument(
+        "--break-on-word", "-bow",
+        action="store_true",
+        default=True,
+        help="Break lines on word boundaries when possible (default: True)"
+    )
+    linebreak_group.add_argument(
+        "--no-break-on-word", "-nbow",
+        action="store_false",
+        dest="break_on_word",
+        help="Break lines at exact character position"
+    )
+    linebreak_group.add_argument(
+        "--preserve-indent", "-pi",
+        action="store_true",
+        default=True,
+        help="Preserve indentation when breaking lines (default: True)"
+    )
+    linebreak_group.add_argument(
+        "--no-preserve-indent", "-npi",
+        action="store_false",
+        dest="preserve_indent",
+        help="Don't preserve indentation when breaking lines"
     )
 
     # Search operations
@@ -600,6 +638,8 @@ def main():
         operations.append(OPERATION_BIBDEDUP)
     if args.autocomment:
         operations.append(OPERATION_AUTOCOMMENT)
+    if args.linebreak:
+        operations.append(OPERATION_LINEBREAK)
 
     # If no operations specified, use defaults
     if not operations:
@@ -607,6 +647,7 @@ def main():
             OPERATION_FLATTEN, OPERATION_DEFLATTEN, OPERATION_MINIFY,
             OPERATION_BUNDLE, OPERATION_MINIFY_BUNDLE, OPERATION_PROPERTIES,
             OPERATION_BIBDEDUP, OPERATION_ACROSCAN, OPERATION_AUTOCOMMENT,
+            OPERATION_LINEBREAK,
         ]
 
     # Add tree operations unless explicitly disabled
@@ -702,9 +743,7 @@ def main():
                         logger.info("")
 
                 is_minified = (operation == OPERATION_MINIFY_BUNDLE)
-                results = process_bundle_operation(
-                    source_dir, bundle_dest, args, exclude_dirs, exclude_exts, exclude_files, is_minified, logger
-                )
+                results = process_bundle_operation(source_dir, bundle_dest, args, exclude_dirs, exclude_exts, exclude_files, is_minified, logger)
 
                 if not args.no_log:
                     logger.info("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
@@ -723,9 +762,7 @@ def main():
                         logger.info("Note: Continuing on minification errors (--continue-on-error flag is set)")
                     logger.info("")
 
-                results = process_minify_operation(
-                    source_dir, minify_dest, args, exclude_dirs, exclude_exts, exclude_files, logger
-                )
+                results = process_minify_operation(source_dir, minify_dest, args, exclude_dirs, exclude_exts, exclude_files, logger)
 
                 if not args.no_log:
                     if results:
@@ -790,6 +827,68 @@ def main():
                             logger.info("--------------------\n")
 
                 if not args.no_log:
+                    logger.info("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
+
+            elif operation == OPERATION_LINEBREAK:
+                linebreak_dest = args.dest_named if args.dest_named else args.dest_pos
+                if not linebreak_dest:
+                    linebreak_dest = os.path.join(timestamp_dir, DEFAULT_LINEBREAK_OUTPUT_PATH)
+                output_paths[operation] = linebreak_dest
+
+                if not args.no_log:
+                    logger.info("\n\n:::::::::::::::::::::::::::::: LINEBREAK ::::::::::::::::::::::::::::::")
+                    logger.info(f"Destination: \"{DEFAULT_LINEBREAK_OUTPUT_PATH}/\"")
+                    logger.info(f"Line width: {args.line_width} characters")
+                    logger.info(f"Break on word boundaries: {args.break_on_word}")
+                    logger.info(f"Preserve indentation: {args.preserve_indent}")
+                    logger.info("")
+
+                results = []
+                for file_type in args.file_types:
+                    if file_type in HANDLERS:
+                        handler = HANDLERS[file_type]
+                        if args.include_extensions and not any(ext in args.include_extensions for ext in handler.extensions):
+                            continue
+
+                        if not args.no_log:
+                            logger.info(f"----- {file_type.upper()} FILES -----")
+
+                        operation = LinebreakOperation(handler, logger)  # Changed class name
+                        stats = operation.execute(
+                            source_dir,
+                            linebreak_dest,
+                            exclude_dirs=exclude_dirs,
+                            exclude_exts=exclude_exts,
+                            exclude_files=exclude_files,
+                            include_dirs=args.include_dirs,
+                            include_exts=args.include_extensions,
+                            include_files=args.include_files,
+                            line_width=args.line_width,
+                            break_on_word=args.break_on_word,
+                            preserve_indent=args.preserve_indent,
+                            clear_dest_dir=args.clear_dest_dir
+                        )
+
+                        results.append(stats)
+
+                        if not args.no_log:
+                            logger.info("--------------------\n")
+
+                if not args.no_log:
+                    if results:
+                        total_files = sum(result.files_copied for result in results)
+                        total_lines_broken = sum(getattr(result, 'total_lines_broken', 0) for result in results)
+                        files_with_long_lines = sum(getattr(result, 'files_with_long_lines', 0) for result in results)
+
+                        if total_files > 0:
+                            logger.info("----- OPERATION SUMMARY -----")
+                            logger.info(f"Total files processed: {total_files}")
+                            logger.info(f"Files with long lines: {files_with_long_lines}")
+                            logger.info(f"Total lines broken: {total_lines_broken}")
+                        else:
+                            logger.info("----- OPERATION SUMMARY -----")
+                            logger.info(f"No files were processed.")
+
                     logger.info("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
 
             elif operation == OPERATION_TREE:
