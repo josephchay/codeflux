@@ -235,8 +235,7 @@ class LinebreakOperation(Operation):
 
         return '\n'.join(processed_lines), lines_broken
 
-    def _break_line(self, line: str, line_width: int,
-                    break_on_word: bool = True, indent: str = "") -> List[str]:
+    def _break_line(self, line: str, line_width: int, break_on_word: bool = True, indent: str = "") -> List[str]:
         """
         Break a single line into multiple lines.
 

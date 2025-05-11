@@ -1,7 +1,13 @@
 # CodeFlux - Unravel Your Codebase
 
+[//]: # (<p align="center">)
+
+[//]: # (  <img src="assets/brand.png" alt="Description" style="width: 380px; border-radius: 10px; display: block; margin: auto;" />)
+
+[//]: # (</p>)
+
 <p align="center">
-  <img src="assets/brand.png" alt="Description" style="width: 380px; border-radius: 10px; display: block; margin: auto;" />
+  <img src="assets/brand3.png" alt="Description" style="border-radius: 12px; display: block; margin: auto;" />
 </p>
 
 **CodeFlux** is a versatile command-line tool for organizing, transforming, and enhancing large codebases. 
