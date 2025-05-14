@@ -5,7 +5,7 @@ Base Operation: Defines the abstract interface for all operations in CodeFlux.
 import os
 import time
 from abc import ABC, abstractmethod
-from typing import Dict, List, Optional, Any
+from typing import Dict, Any
 
 
 class OperationStats:
@@ -33,6 +33,10 @@ class OperationStats:
         self.files_bundled = 0
         self.bytes_bundled = 0
         self.files_with_snippets = 0
+
+        # Autocomment operation stats
+        self.files_commented = 0
+        self.comments_added = 0
 
     def start_timer(self):
         """Start the operation timer."""

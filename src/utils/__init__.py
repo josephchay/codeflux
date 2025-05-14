@@ -8,10 +8,12 @@ Contains helper functions and utilities used by operations.
 from utils.logging import Logger
 
 # Then import other utilities
+from utils.env import get_env
 from utils.minifier import minify_code
 from utils.snippet import apply_snippet_filter, parse_line_ranges, get_file_snippet
 
 __all__ = [
+    'get_env',
     'Logger',
     'minify_code',
     'apply_snippet_filter',

@@ -7,7 +7,7 @@
 [//]: # (</p>)
 
 <p align="center">
-  <img src="assets/brand3.png" alt="Description" style="border-radius: 12px; display: block; margin: auto;" />
+  <img src="assets/brand3.png" alt="CodeFlux brand image"/>
 </p>
 
 **CodeFlux** is a versatile command-line tool for organizing, transforming, and enhancing large codebases. 
@@ -341,6 +341,13 @@ To test functionality during development, you can run:
 ```bash
 python -m src.main --src <source_dir> --dest <dest_dir>
 ```
+
+## Upcoming Features
+
+- [ ] Operations
+  - [ ] Code conversion (e.g., Python to JavaScript)
+  - [ ] Dead code detection and elimination
+  - [ ] AI-level of code understanding and commenting
 
 ## License
 

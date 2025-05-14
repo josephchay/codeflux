@@ -13,10 +13,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Automatic comment feature for python files.
 - `LinebreakOperation` class for handling linebreak operations.
 - Brand image under the `assets` directory.
+- `python-dotenv`, `huggingface-hub`, `requests`, `transformers` packages to `requirements.txt`.
 
 ### Changed
 
 - Updated `setup.py`.
+- `AutoComment` operation to use Google's Gemini 2.0 Flash model.
 
 ### Removed
 

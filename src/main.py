@@ -1,7 +1,7 @@
 """
 CodeFlux: A comprehensive codebase management and transformation tool.
 
-This application provides utilities for code flattening, minification, bundling, and analysis.
+This application provides utilities for codebase management, and analysis
 """
 
 import argparse
@@ -18,16 +18,11 @@ from constants import (
     DEFAULT_TREE_OUTPUT_PATH, DEFAULT_ROOT_TREE_OUTPUT_PATH, DEFAULT_SUMMARY_OUTPUT_PATH,
     DEFAULT_AUTOCOMMENT_OUTPUT_PATH, OPERATION_LINEBREAK, DEFAULT_LINEBREAK_OUTPUT_PATH
 )
+from utils import get_env, Logger
 from file_handler import FileHandler
 from handlers import HANDLERS
-from operations.autocomment import AutoCommentOperation
-from operations.bundle import BundleOperation
-from operations.deflatten import DeflattenOperation
-from operations.flatten import FlattenOperation
-from operations.linebreak import LinebreakOperation
-from operations.minify import MinifyOperation
+from operations import BundleOperation, DeflattenOperation, FlattenOperation, LinebreakOperation, MinifyOperation, AutoCommentOperation
 from ui.tree import visualize_root_dir_tree, visualize_dir_tree
-from utils.logging import Logger
 
 
 def make_parser():
@@ -99,7 +94,7 @@ def make_parser():
     operation_group.add_argument(
         "--autocomment", "-ac",
         action="store_true",
-        help="Automatically add comments to code files"
+        help="Add AI-generated comments to code files"
     )
     operation_group.add_argument(
         "--linebreak", "-hb",
@@ -238,33 +233,9 @@ def make_parser():
     autocomment_group = parser.add_argument_group('autocomment options')
     autocomment_group.add_argument(
         "--comment-level", "-cl",
-        choices=["minimal", "standard", "verbose"],
+        choices=["minimal", "standard", "comprehensive"],
         default="standard",
-        help="Level of commenting to add (default: standard)"
-    )
-    autocomment_group.add_argument(
-        "--no-add-docstrings",
-        action="store_false",
-        dest="add_docstrings",
-        help="Don't add docstrings to functions and classes"
-    )
-    autocomment_group.add_argument(
-        "--no-add-inline",
-        action="store_false",
-        dest="add_inline",
-        help="Don't add inline comments for complex logic"
-    )
-    autocomment_group.add_argument(
-        "--no-add-header",
-        action="store_false",
-        dest="add_header",
-        help="Don't add file header comments"
-    )
-    autocomment_group.add_argument(
-        "--no-preserve-existing",
-        action="store_false",
-        dest="preserve_existing",
-        help="Don't preserve existing comments"
+        help="Level of detail in the generated comments"
     )
 
     linebreak_group = parser.add_argument_group('linebreak options')
@@ -791,16 +762,20 @@ def main():
                 autocomment_dest = args.dest_named if args.dest_named else args.dest_pos
                 if not autocomment_dest:
                     autocomment_dest = os.path.join(timestamp_dir, DEFAULT_AUTOCOMMENT_OUTPUT_PATH)
-                output_paths[operation] = autocomment_dest
 
+                output_paths[operation] = autocomment_dest
                 if not args.no_log:
-                    logger.info("\n\n:::::::::::::::::::::::::::::: AUTO-COMMENT ::::::::::::::::::::::::::::::")
-                    logger.info(f"Destination: \"{DEFAULT_AUTOCOMMENT_OUTPUT_PATH}/\"\n")
+                    logger.info("\n\n:::::::::::::::::::::::::::::: AI AUTO-COMMENT ::::::::::::::::::::::::::::::")
+                    logger.info(f"Destination: \"{DEFAULT_AUTOCOMMENT_OUTPUT_PATH}/\"")
+                    logger.info("Using Gemini 2.0 Flash model for AI-powered commenting")
+                    logger.info("")
 
                 results = []
                 for file_type in args.file_types:
                     if file_type in HANDLERS:
                         handler = HANDLERS[file_type]
+                        if args.include_extensions and not any(ext in args.include_extensions for ext in handler.extensions):
+                            continue
 
                         if not args.no_log:
                             logger.info(f"----- {file_type.upper()} FILES -----")
@@ -815,19 +790,13 @@ def main():
                             include_dirs=args.include_dirs,
                             include_exts=args.include_extensions,
                             include_files=args.include_files,
-                            comment_level=args.comment_level,
-                            add_docstrings=args.add_docstrings,
-                            add_inline=args.add_inline,
-                            add_header=args.add_header,
-                            preserve_existing=args.preserve_existing
+                            api_key=get_env("GOOGLE_API_KEY"),
+                            comment_level=args.comment_level
                         )
-                        results.append(stats)
 
+                        results.append(stats)
                         if not args.no_log:
                             logger.info("--------------------\n")
-
-                if not args.no_log:
-                    logger.info("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
 
             elif operation == OPERATION_LINEBREAK:
                 linebreak_dest = args.dest_named if args.dest_named else args.dest_pos

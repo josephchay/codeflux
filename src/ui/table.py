@@ -1,7 +1,8 @@
 import shutil
 
-from constants import OPERATION_BUNDLE, OPERATION_MINIFY_BUNDLE, OPERATION_FLATTEN, OPERATION_DEFLATTEN, \
-    OPERATION_MINIFY, TABULATE_FORMAT, OPERATION_PROPERTIES, OPERATION_BIBDEDUP, OPERATION_ACROSCAN
+from constants import (OPERATION_BUNDLE, OPERATION_MINIFY_BUNDLE, OPERATION_FLATTEN, OPERATION_DEFLATTEN,
+                       OPERATION_MINIFY, TABULATE_FORMAT, OPERATION_PROPERTIES, OPERATION_BIBDEDUP, OPERATION_ACROSCAN,
+                       OPERATION_AUTOCOMMENT)
 
 
 def get_table_formatter():
@@ -150,6 +151,21 @@ def format_file_table(files_info, operation_type):
 
             if has_warnings:
                 row.append(file_info.get("warnings", ""))
+            rows.append(row)
+
+    elif operation_type == OPERATION_AUTOCOMMENT:
+        headers = ["File", "Size (KB)", "Original Lines", "Commented Lines", "Comments Added", "Status"]
+
+        rows = []
+        for file_info in files_info:
+            row = [
+                file_info["file"],
+                f"{file_info['size'] / 1024:.2f}",
+                str(file_info.get("original_lines", 0)),
+                str(file_info.get("commented_lines", 0)),
+                str(file_info.get("comments_added", 0)),
+                file_info["status"]
+            ]
             rows.append(row)
     else:
         headers = ["File", "Size (KB)", "Status"]
@@ -363,6 +379,20 @@ def format_stats_table(stats, operation_type, duration):
         if bib_files_processed > 0 and files_with_duplicates > 0:
             files_with_dupes_percentage = (files_with_duplicates / bib_files_processed) * 100
             data.append(["Percentage of files with duplicates", f"{files_with_dupes_percentage:.2f}%"])
+    elif operation_type.lower() == "autocomment":  # Add autocomment operation stats
+        files_processed = stats.get("total_files_processed", 0)
+        files_commented = stats.get("files_commented", 0)
+        comments_added = stats.get("comments_added", 0)
+
+        data.extend([
+            ["Files processed", files_processed],
+            ["Files commented", files_commented],
+            ["Comments added", comments_added],
+        ])
+
+        if files_processed > 0 and files_commented > 0:
+            commented_percentage = (files_commented / files_processed) * 100
+            data.append(["Percentage of files commented", f"{commented_percentage:.1f}%"])
     elif operation_type == OPERATION_PROPERTIES:
         files_counted = stats.get("total_files_counted", 0)
         bytes_total = stats.get("bytes_total", 0) / 1024  # Convert to KB

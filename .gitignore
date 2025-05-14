@@ -9,3 +9,5 @@ src/codeflux.egg-info/
 
 temp/
 codeflux/
+
+.env
