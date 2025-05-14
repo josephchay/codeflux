@@ -58,6 +58,7 @@ setup(
     url="https://github.com/josephchay/codeflux",
     package_dir={"": "src"},
     packages=find_packages(where="src"),
+    py_modules=["main", "constants", "handlers", "file_handler"],
     entry_points={
         "console_scripts": [
             "codeflux=main:main",
@@ -69,7 +70,7 @@ setup(
         'install': PostInstallCommand,
     },
     package_data={
-        '': ['scripts/minify/*.js', 'templates/*.csv'],
+        'src': ['scripts/**/*', 'templates/**/*'],
     },
     include_package_data=True,
     classifiers=[

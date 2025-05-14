@@ -2,7 +2,7 @@ import os
 import re
 
 from operations.base import Operation, OperationStats
-from scripts.commentor import GeminiCommentGenerator
+from scripts.commenter import GeminiCommentGenerator
 
 
 class AutoCommentOperation(Operation):
